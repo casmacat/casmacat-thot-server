@@ -12,10 +12,33 @@
 #include <casmacat/utils.h>
 
 using namespace std;
+using namespace casmacat;
 
-class RandomAligner: public casmacat::IAlignmentEngine {
+class RandomAligner: public IAlignmentEngine {
 public:
   RandomAligner() { }
+
+  virtual void align(const std::vector<std::string> &source,
+                     const std::vector<std::string> &target,
+                     std::vector< std::vector<float> > &alignments)
+  {
+    alignments.resize(source.size());
+    for (size_t s = 0; s < source.size(); s++) {
+      alignments[s].resize(target.size());
+      for (size_t t = 0; t < target.size(); t++) {
+        alignments[s][t] = rand() / double(RAND_MAX);
+      }
+    }
+  }
+
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~RandomAligner() { std::cerr << "destroying " << typeid(*this).name() << "\n";}
+};
+
+class RandomAlignerFactory: public IAlignmentFactory {
+public:
+  RandomAlignerFactory() { }
 
   virtual int init(int argc, char *argv[]) {
     if (argc > 2) { // invalid number of arguments
@@ -37,25 +60,17 @@ public:
 
   virtual string getVersion() { return PACKAGE_VERSION; }
 
-  virtual void align(const std::vector<std::string> &source,
-                     const std::vector<std::string> &target,
-                     std::vector< std::vector<float> > &alignments)
-  {
-    alignments.resize(source.size());
-    for (size_t s = 0; s < source.size(); s++) {
-      alignments[s].resize(target.size());
-      for (size_t t = 0; t < target.size(); t++) {
-        alignments[s][t] = rand() / double(RAND_MAX);
-      }
-    }
+  virtual IAlignmentEngine *createEngine(const std::string &specialization_id = "") {
+    return new RandomAligner();
   }
 
   // do not forget to free all allocated resources
   // otherwise define the destructor with an empty body
-  virtual ~RandomAligner() {}
+  virtual ~RandomAlignerFactory() { std::cerr << "destroying " << typeid(*this).name() << "\n";}
 
 };
 
 
-EXPORT_CASMACAT_PLUGIN(IAlignmentEngine, RandomAligner);
+EXPORT_CASMACAT_PLUGIN(IAlignmentFactory, RandomAlignerFactory);
+
 

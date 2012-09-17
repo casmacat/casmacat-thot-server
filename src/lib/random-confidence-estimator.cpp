@@ -12,30 +12,11 @@
 #include <casmacat/utils.h>
 
 using namespace std;
+using namespace casmacat;
 
-class RandomConfidenceEstimator: public casmacat::IConfidenceEngine {
+class RandomConfidencer: public IConfidenceEngine {
 public:
-  RandomConfidenceEstimator() { }
-
-  virtual int init(int argc, char *argv[]) {
-    if (argc > 2) { // invalid number of arguments
-      return EXIT_FAILURE;
-    }
-
-    unsigned int seed = time(NULL);
-    if (argc == 2) {
-      seed = casmacat::convert_string<unsigned int>(string(argv[1]));
-      if (not finite(seed)) { // check if initialization went wrong
-        cerr << "Invalid seed = '" << argv[1] << "'\n";
-        return EXIT_FAILURE;
-      }
-    }
-
-    srand(seed);
-    return EXIT_SUCCESS;
-  }
-
-  virtual string getVersion() { return PACKAGE_VERSION; }
+  RandomConfidencer() { }
 
   virtual void getWordConfidences(const std::vector<std::string> &source,
                                   const std::vector<std::string> &target,
@@ -70,10 +51,45 @@ public:
 
   // do not forget to free all allocated resources
   // otherwise define the destructor with an empty body
-  virtual ~RandomConfidenceEstimator() { cerr << "I'm free!!!" << endl; }
+  virtual ~RandomConfidencer() { cerr << "I'm free!!!" << endl; }
+
+};
+
+class RandomConfidenceFactory: public IConfidenceFactory {
+public:
+  RandomConfidenceFactory() { }
+
+  virtual int init(int argc, char *argv[]) {
+    if (argc > 2) { // invalid number of arguments
+      return EXIT_FAILURE;
+    }
+
+    unsigned int seed = time(NULL);
+    if (argc == 2) {
+      seed = casmacat::convert_string<unsigned int>(string(argv[1]));
+      if (not finite(seed)) { // check if initialization went wrong
+        cerr << "Invalid seed = '" << argv[1] << "'\n";
+        return EXIT_FAILURE;
+      }
+    }
+
+    srand(seed);
+    return EXIT_SUCCESS;
+  }
+
+  virtual string getVersion() { return PACKAGE_VERSION; }
+
+  virtual IConfidenceEngine *createEngine(const std::string &specialization_id = "") {
+    return new RandomConfidencer();
+  }
+
+
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~RandomConfidenceFactory() { cerr << "I'm free!!!" << endl; }
 
 };
 
 
-EXPORT_CASMACAT_PLUGIN(IConfidenceEngine, RandomConfidenceEstimator);
+EXPORT_CASMACAT_PLUGIN(IConfidenceFactory, RandomConfidenceFactory);
 

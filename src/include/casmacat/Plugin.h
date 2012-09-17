@@ -32,14 +32,18 @@ namespace casmacat {
   class Plugin {
     typedef value_type* (*create_fn)(int argc, char *argv[]);
     typedef void (*destroy_fn)(value_type *);
+    typedef const std::type_info& (*plugin_type_fn)();
 
     std::string plugin_fn;
     std::string default_args;
     std::string create_symbol_name;
     std::string destroy_symbol_name;
+    std::string plugin_type_name;
 
     create_fn create_;
     destroy_fn destroy_;
+    plugin_type_fn plugin_type_;
+
 #ifdef PLUGIN_USE_LIBTOOL
     lt_dlhandle library_h_;
 #else
@@ -48,9 +52,11 @@ namespace casmacat {
   public:
 
     Plugin(const std::string &_plugin_fn, const std::string &_default_args = "",
-    		   const std::string &_create_symbol_name = "new_plugin", const std::string &_destroy_symbol_name = "delete_plugin")
+    		   const std::string &_create_symbol_name = "new_plugin", const std::string &_destroy_symbol_name = "delete_plugin",
+    		   const std::string &_plugin_type_name = "plugin_type")
            : plugin_fn(_plugin_fn), default_args(_default_args),
-             create_symbol_name(_create_symbol_name),destroy_symbol_name(_destroy_symbol_name)
+             create_symbol_name(_create_symbol_name), destroy_symbol_name(_destroy_symbol_name),
+             plugin_type_name(_plugin_type_name)
     {
       using std::cout;
       using std::cerr;
@@ -94,7 +100,24 @@ namespace casmacat {
           cerr << "Cannot load library: " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error); 
       }
-  
+
+      // load the plugin type
+      plugin_type_ = reinterpret_cast<plugin_type_fn>(plugin_dlsym(library_h_, plugin_type_name.c_str()));
+      dlsym_error = plugin_dlerror();
+      if (dlsym_error) {
+          cerr << "Cannot load symbol'" << plugin_type_name << "': " << dlsym_error << std::endl;
+          throw std::runtime_error(dlsym_error);
+      }
+      else if (not plugin_type_) {
+          cerr << "Incompatible symbol '" << plugin_type_name << "': " << dlsym_error << std::endl;
+          throw std::runtime_error(dlsym_error);
+      }
+
+      if (plugin_type_() != typeid(value_type)) {
+        cerr << "Incompatible plugin: '" << plugin_fn << "' is a plugin of type '" << plugin_type_().name() << "' instead of '" << typeid(value_type).name() << "'" << std::endl;
+        throw std::runtime_error(dlsym_error);
+      }
+
       // load the creator
       create_ = reinterpret_cast<create_fn>(plugin_dlsym(library_h_, create_symbol_name.c_str()));
       dlsym_error = plugin_dlerror();
@@ -152,7 +175,7 @@ namespace casmacat {
       value_type *value = create_(argc, argv);
 
       for (size_t i = 0; i < argc; i++) {
-        delete argv[i];
+        delete[] argv[i];
       }
       delete[] argv;
 

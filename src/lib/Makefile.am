@@ -2,7 +2,7 @@
 # The list of libraries we are building seperated by spaces.
 # The 'lib_' indicates that these build products will be installed
 # in the $(libdir) directory. For example /usr/lib
-lib_LTLIBRARIES = libcasmacat.la random-aligner.la random-confidence-estimator.la random-imt-engine.la random-mt-engine.la 
+lib_LTLIBRARIES = libcasmacat.la random-aligner.la random-confidence-estimator.la random-imt-engine.la random-mt-engine.la space-tokenizer.la 
 
 
 #######################################
@@ -33,6 +33,10 @@ random_imt_engine_la_CPPFLAGS = -I$(top_srcdir)/src/include
 random_mt_engine_la_SOURCES = random-mt-engine.cpp
 random_mt_engine_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic $(LDFLAGS)
 random_mt_engine_la_CPPFLAGS = -I$(top_srcdir)/src/include
+
+space_tokenizer_la_SOURCES = space-tokenizer.cpp
+space_tokenizer_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic $(LDFLAGS)
+space_tokenizer_la_CPPFLAGS = -I$(top_srcdir)/src/include
 
 ### Python extension ###
 if HAVE_BOOST_PYTHON

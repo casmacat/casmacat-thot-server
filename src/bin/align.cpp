@@ -37,16 +37,23 @@ using namespace std;
 int main(int argc, char* argv[]) {
 
     if (argc != 4) {
-      cerr << "Usage: " << argv[0] << " config.js source target\n";
+      cerr << "Usage: " << argv[0] << " aligner.so source target\n";
       return EXIT_FAILURE;
     }
 
-    string aligner_plugin_fn = "";
+    string aligner_plugin_fn = argv[1];
     string args = "";
 
-    Plugin<IAlignmentEngine> aligner_plugin(aligner_plugin_fn, args);
+    Plugin<IAlignmentFactory> aligner_plugin(aligner_plugin_fn, args);
+    IAlignmentFactory *aligner_factory = aligner_plugin.create();
+    std::cerr << "who am I? " << typeid(aligner_factory).name() << "\n";
+    std::cerr << "who am *I? " << typeid(*aligner_factory).name() << "\n";
+    IAlignmentEngine *aligner = aligner_factory->createEngine();
+    std::cerr << "who am I? " << typeid(aligner).name() << "\n";
+    std::cerr << "who am *I? " << typeid(*aligner).name() << "\n";
 
-    IAlignmentEngine *aligner = aligner_plugin.create();
+    //std::cerr << "Is correct type? " << (aligner->getType() == typeid(IAlignmentEngine)) << "\n";
+
     if (aligner == 0) {
       cerr << "Plugin could not be instantiated\n";
     }
@@ -56,7 +63,7 @@ int main(int argc, char* argv[]) {
       ifstream target_file(argv[3]);
       string source, target;
       vector<string> tok_source, tok_target;
-      std::vector< std::vector<float> > alignments;
+      vector< vector<float> > alignments;
 
       cout.setf(ios::fixed, ios::floatfield);
       cout.precision(2);
@@ -77,6 +84,9 @@ int main(int argc, char* argv[]) {
         }
       }
     }
+
+    delete aligner;
+    delete aligner_factory;
 
 
     return EXIT_SUCCESS;

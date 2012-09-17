@@ -14,19 +14,14 @@
  *   limitations under the License.
  *
  * 
- * IConfidenceEngine.h
+ * ITextProcessor.h
  *
- *  Created on: 16/07/2012
+ *  Created on: 14/09/2012
  *      Author: valabau
  */
 
-#ifndef CASMACAT_ICONFIDENCEENGINE_H_
-#define CASMACAT_ICONFIDENCEENGINE_H_
-
-
-#include <string>
-#include <vector>
-#include <casmacat/plugin-utils.h>
+#ifndef CASMACAT_ITEXTPROCESSOR_H_
+#define CASMACAT_ITEXTPROCESSOR_H_
 
 namespace casmacat {
 
@@ -34,22 +29,20 @@ namespace casmacat {
  * Interface for Confidence plug-ins
  */
 
-  class IConfidenceEngine {
+  class ITextProcessor {
   public:
-    virtual ~IConfidenceEngine() {};
+    virtual ~ITextProcessor() {};
 
-    virtual void getWordConfidences(const std::vector<std::string> &source,
-                                    const std::vector<std::string> &target,
-                                    const std::vector<bool> &validated,
-                                    std::vector<float> &confidences) = 0;
-    virtual float getSentenceConfidence(const std::vector<std::string> &source,
-                                        const std::vector<std::string> &target,
-                                        const std::vector<bool> &validated) = 0;
+    virtual void preprocess(const std::string &detokenized,
+                            std::vector<std::string> &tokenized) = 0;
+    virtual void postprocess(const std::vector<std::string> &tokenized,
+                              std::string &detokenized,
+                              std::vector< std::pair<size_t, size_t> > &segmentation) = 0;
   };
 
-  class IConfidenceFactory {
+  class ITextProcessorFactory {
   public:
-    virtual ~IConfidenceFactory() {};
+    virtual ~ITextProcessorFactory() {};
     /**
      * initialize the Confidence engine with main-like parameters
      */
@@ -61,10 +54,9 @@ namespace casmacat {
      * @param[in] specialization_id returns a specialized version of the confidence engine,
      *            for instance, for user specific models
      */
-    virtual IConfidenceEngine *createEngine(const std::string &specialization_id = "") = 0;
+    virtual ITextProcessor *createProcessor(const std::string &specialization_id = "") = 0;
   };
 
 }
 
-
-#endif /* CASMACAT_ICONFIDENCEENGINE_H_ */
+#endif /* CASMACAT_ITEXTPROCESSOR_H_ */

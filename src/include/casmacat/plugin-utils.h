@@ -25,11 +25,13 @@
 
 #include <typeinfo>
 #include <iostream>
+#include <iterator>
 #include <casmacat/NotImplementedException.h>
 
 #define EXPORT_CASMACAT_PLUGIN_NAME(I, C, name) \
   extern "C" casmacat::I * new_##name(int argc, char *argv[]) { return casmacat::new_object<casmacat::I, C>(argc, argv); } \
-  extern "C" void delete_##name(casmacat::I * c) { casmacat::delete_object<casmacat::I, C>(c); }
+  extern "C" void delete_##name(casmacat::I * c) { casmacat::delete_object<casmacat::I, C>(c); } \
+  extern "C" const std::type_info& name##_type() { return casmacat::plugin_type<casmacat::I>(); }
 
 #define EXPORT_CASMACAT_PLUGIN(I, C) EXPORT_CASMACAT_PLUGIN_NAME(I, C, plugin)
 
@@ -63,7 +65,8 @@ template <typename I, typename C> bool delete_object(I * i) {
   }
 }
 
-  //EXPORT_CASMACAT_PLUGIN(MtEngine, MosesMtEngine);
+template <typename I> const std::type_info& plugin_type() { return typeid(I); }
+
 
 }
 

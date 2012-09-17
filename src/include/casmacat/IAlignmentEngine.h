@@ -27,7 +27,6 @@
 #include <vector>
 #include <casmacat/plugin-utils.h>
 
-
 namespace casmacat {
 
 /**
@@ -36,31 +35,36 @@ namespace casmacat {
 
   class IAlignmentEngine {
   public:
-    IAlignmentEngine() {};
     virtual ~IAlignmentEngine() {};
-    /**
-     * initialize the Alignment engine with main-like parameters
-     */
-    virtual int init(int argc, char *argv[]) { throw NotImplementedException(METHOD_DEFINITION); }
-    virtual std::string getVersion() { throw NotImplementedException(METHOD_DEFINITION); }
 
     /**
      * obtain an alignment matrix from the source and target sentences
      */
     virtual void align(const std::vector<std::string> &source,
                        const std::vector<std::string> &target,
-                       std::vector< std::vector<float> > &alignments
-                          ) { throw NotImplementedException(METHOD_DEFINITION); }
-
-  private:
-    // Following the rule of three copy and the assignment operator are disabled
-    IAlignmentEngine(const IAlignmentEngine&); // Disallow copy
-    IAlignmentEngine& operator=(const IAlignmentEngine&); // Disallow assignment operator
+                       std::vector< std::vector<float> > &alignments) = 0;
   };
 
+
+  class IAlignmentFactory {
+  public:
+    virtual ~IAlignmentFactory() {};
+
+    /**
+     * initialize the alignment factory with main-like parameters
+     */
+    virtual int init(int argc, char *argv[]) = 0;
+    virtual std::string getVersion() = 0;
+
+    /**
+     * create an instance of an alignment engine
+     * @param[in] specialization_id returns a specialized version of the alignment engine,
+     *            for instance, for user specific models
+     */
+    virtual IAlignmentEngine *createEngine(const std::string &specialization_id = "") = 0;
+  };
+
+
 }
-
-
-
 
 #endif /* CASMACAT_IALIGNMENTENGINE_H_ */
