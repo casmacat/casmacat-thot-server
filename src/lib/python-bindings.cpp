@@ -25,8 +25,10 @@
 
 #include <string>
 #include <vector>
+using namespace std;
 
 #include <boost/python.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 using namespace boost::python;
 
 #include <casmacat/Plugin.h>
@@ -35,26 +37,21 @@ using namespace casmacat;
 
 
 
-char const* greet()
+BOOST_PYTHON_MODULE(pycasmacat)
 {
-     return "hello, world";
-}
+  class_<vector<string> >("vector<string>").def(vector_indexing_suite<vector<string> >() );
+  class_<vector<bool> >("vector<bool>").def(vector_indexing_suite<vector<bool> >() );
 
-class Test {
-public:
-  Test() {}
-  Test(int size): data(size) {}
-private:
-  std::vector<int> data;
-};
+  //http://www.boost.org/doc/libs/1_51_0/libs/python/doc/tutorial/doc/html/python/exposing.html
+  class_<IConfidenceEngine, boost::noncopyable>("IConfidenceEngine", no_init)
+			.def("getWordConfidences", &IConfidenceEngine::getWordConfidences)
+			.def("getSentenceConfidence", &IConfidenceEngine::getSentenceConfidence)
+		;
 
-BOOST_PYTHON_MODULE(casmacat)
-{
-  def("greet", greet);
+  class_<Plugin<IConfidenceEngine>, boost::noncopyable>("PluginConfidenceEngine", init<std::string, optional<std::string, std::string, std::string> >())
+				.def("create", &Plugin<IConfidenceEngine>::create, return_value_policy<manage_new_object>())
+				.def("destroy", &Plugin<IConfidenceEngine>::destroy)
 
-  class_<Test>("Test", init<>())
-          .def(init<int>())
-          ;
 
   //http://www.boost.org/doc/libs/1_51_0/libs/python/doc/tutorial/doc/html/python/exposing.html
   class_<IConfidenceEngine, boost::noncopyable>("IConfidenceEngine", no_init)
@@ -62,8 +59,8 @@ BOOST_PYTHON_MODULE(casmacat)
             .def("getSentenceConfidence", &IConfidenceEngine::getSentenceConfidence)
         ;
 
-  class_<Plugin<IConfidenceEngine>, boost::noncopyable>("PluginConfidenceEngine") //, init<std::string>())
-                .def("create", &Plugin<IConfidenceEngine>::create)
+  class_<Plugin<IConfidenceEngine>, boost::noncopyable>("PluginConfidenceEngine", init<std::string, optional<std::string, std::string, std::string> >())
+                .def("create", &Plugin<IConfidenceEngine>::create, return_value_policy<manage_new_object>())
                 .def("destroy", &Plugin<IConfidenceEngine>::destroy)
             ;
 }

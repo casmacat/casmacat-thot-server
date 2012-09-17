@@ -25,6 +25,7 @@
 
 #include <sstream>
 #include <limits>
+#include <vector>
 
 namespace casmacat {
 

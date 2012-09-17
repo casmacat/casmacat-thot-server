@@ -31,7 +31,6 @@
 #include <fstream>
 #include <iterator>
 #include <cassert>
-#include <jsoncpp/json.h>
 
 using namespace casmacat;
 using namespace std;
@@ -43,21 +42,11 @@ int main(int argc, char* argv[]) {
       return EXIT_FAILURE;
     }
 
-    Json::Value config(Json::objectValue);
-//    config["mt"] = "nothing";
-//    cerr << config.toStyledString() << "\n";
 
-    {
-      Json::Reader reader;
-      ifstream config_f(argv[1]);
-      bool is_ok = reader.parse(config_f, config);
-      assert(is_ok);
-    }
+    string imt_plugin_fn = "";
+    string args = "";
 
-    cerr << config.toStyledString() << "\n";
-
-
-    Plugin<IImtEngine> imt_plugin(config["interactive-mt"]);
+    Plugin<IImtEngine> imt_plugin(imt_plugin_fn, args);
 
     IImtEngine *imt = imt_plugin.create();
     if (imt == 0) {

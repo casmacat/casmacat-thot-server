@@ -30,7 +30,6 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
-#include <jsoncpp/json.h>
 
 using namespace casmacat;
 using namespace std;
@@ -42,21 +41,10 @@ int main(int argc, char* argv[]) {
       return EXIT_FAILURE;
     }
 
-    Json::Value config(Json::objectValue);
-//    config["aligner"] = "nothing";
-//    cerr << config.toStyledString() << "\n";
+    string aligner_plugin_fn = "";
+    string args = "";
 
-    {
-      Json::Reader reader;
-      ifstream config_f(argv[1]);
-      bool is_ok = reader.parse(config_f, config);
-      assert(is_ok);
-    }
-
-    cerr << config.toStyledString() << "\n";
-
-
-    Plugin<IAlignmentEngine> aligner_plugin(config["aligner"]);
+    Plugin<IAlignmentEngine> aligner_plugin(aligner_plugin_fn, args);
 
     IAlignmentEngine *aligner = aligner_plugin.create();
     if (aligner == 0) {

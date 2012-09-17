@@ -10,7 +10,6 @@
 // #include <cstdint>
 #include <cstring>
 
-#include <jsoncpp/json.h>
 #include <casmacat/utils.h>
 
 //#define PLUGIN_USE_LIBTOOL
@@ -30,7 +29,11 @@ namespace casmacat {
     typedef value_type* (*create_fn)(int argc, char *argv[]);
     typedef void (*destroy_fn)(value_type *);
 
-    Json::Value config;
+    std::string plugin_fn;
+    std::string default_args;
+    std::string create_symbol_name;
+    std::string destroy_symbol_name;
+
     create_fn create_;
     destroy_fn destroy_;
 #ifdef PLUGIN_USE_LIBTOOL
@@ -40,12 +43,13 @@ namespace casmacat {
 #endif
   public:
 
-    Plugin(const Json::Value &_config)
+    Plugin(const std::string &_plugin_fn, const std::string &_default_args = "",
+    		const std::string &_create_symbol_name = "", const std::string &_destroy_symbol_name = "")
+           : plugin_fn(_plugin_fn), default_args(_default_args),
+             create_symbol_name(_create_symbol_name),destroy_symbol_name(_destroy_symbol_name)
     {
       using std::cout;
       using std::cerr;
-
-      config = _config;
 
       const char* dlsym_error = NULL;
 #ifdef PLUGIN_USE_LIBTOOL
@@ -73,15 +77,14 @@ namespace casmacat {
       int advise = RTLD_NOW | RTLD_GLOBAL;
 #endif
      
-      if (not config["plugin"]) {
+      if (plugin_fn.empty()) {
         cerr << "Plugin undefined: " << dlsym_error  << std::endl;
         throw std::runtime_error(dlsym_error);
       }
-      const std::string library = config["plugin"].asString();
   
       // load the dynamic 
-      cerr << "Loading plug-in from '" << library << "'" << std::endl;
-      library_h_ = plugin_dlopen(library.c_str(), advise);
+      cerr << "Loading plug-in from '" << plugin_fn << "'" << std::endl;
+      library_h_ = plugin_dlopen(plugin_fn.c_str(), advise);
       dlsym_error = plugin_dlerror();
       if (library_h_ == 0 or dlsym_error) {
           cerr << "Cannot load library: " << dlsym_error << std::endl;
@@ -89,30 +92,28 @@ namespace casmacat {
       }
   
       // load the creator
-      std::string create_str = config["create_symbol"].asString();
-      if (create_str == "") create_str = "new_plugin";
-      create_ = reinterpret_cast<create_fn>(plugin_dlsym(library_h_, create_str.c_str()));
+      if (create_symbol_name == "") create_symbol_name = "new_plugin";
+      create_ = reinterpret_cast<create_fn>(plugin_dlsym(library_h_, create_symbol_name.c_str()));
       dlsym_error = plugin_dlerror();
       if (dlsym_error) {
-          cerr << "Cannot load symbol'" << create_str << "': " << dlsym_error << std::endl;
+          cerr << "Cannot load symbol'" << create_symbol_name << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error); 
       }
       else if (not create_) {
-          cerr << "Incompatible symbol '" << create_str << "': " << dlsym_error << std::endl;
+          cerr << "Incompatible symbol '" << create_symbol_name << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error);
       }
 
        // load the destroyer 
-      std::string destroy_str = config["destroy_symbol"].asString();
-      if (destroy_str == "") destroy_str = "delete_plugin";
-      destroy_ = reinterpret_cast<destroy_fn>(plugin_dlsym(library_h_, destroy_str.c_str()));
+      if (destroy_symbol_name == "") destroy_symbol_name = "delete_plugin";
+      destroy_ = reinterpret_cast<destroy_fn>(plugin_dlsym(library_h_, destroy_symbol_name.c_str()));
       dlsym_error = plugin_dlerror();
       if (dlsym_error) {
-          cerr << "Cannot load symbol kk'" << destroy_str << "': " << dlsym_error << std::endl;
+          cerr << "Cannot load symbol '" << destroy_symbol_name << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error); 
       }
       else if (not destroy_) {
-          cerr << "Incompatible symbol '" << destroy_str << "': " << dlsym_error << std::endl;
+          cerr << "Incompatible symbol '" << destroy_symbol_name << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error);
       }
   
@@ -129,15 +130,15 @@ namespace casmacat {
     };
 
     // Note: value_type needs to be explicitly declared so that SWIG does not complain
-    value_type *create(int argc, char *argv[]) {
+    value_type *createCArgs(int argc, char *argv[]) {
       return create_(argc, argv);
     }
 
 
-    value_type *create(const std::vector<std::string> &args) {
+    value_type *createVectorStringArgs(const std::vector<std::string> &args) {
       int argc = args.size() + 1;
       char **argv = new char *[argc + 1];
-      std::string name = config["plugin"].asString();
+      std::string name = plugin_fn;
       argv[0] = new char[ strlen(name.c_str()) + 1 ];;
       strcpy(argv[0], name.c_str());
       for (size_t argc = 0;argc < args.size(); argc++) {
@@ -156,17 +157,17 @@ namespace casmacat {
       return value;
     }
 
-    value_type *create(const std::string &cmd) {
+    value_type *createStringArgs(const std::string &cmd) {
       std::vector<std::string> args;
       tokenize(cmd, args, std::string(" "));
-      return create(args);
+      return createVectorStringArgs(args);
     }
 
     value_type *create() {
-      return create(config["args"].asString());
+      return createStringArgs(default_args);
     }
 
-    void destroy(value_type obj) {
+    void destroy(value_type *obj) {
       destroy_(obj);
     }
 

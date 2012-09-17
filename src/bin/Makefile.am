@@ -10,8 +10,8 @@
 # The 'noinst_' prefix indicates that the following targets are not to be
 # installed.
 bin_PROGRAMS=casmacat-translate casmacat-align casmacat-estimate-confidences casmacat-imt
-noinst_PROGRAMS=echo_server
-LDADD= -ljsoncpp -lwebsocketpp -lboost_system -lboost_date_time -lboost_regex -lboost_program_options -lboost_thread -lltdl
+#noinst_PROGRAMS=echo_server
+LDADD= -lltdl
 
 #######################################
 # Build information for each executable. The variable name is derived
@@ -19,9 +19,9 @@ LDADD= -ljsoncpp -lwebsocketpp -lboost_system -lboost_date_time -lboost_regex -l
 # replaced by '_'. So a.out becomes a_out and the appropriate suffex added.
 # '_SOURCES' for example.
 
-echo_server_SOURCES= echo-server.cpp
-echo_server_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
-echo_server_CPPFLAGS = -I$(top_srcdir)/src/include
+#echo_server_SOURCES= echo-server.cpp
+#echo_server_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
+#echo_server_CPPFLAGS = -I$(top_srcdir)/src/include
 
 ###### translate
 casmacat_translate_SOURCES= translate.cpp

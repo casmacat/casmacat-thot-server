@@ -30,7 +30,6 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
-#include <jsoncpp/json.h>
 
 using namespace casmacat;
 using namespace std;
@@ -42,21 +41,10 @@ int main(int argc, char* argv[]) {
       return EXIT_FAILURE;
     }
 
-    Json::Value config(Json::objectValue);
-//    config["aligner"] = "nothing";
-//    cerr << config.toStyledString() << "\n";
+    string confidence_estimator_plugin_fn = "";
+    string args = "";
 
-    {
-      Json::Reader reader;
-      ifstream config_f(argv[1]);
-      bool is_ok = reader.parse(config_f, config);
-      assert(is_ok);
-    }
-
-    cerr << config.toStyledString() << "\n";
-
-
-    Plugin<IConfidenceEngine> confidence_estimator_plugin(config["confidence-estimator"]);
+    Plugin<IConfidenceEngine> confidence_estimator_plugin(confidence_estimator_plugin_fn, args);
 
     IConfidenceEngine *confidence_estimator = confidence_estimator_plugin.create();
     if (confidence_estimator == 0) {
