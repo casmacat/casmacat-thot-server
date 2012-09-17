@@ -42,9 +42,12 @@ namespace casmacat {
      * initialize the Alignment engine with main-like parameters
      */
     virtual int init(int argc, char *argv[]) { throw NotImplementedException(METHOD_DEFINITION); }
-    virtual void align(const std::string &source,
-                       const std::string &target,
-                       const std::vector< std::vector<float> > &alignments
+    /**
+     * obtain an alignment matrix from the source and target sentences
+     */
+    virtual void align(const std::vector<std::string> &source,
+                       const std::vector<std::string> &target,
+                       std::vector< std::vector<float> > &alignments
                           ) { throw NotImplementedException(METHOD_DEFINITION); }
 
   private:

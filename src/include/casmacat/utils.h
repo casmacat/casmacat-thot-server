@@ -24,6 +24,8 @@
 #define CasMaCat_UTILS_H_
 
 #include <jsoncpp/json.h>
+#include <sstream>
+#include <limits>
 
 namespace casmacat {
 
@@ -59,6 +61,29 @@ namespace casmacat {
           pos = str.find_first_of(delimiters, lastPos);
       }
     }
+  }
+
+  template <typename T>
+  T convert_string(const std::string& text) {
+    T ret;
+    std::istringstream ss(text, std::istringstream::in);
+    ss >> ret;
+    if (ss.fail()) {
+      if (text == "inf") return std::numeric_limits<T>::infinity();
+      else if (text == "-inf") return -std::numeric_limits<T>::infinity();
+      else if (text == "nan") return std::numeric_limits<T>::quiet_NaN();
+      return std::numeric_limits<T>::quiet_NaN();
+      //assert_bt(false, "Unknown error");
+
+    }
+    return ret;
+  }
+
+  template <typename T>
+  std::string to_string(const T& value) {
+    std::ostringstream ss(std::ostringstream::out);
+    ss << value;
+    return ss.str();
   }
 
 }

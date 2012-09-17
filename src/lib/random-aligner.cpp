@@ -1,0 +1,60 @@
+// Moses plugin for casmacat
+
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
+
+#include <casmacat/IAlignmentEngine.h>
+#include <casmacat/utils.h>
+
+using namespace std;
+
+class RandomAligner: public casmacat::IAlignmentEngine {
+public:
+  RandomAligner() { }
+
+  virtual int init(int argc, char *argv[]) {
+    if (argc > 2) { // invalid number of arguments
+      return EXIT_FAILURE;
+    }
+
+    unsigned int seed = time(NULL);
+    if (argc == 2) {
+      seed = casmacat::convert_string<unsigned int>(string(argv[1]));
+      if (not finite(seed)) { // check if initialization went wrong
+        cerr << "Invalid seed = '" << argv[1] << "'\n";
+        return EXIT_FAILURE;
+      }
+    }
+
+    srand(seed);
+    return EXIT_SUCCESS;
+  }
+
+  virtual void align(const std::vector<std::string> &source,
+                     const std::vector<std::string> &target,
+                     std::vector< std::vector<float> > &alignments)
+  {
+    alignments.resize(source.size());
+    for (size_t s = 0; s < source.size(); s++) {
+      alignments[s].resize(target.size());
+      for (size_t t = 0; t < target.size(); t++) {
+        alignments[s][t] = rand() / double(RAND_MAX);
+      }
+    }
+  }
+
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~RandomAligner() {}
+
+private:
+  size_t lineCount;
+};
+
+
+EXPORT_CASMACAT_PLUGIN(IAlignmentEngine, RandomAligner);
+

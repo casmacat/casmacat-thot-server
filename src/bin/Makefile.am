@@ -9,7 +9,7 @@
 # Because a.out is only a sample program we don't want it to be installed.
 # The 'noinst_' prefix indicates that the following targets are not to be
 # installed.
-bin_PROGRAMS=casmacat-translate
+bin_PROGRAMS=casmacat-translate casmacat-aligner
 noinst_PROGRAMS=echo_server
 LDADD= -ljsoncpp -lwebsocketpp -lboost_system -lboost_date_time -lboost_regex -lboost_program_options -lboost_thread -lltdl
 
@@ -27,3 +27,9 @@ echo_server_CPPFLAGS = -I$(top_srcdir)/src/include
 casmacat_translate_SOURCES= translate.cpp
 casmacat_translate_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
 casmacat_translate_CPPFLAGS = -I$(top_srcdir)/src/include
+
+###### aligner
+casmacat_aligner_SOURCES= aligner.cpp
+casmacat_aligner_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
+casmacat_aligner_CPPFLAGS = -I$(top_srcdir)/src/include
+
