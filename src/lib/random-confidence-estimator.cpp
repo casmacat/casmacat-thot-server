@@ -70,7 +70,7 @@ public:
 
   // do not forget to free all allocated resources
   // otherwise define the destructor with an empty body
-  virtual ~RandomConfidenceEstimator() {}
+  virtual ~RandomConfidenceEstimator() { cerr << "I'm free!!!" << endl; }
 
 };
 

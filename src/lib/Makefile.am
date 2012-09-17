@@ -4,9 +4,6 @@
 # in the $(libdir) directory. For example /usr/lib
 lib_LTLIBRARIES = libcasmacat.la random-aligner.la random-confidence-estimator.la random-imt-engine.la random-mt-engine.la 
 
-#if HAVE_BOOST_PYTHON
-lib_LTLIBRARIES += pycasmacat.la
-#endif
 
 #######################################
 # Build information for each library
@@ -37,8 +34,24 @@ random_mt_engine_la_SOURCES = random-mt-engine.cpp
 random_mt_engine_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic $(LDFLAGS)
 random_mt_engine_la_CPPFLAGS = -I$(top_srcdir)/src/include
 
-#if HAVE_BOOST_PYTHON
-pycasmacat_la_SOURCES = python-bindings.cpp
-pycasmacat_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic -l$(BOOST_PYTHON_LIB) -l$(PYTHON_LIB) $(LDFLAGS)
+### Python extension ###
+if HAVE_BOOST_PYTHON
+lib_LTLIBRARIES += pycasmacat.la
+pycasmacat_la_SOURCES  = python-bindings.cpp
+pycasmacat_la_LDFLAGS  = -version-info 0:0:0 -module -export-dynamic -l$(BOOST_PYTHON_LIB) -l$(PYTHON_LIB) $(LDFLAGS)
 pycasmacat_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(PYTHON_INCLUDE_DIR)
-#endif
+endif
+
+if HAVE_SWIG
+BUILT_SOURCES = $(builddir)/pycasmacat_swig_wrap.cpp
+SWIG_SOURCES = pycasmacat.i
+
+pkgpython_PYTHON = pycasmacat.py
+pkgpyexec_LTLIBRARIES   = _pycasmacat.la
+_pycasmacat_la_SOURCES  = $(BUILT_SOURCES) $(SWIG_SOURCES)
+_pycasmacat_la_CXXFLAGS = $(COMPILANCE_CXXFLAGS) $(AX_SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/src/include 
+_pycasmacat_la_LDFLAGS  = -version-info 0:0:0 -export-dynamic -module $(PYTHON_LDFLAGS) $(LDFLAGS)
+
+$(builddir)/pycasmacat_swig_wrap.cpp : $(SWIG_SOURCES) 
+	$(SWIG) $(AX_SWIG_PYTHON_OPT) -I$(top_srcdir)/src/include -o $@ $<
+endif
