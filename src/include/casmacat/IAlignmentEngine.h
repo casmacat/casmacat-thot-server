@@ -42,6 +42,8 @@ namespace casmacat {
      * initialize the Alignment engine with main-like parameters
      */
     virtual int init(int argc, char *argv[]) { throw NotImplementedException(METHOD_DEFINITION); }
+    virtual std::string getVersion() { throw NotImplementedException(METHOD_DEFINITION); }
+
     /**
      * obtain an alignment matrix from the source and target sentences
      */

@@ -67,6 +67,7 @@ namespace casmacat {
      * initialize the IMT engine with main-like parameters
      */
     virtual int init(int argc, char *argv[]) { throw NotImplementedException(METHOD_DEFINITION); }
+    virtual std::string getVersion() { throw NotImplementedException(METHOD_DEFINITION); }
 
     /**
      * create new IMT session

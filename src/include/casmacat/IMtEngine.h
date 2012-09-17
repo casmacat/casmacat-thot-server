@@ -34,6 +34,7 @@ namespace casmacat {
      * initializes Mt Engine with main-like parameters
      */
     virtual int init(int argc, char *argv[]) { throw NotImplementedException(METHOD_DEFINITION); }
+    virtual std::string getVersion() { throw NotImplementedException(METHOD_DEFINITION); }
 
     /**
      * translates a sentence in a source language into a sentence in a target language

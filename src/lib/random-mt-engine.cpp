@@ -8,6 +8,7 @@
 #include <ctime>
 #include <cmath>
 
+#include <casmacat/config.h>
 #include <casmacat/IMtEngine.h>
 #include <casmacat/utils.h>
 
@@ -53,6 +54,8 @@ public:
     srand(seed);
     return EXIT_SUCCESS;
   }
+
+  virtual string getVersion() { return PACKAGE_VERSION; }
 
   /* Set partial validation of a translation */
   virtual void translate(const std::vector<std::string> &source,

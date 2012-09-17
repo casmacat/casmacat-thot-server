@@ -43,6 +43,7 @@ namespace casmacat {
      * initialize the Confidence engine with main-like parameters
      */
     virtual int init(int argc, char *argv[]) { throw NotImplementedException(METHOD_DEFINITION); }
+    virtual std::string getVersion() { throw NotImplementedException(METHOD_DEFINITION); }
     virtual void getWordConfidences(const std::vector<std::string> &source,
                                     const std::vector<std::string> &target,
                                     const std::vector<bool> &validated,

@@ -7,6 +7,7 @@
 #include <ctime>
 #include <cmath>
 
+#include <casmacat/config.h>
 #include <casmacat/IAlignmentEngine.h>
 #include <casmacat/utils.h>
 
@@ -33,6 +34,8 @@ public:
     srand(seed);
     return EXIT_SUCCESS;
   }
+
+  virtual string getVersion() { return PACKAGE_VERSION; }
 
   virtual void align(const std::vector<std::string> &source,
                      const std::vector<std::string> &target,
