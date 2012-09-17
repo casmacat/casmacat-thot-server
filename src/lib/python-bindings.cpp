@@ -29,6 +29,12 @@
 #include <boost/python.hpp>
 using namespace boost::python;
 
+#include <casmacat/Plugin.h>
+#include <casmacat/IConfidenceEngine.h>
+using namespace casmacat;
+
+
+
 char const* greet()
 {
      return "hello, world";
@@ -49,4 +55,15 @@ BOOST_PYTHON_MODULE(casmacat)
   class_<Test>("Test", init<>())
           .def(init<int>())
           ;
+
+  //http://www.boost.org/doc/libs/1_51_0/libs/python/doc/tutorial/doc/html/python/exposing.html
+  class_<IConfidenceEngine, boost::noncopyable>("IConfidenceEngine", no_init)
+            .def("getWordConfidences", &IConfidenceEngine::getWordConfidences)
+            .def("getSentenceConfidence", &IConfidenceEngine::getSentenceConfidence)
+        ;
+
+  class_<Plugin<IConfidenceEngine>, boost::noncopyable>("PluginConfidenceEngine") //, init<std::string>())
+                .def("create", &Plugin<IConfidenceEngine>::create)
+                .def("destroy", &Plugin<IConfidenceEngine>::destroy)
+            ;
 }
