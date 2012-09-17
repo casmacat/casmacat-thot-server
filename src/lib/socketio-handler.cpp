@@ -126,48 +126,6 @@ void socketio_server_handler::on_message(connection_ptr con, message_ptr msg) {
 
 }
 
-// {"type":"participants","value":[<participant>,...]}
-std::string socketio_server_handler::serialize_state() {
-    std::stringstream s;
-
-    s << "{\"type\":\"participants\",\"value\":[";
-
-    std::map<connection_ptr,std::string>::iterator it;
-
-    for (it = connections_.begin(); it != connections_.end(); it++) {
-        s << "\"" << (*it).second << "\"";
-        if (++it != connections_.end()) {
-            s << ",";
-        }
-        it--;
-    }
-
-    s << "]}";
-
-    return s.str();
-}
-
-// {"type":"msg","sender":"<sender>","value":"<msg>" }
-std::string socketio_server_handler::encode_message(std::string sender,std::string msg,bool escape) {
-    std::stringstream s;
-
-    // escape JSON characters
-    boost::algorithm::replace_all(msg,"\\","\\\\");
-    boost::algorithm::replace_all(msg,"\"","\\\"");
-
-    // escape HTML characters
-    if (escape) {
-        boost::algorithm::replace_all(msg,"&","&amp;");
-        boost::algorithm::replace_all(msg,"<","&lt;");
-        boost::algorithm::replace_all(msg,">","&gt;");
-    }
-
-    s << "{\"type\":\"msg\",\"sender\":\"" << sender
-      << "\",\"value\":\"" << msg << "\"}";
-
-    return s.str();
-}
-
 std::string socketio_server_handler::get_con_id(connection_ptr con) {
     std::stringstream endpoint;
     //endpoint << con->get_endpoint();

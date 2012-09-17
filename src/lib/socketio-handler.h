@@ -58,8 +58,6 @@ public:
 
     void on_message(connection_ptr con, message_ptr msg);
 private:
-    std::string serialize_state();
-    std::string encode_message(std::string sender,std::string msg,bool escape = true);
     std::string get_con_id(connection_ptr con);
 
     // list of outstanding connections

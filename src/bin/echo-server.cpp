@@ -25,7 +25,6 @@
 #include <boost/asio.hpp>
 #include <casmacat/compat.h>
 #include <iostream>
-#include "../lib/socketio-handler.h"
 
 using namespace casmacat;
 using websocketpp::server;
@@ -40,7 +39,7 @@ int main(int argc, char* argv[]) {
 
     try {
         // create an instance of our handler
-        server::handler::ptr handler(new socketio_server_handler("/echo"));
+        server::handler::ptr handler; //(new socketio_server_handler("/echo"));
 
         // create a server that listens on port `port` and uses our handler
         server endpoint(handler);
