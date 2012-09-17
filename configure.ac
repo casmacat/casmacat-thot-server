@@ -13,8 +13,21 @@ dnl Initialize automake
 AM_INIT_AUTOMAKE(casmacat, 0.1)
 
 dnl Initialize Libtool
-LT_INIT
+LT_INIT([dlopen])
 LTDL_INIT
+
+# The lt_dladvise_init symbol was added with libtool-2.2
+if test "x$with_included_ltdl" != "xyes"; then
+  save_CPPFLAGS="$CPPFLAGS"
+  save_LDFLAGS="$LDFLAGS"
+  CFLAGS="$CPPFLAGS $LTDLINCL"
+  LDFLAGS="$LDFLAGS $LIBLTDL"
+  AC_CHECK_LIB([ltdl], [lt_dladvise_init],
+                [],
+        [AC_MSG_ERROR([installed libltdl is too old])])
+  LDFLAGS="$save_LDFLAGS"
+  CPPFLAGS="$save_CPPFLAGS"
+fi
 
 
 YACC=bison
@@ -39,15 +52,21 @@ AM_CONDITIONAL([MAKE_TEST], [test x"$BOOST_UNIT_TEST_FRAMEWORK_LIB" != x])
 
 
 # doxygen
-DX_HTML_FEATURE(ON)
-DX_CHM_FEATURE(OFF)
-DX_CHI_FEATURE(OFF)
-DX_MAN_FEATURE(OFF)
-DX_RTF_FEATURE(OFF)
-DX_XML_FEATURE(OFF)
-DX_PDF_FEATURE(OFF)
-DX_PS_FEATURE(OFF)
-DX_INIT_DOXYGEN(casmacat, doxygen.cfg, doc)
+AC_CHECK_PROGS([DOXYGEN], [doxygen])
+if test -z "$DOXYGEN";
+   then AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
+fi
+AM_CONDITIONAL([HAVE_DOXYGEN],
+[test -n "$DOXYGEN"])AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([docs/doxygen.cfg])])
+#DX_HTML_FEATURE(ON)
+#DX_CHM_FEATURE(OFF)
+#DX_CHI_FEATURE(OFF)
+#DX_MAN_FEATURE(OFF)
+#DX_RTF_FEATURE(OFF)
+#DX_XML_FEATURE(OFF)
+#DX_PDF_FEATURE(OFF)
+#DX_PS_FEATURE(OFF)
+#DX_INIT_DOXYGEN(casmacat, doxygen.cfg, doc)
 
 
 # optional configure options
@@ -103,5 +122,6 @@ AC_SUBST([OPTIMIZATION_CXXFLAGS])
 AC_CONFIG_FILES(Makefile
                 src/bin/Makefile
                 src/lib/Makefile
-                src/include/casmacat/Makefile)
+                src/include/casmacat/Makefile
+                docs/Makefile)
 AC_OUTPUT

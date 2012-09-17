@@ -59,17 +59,23 @@ int main(int argc, char* argv[]) {
     Plugin<IMtEngine> mt_plugin(config["mt"]);
 
     IMtEngine *mt = mt_plugin.create();
-    cerr << "Plugin loaded\n";
+    if (mt == 0) {
+      cerr << "Plugin could not be instantiated\n";
+    }
+    else {
+      cerr << "Plugin loaded\n";
 
-    for (int i = 2; i < argc; i++) {
-      ifstream file(argv[i]);
-      string source, target;
-      while(getline(file, source)) {
-        cout << source << "|||";
-        mt->translate(source, target);
-        cout << target << "\n";
+      for (int i = 2; i < argc; i++) {
+        ifstream file(argv[i]);
+        string source, target;
+        while(getline(file, source)) {
+          cout << source << "|||";
+          mt->translate(source, target);
+          cout << target << "\n";
+        }
       }
     }
+
 
     return EXIT_SUCCESS;
 }

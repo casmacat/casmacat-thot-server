@@ -15,11 +15,13 @@
 
 //#define PLUGIN_USE_LIBTOOL
 
+
 #ifdef PLUGIN_USE_LIBTOOL
   #include <ltdl.h>
 #else
   #include <dlfcn.h>
 #endif
+
 
 namespace casmacat {
 
@@ -54,7 +56,7 @@ namespace casmacat {
 
       dlsym_error = plugin_dlerror();
       if (lt_dlinit() != 0 or dlsym_error) {
-          cerr << "Cannot initialize library system: " << dlsym_error << '\n';
+          std::cerr << "Cannot initialize library system: " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error); 
       }
       lt_dladvise advise;
@@ -72,45 +74,45 @@ namespace casmacat {
 #endif
      
       if (not config["plugin"]) {
-        cerr << "Plugin undefined: " << dlsym_error << '\n';
+        cerr << "Plugin undefined: " << dlsym_error  << std::endl;
         throw std::runtime_error(dlsym_error);
       }
       const std::string library = config["plugin"].asString();
   
       // load the dynamic 
-      cerr << "Loading plug-in from '" << library << "'\n";
+      cerr << "Loading plug-in from '" << library << "'" << std::endl;
       library_h_ = plugin_dlopen(library.c_str(), advise);
       dlsym_error = plugin_dlerror();
       if (library_h_ == 0 or dlsym_error) {
-          cerr << "Cannot load library: " << dlsym_error << '\n';
+          cerr << "Cannot load library: " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error); 
       }
   
       // load the creator
       std::string create_str = config["create_symbol"].asString();
-      if (create_str == "") create_str = "create_plugin";
+      if (create_str == "") create_str = "new_plugin";
       create_ = reinterpret_cast<create_fn>(plugin_dlsym(library_h_, create_str.c_str()));
       dlsym_error = plugin_dlerror();
       if (dlsym_error) {
-          cerr << "Cannot load symbol '" << create_str << "': " << dlsym_error << '\n';
+          cerr << "Cannot load symbol'" << create_str << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error); 
       }
       else if (not create_) {
-          cerr << "Incompatible symbol '" << create_str << "': " << dlsym_error << '\n';
+          cerr << "Incompatible symbol '" << create_str << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error);
       }
 
        // load the destroyer 
       std::string destroy_str = config["destroy_symbol"].asString();
-      if (destroy_str == "") create_str = "destroy_plugin";
+      if (destroy_str == "") destroy_str = "delete_plugin";
       destroy_ = reinterpret_cast<destroy_fn>(plugin_dlsym(library_h_, destroy_str.c_str()));
       dlsym_error = plugin_dlerror();
       if (dlsym_error) {
-          cerr << "Cannot load symbol '" << destroy_str << "': " << dlsym_error << '\n';
+          cerr << "Cannot load symbol kk'" << destroy_str << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error); 
       }
       else if (not destroy_) {
-          cerr << "Incompatible symbol '" << destroy_str << "': " << dlsym_error << '\n';
+          cerr << "Incompatible symbol '" << destroy_str << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error);
       }
   
