@@ -147,7 +147,7 @@ public:
   virtual string getVersion() { return PACKAGE_VERSION; }
 
 
-  virtual IInteractiveMtEngine *createEngine(const std::string &specialization_id = "") {
+  virtual IInteractiveMtEngine *createInstance(const std::string &specialization_id = "") {
     return new RandomImtEngine();
   }
 };

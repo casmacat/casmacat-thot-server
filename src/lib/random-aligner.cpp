@@ -61,7 +61,7 @@ public:
 
   virtual string getVersion() { return PACKAGE_VERSION; }
 
-  virtual IAlignmentEngine *createEngine(const std::string &specialization_id = "") {
+  virtual IAlignmentEngine *createInstance(const std::string &specialization_id = "") {
     return new RandomAligner();
   }
 };

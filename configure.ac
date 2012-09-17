@@ -150,19 +150,11 @@ AC_SUBST(PERL_O)
 AC_CHECK_PROGS([DOXYGEN], [doxygen])
 if test -z "$DOXYGEN";
    then AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
-fi
+else
 AM_CONDITIONAL([HAVE_DOXYGEN],
 [test -n "$DOXYGEN"])AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([docs/doxygen.cfg])])
-#DX_HTML_FEATURE(ON)
-#DX_CHM_FEATURE(OFF)
-#DX_CHI_FEATURE(OFF)
-#DX_MAN_FEATURE(OFF)
-#DX_RTF_FEATURE(OFF)
-#DX_XML_FEATURE(OFF)
-#DX_PDF_FEATURE(OFF)
-#DX_PS_FEATURE(OFF)
-#DX_INIT_DOXYGEN(casmacat, doxygen.cfg, doc)
-
+DX_INIT_DOXYGEN(casmacat, doxygen.cfg, doc)
+fi
 
 # optional configure options
 AC_ARG_WITH(debug, AC_HELP_STRING(--with-debug, \

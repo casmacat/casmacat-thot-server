@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
     Plugin<ITextProcessorFactory> text_processor_plugin(text_processor_plugin_fn, args);
 
     ITextProcessorFactory *text_processor_factory = text_processor_plugin.create();
-    ITextProcessor *text_processor = text_processor_factory->createProcessor();
+    ITextProcessor *text_processor = text_processor_factory->createInstance();
 
     if (text_processor == 0) {
       cerr << "Plugin could not be instantiated\n";

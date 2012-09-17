@@ -81,7 +81,7 @@ public:
 
   virtual string getVersion() { return PACKAGE_VERSION; }
 
-  virtual IConfidenceEngine *createEngine(const std::string &specialization_id = "") {
+  virtual IConfidenceEngine *createInstance(const std::string &specialization_id = "") {
     return new RandomConfidencer();
   }
 

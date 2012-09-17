@@ -61,7 +61,7 @@ namespace casmacat {
      * @param[in] specialization_id returns a specialized version of the alignment engine,
      *            for instance, for user specific models
      */
-    virtual IAlignmentEngine *createEngine(const std::string &specialization_id = "") = 0;
+    virtual IAlignmentEngine *createInstance(const std::string &specialization_id = "") = 0;
   };
 
 

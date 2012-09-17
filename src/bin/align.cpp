@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
     IAlignmentFactory *aligner_factory = aligner_plugin.create();
     std::cerr << "who am I? " << typeid(aligner_factory).name() << "\n";
     std::cerr << "who am *I? " << typeid(*aligner_factory).name() << "\n";
-    IAlignmentEngine *aligner = aligner_factory->createEngine();
+    IAlignmentEngine *aligner = aligner_factory->createInstance();
     std::cerr << "who am I? " << typeid(aligner).name() << "\n";
     std::cerr << "who am *I? " << typeid(*aligner).name() << "\n";
 

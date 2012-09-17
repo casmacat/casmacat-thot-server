@@ -88,7 +88,7 @@ namespace casmacat {
      * @param[in] specialization_id returns a specialized version of the confidence engine,
      *            for instance, for user specific models
      */
-    virtual IInteractiveMtEngine *createEngine(const std::string &specialization_id = "") = 0;
+    virtual IInteractiveMtEngine *createInstance(const std::string &specialization_id = "") = 0;
   };
 
 }

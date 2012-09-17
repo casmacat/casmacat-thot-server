@@ -94,7 +94,7 @@ public:
 
   virtual string getVersion() { return PACKAGE_VERSION; }
 
-  virtual ITextProcessor *createProcessor(const std::string &specialization_id = "") {
+  virtual ITextProcessor *createInstance(const std::string &specialization_id = "") {
     return new SpaceTokenizer(delimiters);
   }
 };
