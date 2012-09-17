@@ -33,29 +33,7 @@ string random_string() {
 class RandomMtEngine: public IMtEngine {
 public:
   RandomMtEngine() {};
-  virtual ~RandomMtEngine() {};
-  /**
-   * initialize the IMT engine with main-like parameters
-   */
-  virtual int init(int argc, char *argv[]) {
-    if (argc > 2) { // invalid number of arguments
-      return EXIT_FAILURE;
-    }
-
-    unsigned int seed = time(NULL);
-    if (argc == 2) {
-      seed = casmacat::convert_string<unsigned int>(string(argv[1]));
-      if (not finite(seed)) { // check if initialization went wrong
-        cerr << "Invalid seed = '" << argv[1] << "'\n";
-        return EXIT_FAILURE;
-      }
-    }
-
-    srand(seed);
-    return EXIT_SUCCESS;
-  }
-
-  virtual string getVersion() { return PACKAGE_VERSION; }
+  virtual ~RandomMtEngine() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
   /* Set partial validation of a translation */
   virtual void translate(const std::vector<std::string> &source,
@@ -82,15 +60,44 @@ public:
     }
     cout << "\n";
   }
-
-
-private:
-  // Following the rule of three copy and the assignment operator are disabled
-  RandomMtEngine(const RandomMtEngine&);            // Disallow copy
-  RandomMtEngine& operator=(const RandomMtEngine&); // Disallow assignment operator
 };
 
 
+class RandomMtFactory: public IMtFactory {
+public:
+  RandomMtFactory() { }
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~RandomMtFactory() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; }
 
-EXPORT_CASMACAT_PLUGIN(IMtEngine, RandomMtEngine);
+  /**
+   * initialize the IMT engine with main-like parameters
+   */
+  virtual int init(int argc, char *argv[]) {
+    if (argc > 2) { // invalid number of arguments
+      return EXIT_FAILURE;
+    }
+
+    unsigned int seed = time(NULL);
+    if (argc == 2) {
+      seed = casmacat::convert_string<unsigned int>(string(argv[1]));
+      if (not finite(seed)) { // check if initialization went wrong
+        cerr << "Invalid seed = '" << argv[1] << "'\n";
+        return EXIT_FAILURE;
+      }
+    }
+
+    srand(seed);
+    return EXIT_SUCCESS;
+  }
+
+  virtual string getVersion() { return PACKAGE_VERSION; }
+
+
+  virtual IMtEngine *createEngine(const std::string &specialization_id = "") {
+    return new RandomMtEngine();
+  }
+};
+
+EXPORT_CASMACAT_PLUGIN(IMtFactory, RandomMtFactory);
 

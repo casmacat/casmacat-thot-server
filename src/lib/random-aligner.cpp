@@ -1,5 +1,3 @@
-// Moses plugin for casmacat
-
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -17,6 +15,9 @@ using namespace casmacat;
 class RandomAligner: public IAlignmentEngine {
 public:
   RandomAligner() { }
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~RandomAligner() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
   virtual void align(const std::vector<std::string> &source,
                      const std::vector<std::string> &target,
@@ -31,14 +32,14 @@ public:
     }
   }
 
-  // do not forget to free all allocated resources
-  // otherwise define the destructor with an empty body
-  virtual ~RandomAligner() { std::cerr << "destroying " << typeid(*this).name() << "\n";}
 };
 
 class RandomAlignerFactory: public IAlignmentFactory {
 public:
   RandomAlignerFactory() { }
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~RandomAlignerFactory() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
   virtual int init(int argc, char *argv[]) {
     if (argc > 2) { // invalid number of arguments
@@ -63,11 +64,6 @@ public:
   virtual IAlignmentEngine *createEngine(const std::string &specialization_id = "") {
     return new RandomAligner();
   }
-
-  // do not forget to free all allocated resources
-  // otherwise define the destructor with an empty body
-  virtual ~RandomAlignerFactory() { std::cerr << "destroying " << typeid(*this).name() << "\n";}
-
 };
 
 

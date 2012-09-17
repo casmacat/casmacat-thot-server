@@ -17,6 +17,10 @@ using namespace casmacat;
 class RandomConfidencer: public IConfidenceEngine {
 public:
   RandomConfidencer() { }
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~RandomConfidencer() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
+
 
   virtual void getWordConfidences(const std::vector<std::string> &source,
                                   const std::vector<std::string> &target,
@@ -48,16 +52,14 @@ public:
     return rand() / double(RAND_MAX);
   }
 
-
-  // do not forget to free all allocated resources
-  // otherwise define the destructor with an empty body
-  virtual ~RandomConfidencer() { cerr << "I'm free!!!" << endl; }
-
 };
 
 class RandomConfidenceFactory: public IConfidenceFactory {
 public:
   RandomConfidenceFactory() { }
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~RandomConfidenceFactory() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
   virtual int init(int argc, char *argv[]) {
     if (argc > 2) { // invalid number of arguments
@@ -82,11 +84,6 @@ public:
   virtual IConfidenceEngine *createEngine(const std::string &specialization_id = "") {
     return new RandomConfidencer();
   }
-
-
-  // do not forget to free all allocated resources
-  // otherwise define the destructor with an empty body
-  virtual ~RandomConfidenceFactory() { cerr << "I'm free!!!" << endl; }
 
 };
 

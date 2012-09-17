@@ -29,11 +29,11 @@ string random_string() {
   return result;
 }
 
-class RandomImtSession: public IImtSession {
+class RandomImtSession: public IInteractiveMtSession {
 public:
   RandomImtSession() {};
   RandomImtSession(const vector<string> &_source): source(_source) {};
-  virtual ~RandomImtSession() {};
+  virtual ~RandomImtSession() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
   /* Set partial validation of a translation */
   virtual void setPartialValidation(const vector<string> &partial_translation,
@@ -78,17 +78,51 @@ public:
 
 private:
   const vector<string> source;
-
-  // Following the rule of three copy and the assignment operator are disabled
-  RandomImtSession(const RandomImtSession&);            // Disallow copy
-  RandomImtSession& operator=(const RandomImtSession&); // Disallow assignment operator
 };
 
 
-class RandomImtEngine: public IImtEngine {
+class RandomImtEngine: public IInteractiveMtEngine {
 public:
   RandomImtEngine() {};
-  virtual ~RandomImtEngine() {};
+  virtual ~RandomImtEngine() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
+
+  /* Update translation models with source/target pair (total or partial translation) */
+  virtual void validate(const vector<string> &source,
+                        const vector<string> &target,
+                        const vector<bool> &validated)
+  {
+    cout << "store validated sentence '";
+    copy(source.begin(), source.end(), ostream_iterator<string>(cout, " "));
+    cout << "' as";
+    for (size_t t = 0; t < target.size(); t++) {
+      cout << " " << target[t] << "(" << validated[t] << ")";
+    }
+    cout << "\n";
+  }
+
+  /**
+   * initialize IMT session
+   */
+  virtual IInteractiveMtSession *newSession(const vector<string> &source) {
+    return new RandomImtSession(source);
+  }
+
+  /**
+   * delete IMT session
+   */
+  virtual void deleteSession(IInteractiveMtSession *session) {
+    delete session;
+  }
+};
+
+
+class RandomImtFactory: public IInteractiveMtFactory {
+public:
+  RandomImtFactory() { }
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~RandomImtFactory() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; }
+
   /**
    * initialize the IMT engine with main-like parameters
    */
@@ -112,40 +146,11 @@ public:
 
   virtual string getVersion() { return PACKAGE_VERSION; }
 
-  /* Update translation models with source/target pair (total or partial translation) */
-  virtual void validate(const vector<string> &source,
-                        const vector<string> &target,
-                        const vector<bool> &validated)
-  {
-    cout << "store validated sentence '";
-    copy(source.begin(), source.end(), ostream_iterator<string>(cout, " "));
-    cout << "' as";
-    for (size_t t = 0; t < target.size(); t++) {
-      cout << " " << target[t] << "(" << validated[t] << ")";
-    }
-    cout << "\n";
-  }
 
-  /**
-   * initialize IMT session
-   */
-  virtual IImtSession *newSession(const vector<string> &source) {
-    return new RandomImtSession(source);
+  virtual IInteractiveMtEngine *createEngine(const std::string &specialization_id = "") {
+    return new RandomImtEngine();
   }
-
-  /**
-   * delete IMT session
-   */
-  virtual void deleteSession(IImtSession *session) {
-    delete session;
-  }
-
-private:
-  // Following the rule of three copy and the assignment operator are disabled
-  RandomImtEngine(const RandomImtEngine&);            // Disallow copy
-  RandomImtEngine& operator=(const RandomImtEngine&); // Disallow assignment operator
 };
 
-
-EXPORT_CASMACAT_PLUGIN(IImtEngine, RandomImtEngine);
+EXPORT_CASMACAT_PLUGIN(IInteractiveMtFactory, RandomImtFactory);
 

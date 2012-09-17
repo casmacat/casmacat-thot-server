@@ -46,9 +46,9 @@ int main(int argc, char* argv[]) {
     string imt_plugin_fn = "";
     string args = "";
 
-    Plugin<IImtEngine> imt_plugin(imt_plugin_fn, args);
+    Plugin<IInteractiveMtEngine> imt_plugin(imt_plugin_fn, args);
 
-    IImtEngine *imt = imt_plugin.create();
+    IInteractiveMtEngine *imt = imt_plugin.create();
     if (imt == 0) {
       cerr << "Plugin could not be instantiated\n";
     }
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
         while(getline(file, source)) {
           tokenize(source, tok_source);
 
-          IImtSession *session = imt->newSession(tok_source);
+          IInteractiveMtSession *session = imt->newSession(tok_source);
 
           session->setPrefix(vector<string>(), vector<string>(), tok_target);
 

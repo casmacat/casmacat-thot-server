@@ -98,6 +98,53 @@ if [ test "x$PYTHON_EXTRA_LIBS" != x ]; then
 fi
 
 
+# check perl support
+# https://bitbucket.org/jjacky/rxvt-unicode-jjk/src/a815fc4b8585/configure.ac
+support_perl=yes
+HAS_PERL=
+if test x$support_perl = xyes; then
+  AC_PATH_PROG(PERL, perl5)
+  AC_PATH_PROG(PERL, perl)
+
+  AC_MSG_CHECKING(for $PERL suitability)
+  if $PERL -MExtUtils::Embed >/dev/null 2>/dev/null; then
+
+     save_CXXFLAGS="$CXXFLAGS"
+     save_LIBS="$LIBS"
+     CXXFLAGS="$CXXFLAGS `$PERL -MExtUtils::Embed -e ccopts`"
+     LIBS="$LIBS `$PERL -MExtUtils::Embed -e ldopts`"
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <EXTERN.h>
+#include <perl.h>
+#include <XSUB.h>
+]], [[
+     PerlInterpreter *perl = perl_alloc ();
+]])],[rxvt_perl_link=yes],[rxvt_perl_link=no])
+     CXXFLAGS="$save_CXXFLAGS"
+     LIBS="$save_LIBS"
+
+     if test x$rxvt_perl_link = xyes; then
+        AC_MSG_RESULT(ok)
+        AC_DEFINE(ENABLE_PERL, 1, Define if you can embed a perl interpreter)
+        HAS_PERL=YES
+        PERL_O=rxvtperl.o
+        PERLFLAGS="`$PERL -MExtUtils::Embed -e ccopts`"
+        PERLLIB="`$PERL -MExtUtils::Embed -e ldopts`"
+        PERLPRIVLIBEXP="`$PERL -MConfig -e 'print $Config{privlibexp}'`"
+     else
+        AC_MSG_WARN([no, unable to link. Probably the libperl-dev package is missing])
+     fi
+  else
+     AC_MSG_WARN([no working perl found, or perl not version >= 5.8])
+  fi
+fi
+AC_SUBST(PERLLIB)
+AC_SUBST(PERLFLAGS)
+AC_SUBST(PERLPRIVLIBEXP)
+AC_SUBST(PERL)
+AC_SUBST(HAS_PERL)
+AC_SUBST(PERL_O)
+
 
 # doxygen
 AC_CHECK_PROGS([DOXYGEN], [doxygen])

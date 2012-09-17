@@ -27,14 +27,7 @@ namespace casmacat {
 
   class IMtEngine {
   public:
-    IMtEngine() {};
     virtual ~IMtEngine() {};
-
-    /**
-     * initializes Mt Engine with main-like parameters
-     */
-    virtual int init(int argc, char *argv[]) { throw NotImplementedException(METHOD_DEFINITION); }
-    virtual std::string getVersion() { throw NotImplementedException(METHOD_DEFINITION); }
 
     /**
      * translates a sentence in a source language into a sentence in a target language
@@ -52,8 +45,7 @@ namespace casmacat {
      * @param[out] target a translation of source in the target language
      */
     virtual void translate(const std::vector<std::string> &source,
-                                 std::vector<std::string> &target
-                          ) { throw NotImplementedException(METHOD_DEFINITION); }
+                                 std::vector<std::string> &target) = 0;
 
     /**
      * updates translation models with source/target pair
@@ -70,15 +62,26 @@ namespace casmacat {
      * @param[in] target a sentence in the target language that is a valid translation of source
      */
     virtual void update(const std::vector<std::string> &source,
-                        const std::vector<std::string> &target
-                          ) { throw NotImplementedException(METHOD_DEFINITION); }
-
-  private:
-    // Following the rule of three copy and the assignment operator are disabled
-    IMtEngine(const IMtEngine&);            // Disallow copy
-    IMtEngine& operator=(const IMtEngine&); // Disallow assignment operator
+                        const std::vector<std::string> &target) = 0;
   };
 
-}
+  class IMtFactory {
+  public:
+    virtual ~IMtFactory() {};
+    /**
+     * initialize the IMT Factory with main-like parameters
+     */
+    virtual int init(int argc, char *argv[]) = 0;
+    virtual std::string getVersion() = 0;
+
+    /**
+     * create an instance of a confidence engine
+     * @param[in] specialization_id returns a specialized version of the confidence engine,
+     *            for instance, for user specific models
+     */
+    virtual IMtEngine *createEngine(const std::string &specialization_id = "") = 0;
+  };
+
+  }
 
 #endif // CASMACAT_IMTENGINE_HPP

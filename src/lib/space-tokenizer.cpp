@@ -43,6 +43,9 @@ class SpaceTokenizer: public ITextProcessor {
 public:
   SpaceTokenizer(): delimiters(" ") { }
   SpaceTokenizer(const string &_delimiters): delimiters(_delimiters) { }
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~SpaceTokenizer() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
   virtual void preprocess(const std::string &detokenized,
                           std::vector<std::string> &tokenized)
@@ -72,16 +75,15 @@ public:
   }
 
 
-  // do not forget to free all allocated resources
-  // otherwise define the destructor with an empty body
-  virtual ~SpaceTokenizer() { cerr << "I'm free!!!" << endl; }
-
 };
 
 class SpaceTokenizerFactory: public ITextProcessorFactory {
   string delimiters;
 public:
   SpaceTokenizerFactory(): delimiters(" ") { }
+  // do not forget to free all allocated resources
+  // otherwise define the destructor with an empty body
+  virtual ~SpaceTokenizerFactory() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
   virtual int init(int argc, char *argv[]) {
     // invalid number of arguments
@@ -95,12 +97,6 @@ public:
   virtual ITextProcessor *createProcessor(const std::string &specialization_id = "") {
     return new SpaceTokenizer(delimiters);
   }
-
-
-  // do not forget to free all allocated resources
-  // otherwise define the destructor with an empty body
-  virtual ~SpaceTokenizerFactory() { cerr << "I'm free!!!" << endl; }
-
 };
 
 EXPORT_CASMACAT_PLUGIN(ITextProcessorFactory, SpaceTokenizerFactory);

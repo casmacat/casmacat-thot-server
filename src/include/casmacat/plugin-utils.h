@@ -20,13 +20,12 @@
  *      Author: valabau
  */
 
-#ifndef CasMaCat_PLUGIN_UTILS_H_
-#define CasMaCat_PLUGIN_UTILS_H_
+#ifndef CASMACAT_PLUGIN_UTILS_H_
+#define CASMACAT_PLUGIN_UTILS_H_
 
 #include <typeinfo>
 #include <iostream>
 #include <iterator>
-#include <casmacat/NotImplementedException.h>
 
 #define EXPORT_CASMACAT_PLUGIN_NAME(I, C, name) \
   extern "C" casmacat::I * new_##name(int argc, char *argv[]) { return casmacat::new_object<casmacat::I, C>(argc, argv); } \
@@ -70,4 +69,4 @@ template <typename I> const std::type_info& plugin_type() { return typeid(I); }
 
 }
 
-#endif /* CasMaCat_PLUGIN_UTILS_H_ */
+#endif /* CASMACAT_PLUGIN_UTILS_H_ */

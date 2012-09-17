@@ -34,61 +34,61 @@ namespace casmacat {
  * Interface for Machine Translation plug-ins
  */
 
-  class IImtSession {
+  class IInteractiveMtSession {
   public:
-    IImtSession() {};
-    virtual ~IImtSession() {};
+    virtual ~IInteractiveMtSession() {};
 
     /* Set partial validation of a translation */
     virtual void setPartialValidation(const std::vector<std::string> &partial_translation,
                                       const std::vector<bool> &validated,
                                             std::vector<std::string> &corrected_translation,
                                             std::vector<bool> &corrected_validated
-                                     ) { throw NotImplementedException(METHOD_DEFINITION); }
+                                     ) = 0;
 
     /* Set prefix of a translation */
     virtual void setPrefix(const std::vector<std::string> &prefix,
                            const std::vector<std::string> &suffix,
                            std::vector<std::string> &corrected_suffix
-                          ) { throw NotImplementedException(METHOD_DEFINITION); }
-
-  private:
-    // Following the rule of three copy and the assignment operator are disabled
-    IImtSession(const IImtSession&);            // Disallow copy
-    IImtSession& operator=(const IImtSession&); // Disallow assignment operator
+                          ) = 0;
   };
 
 
-  class IImtEngine {
+  class IInteractiveMtEngine {
   public:
-    IImtEngine() {};
-    virtual ~IImtEngine() {};
-    /**
-     * initialize the IMT engine with main-like parameters
-     */
-    virtual int init(int argc, char *argv[]) { throw NotImplementedException(METHOD_DEFINITION); }
-    virtual std::string getVersion() { throw NotImplementedException(METHOD_DEFINITION); }
+    virtual ~IInteractiveMtEngine() {};
 
     /**
      * create new IMT session
      */
-    virtual IImtSession *newSession(const std::vector<std::string> &source) { throw NotImplementedException(METHOD_DEFINITION); }
+    virtual IInteractiveMtSession *newSession(const std::vector<std::string> &source) = 0;
 
     /**
      * delete IMT session
      */
-    virtual void deleteSession(IImtSession *session) { throw NotImplementedException(METHOD_DEFINITION); }
+    virtual void deleteSession(IInteractiveMtSession *session) = 0;
 
     /* Update translation models with source/target pair (total or partial translation) */
     virtual void validate(const std::vector<std::string> &source,
                           const std::vector<std::string> &target,
                           const std::vector<bool> &validated
-                         ) { throw NotImplementedException(METHOD_DEFINITION); }
+                         ) = 0;
+  };
 
-  private:
-    // Following the rule of three copy and the assignment operator are disabled
-    IImtEngine(const IImtEngine&);            // Disallow copy
-    IImtEngine& operator=(const IImtEngine&); // Disallow assignment operator
+  class IInteractiveMtFactory {
+  public:
+    virtual ~IInteractiveMtFactory() {};
+    /**
+     * initialize the IMT Factory with main-like parameters
+     */
+    virtual int init(int argc, char *argv[]) = 0;
+    virtual std::string getVersion() = 0;
+
+    /**
+     * create an instance of a confidence engine
+     * @param[in] specialization_id returns a specialized version of the confidence engine,
+     *            for instance, for user specific models
+     */
+    virtual IInteractiveMtEngine *createEngine(const std::string &specialization_id = "") = 0;
   };
 
 }
