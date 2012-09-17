@@ -38,8 +38,8 @@ namespace casmacat {
   %template(AlignmentPlugin)             Plugin<IAlignmentFactory>;
   %template(ConfidencePlugin)            Plugin<IConfidenceFactory>;
   %template(TextProcessorPlugin)         Plugin<ITextProcessorFactory>;
-  %template(MtPlugin)                    Plugin<IMtEngine>;
-  %template(ImtPlugin)                   Plugin<IImtEngine>;
+  %template(MtPlugin)                    Plugin<IMtFactory>;
+  %template(ImtPlugin)                   Plugin<IInteractiveMtFactory>;
 }
 
 
