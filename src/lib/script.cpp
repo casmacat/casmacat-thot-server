@@ -21,12 +21,7 @@
  */
 
 
-#include <jsoncpp/json.h>
-
 namespace casmacat {
 
-  void execute_script(const Json::Value &input, Json::Value &output) {
-
-  }
 
 }

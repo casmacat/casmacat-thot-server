@@ -23,13 +23,10 @@
 #ifndef CasMaCat_UTILS_H_
 #define CasMaCat_UTILS_H_
 
-#include <jsoncpp/json.h>
 #include <sstream>
 #include <limits>
 
 namespace casmacat {
-
-  void execute_script(const Json::Value &input, Json::Value &output);
 
   template <typename T>
   void tokenize(const T& str,

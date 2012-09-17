@@ -49,13 +49,17 @@ AX_BOOST_BASE(1.41)
 AX_BOOST_UNIT_TEST_FRAMEWORK
 AM_CONDITIONAL([MAKE_TEST], [test x"$BOOST_UNIT_TEST_FRAMEWORK_LIB" != x])
 
-AX_BOOST_PYTHON
-AM_CONDITIONAL([HAVE_BOOST_PYTHON], [test x"$BOOST_PYTHON_LIB" != x])
+
 # check for Python
-if [ test x$python = xtrue ]; then
-  AM_PATH_PYTHON(2.7,, :)
-  if [test "$PYTHON" != :]; then
-    AM_CONDITIONAL(HAVE_PYTHON, true)
+AX_PYTHON_DEVEL([>= 2.5])
+AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test x"$PYTHON_EXTRA_LIBS" != x])
+
+if [ test "x$PYTHON_EXTRA_LIBS" != x ]; then
+  AC_DEFINE([HAVE_PYTHON], [1], [Whether Python devel is available])
+  
+  AX_BOOST_PYTHON
+
+  if [ test x$BOOST_PYTHON_LIB != x ]; then
     AC_CACHE_CHECK(
       [if boost_python is available],
       [boost_python_cpplib_avail_cv_],
@@ -80,17 +84,9 @@ if [ test x$python = xtrue ]; then
       AC_DEFINE([HAVE_BOOST_PYTHON], [1], [Whether Boost.Python is available])
       LIBS="-lboost_python$BOOST_SUFFIX -lpython$PYTHON_VERSION $LIBS"
     fi
-  else
-    AM_CONDITIONAL(HAVE_PYTHON, false)
+    AM_CONDITIONAL([HAVE_BOOST_PYTHON], test x$boost_python_cpplib_avail_cv_ = xtrue)
   fi
-  AM_CONDITIONAL(HAVE_BOOST_PYTHON, test x$boost_python_cpplib_avail_cv_ = xtrue)
-else
-  AM_CONDITIONAL(HAVE_PYTHON, false)
-  AM_CONDITIONAL(HAVE_BOOST_PYTHON, false)
 fi
-
-
-#AX_BOOST_IOSTREAMS # BOOST_IOSTREAMS_LIB
 
 
 

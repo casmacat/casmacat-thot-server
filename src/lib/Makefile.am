@@ -15,7 +15,7 @@ lib_LTLIBRARIES += pycasmacat.la
 libcasmacat_la_SOURCES = script.cpp
 
 # Linker options 
-libcasmacat_la_LDFLAGS = -lboost_system -lboost_date_time -lboost_regex -lboost_program_options -lboost_thread -lwebsocketpp -ljsoncpp
+#libcasmacat_la_LDFLAGS = -lboost_system -lboost_date_time -lboost_regex -lboost_program_options -lboost_thread -lwebsocketpp -ljsoncpp
 
 # Compiler options. Here we are adding the include directory
 # to be searched for headers included in the source code.
