@@ -34,6 +34,31 @@ namespace casmacat {
  * Interface for Machine Translation plug-ins
  */
 
+  class IImtSession {
+  public:
+    IImtSession() {};
+    virtual ~IImtSession() {};
+
+    /* Set partial validation of a translation */
+    virtual void setPartialValidation(const std::vector<std::string> &partial_translation,
+                                      const std::vector<bool> &validated,
+                                            std::vector<std::string> &corrected_translation,
+                                            std::vector<bool> &corrected_validated
+                                     ) { throw NotImplementedException(METHOD_DEFINITION); }
+
+    /* Set prefix of a translation */
+    virtual void setPrefix(const std::vector<std::string> &prefix,
+                           const std::vector<std::string> &suffix,
+                           std::vector<std::string> &corrected_suffix
+                          ) { throw NotImplementedException(METHOD_DEFINITION); }
+
+  private:
+    // Following the rule of three copy and the assignment operator are disabled
+    IImtSession(const IImtSession&);            // Disallow copy
+    IImtSession& operator=(const IImtSession&); // Disallow assignment operator
+  };
+
+
   class IImtEngine {
   public:
     IImtEngine() {};
@@ -43,27 +68,19 @@ namespace casmacat {
      */
     virtual int init(int argc, char *argv[]) { throw NotImplementedException(METHOD_DEFINITION); }
 
-    /* Initiate translation */
-    virtual void translate(const std::string &source,
-                                 std::string &target
-                          ) { throw NotImplementedException(METHOD_DEFINITION); }
+    /**
+     * create new IMT session
+     */
+    virtual IImtSession *newSession(const std::vector<std::string> &source) { throw NotImplementedException(METHOD_DEFINITION); }
 
-    /* Set partial validation of a translation */
-    virtual void setPartialValidation(const std::string &partial_translation,
-                                      const std::vector<bool> &validated,
-                                            std::string &corrected_translation,
-                                            std::vector<bool> &corrected_validated
-                                     ) { throw NotImplementedException(METHOD_DEFINITION); }
-
-    /* Set prefix of a translation */
-    virtual void setPrefix(const std::string &prefix,
-                           const std::string &suffix,
-                                 std::string &corrected_suffix
-                          ) { throw NotImplementedException(METHOD_DEFINITION); }
+    /**
+     * delete IMT session
+     */
+    virtual void deleteSession(IImtSession *session) { throw NotImplementedException(METHOD_DEFINITION); }
 
     /* Update translation models with source/target pair (total or partial translation) */
-    virtual void validate(const std::string &source,
-                          const std::string &target,
+    virtual void validate(const std::vector<std::string> &source,
+                          const std::vector<std::string> &target,
                           const std::vector<bool> &validated
                          ) { throw NotImplementedException(METHOD_DEFINITION); }
 

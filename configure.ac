@@ -30,7 +30,6 @@ if test "x$with_included_ltdl" != "xyes"; then
 fi
 
 
-YACC=bison
 # Checks for programs.
 #AC_DISABLE_STATIC
 dnl Check if Libtool is present
@@ -40,6 +39,7 @@ AC_PROG_CXX
 AC_LANG(C++)
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
+#YACC=bison
 #AC_PROG_YACC
 #AM_PROG_LEX
 
@@ -48,7 +48,50 @@ AC_PROG_MAKE_SET
 AX_BOOST_BASE(1.41)
 AX_BOOST_UNIT_TEST_FRAMEWORK
 AM_CONDITIONAL([MAKE_TEST], [test x"$BOOST_UNIT_TEST_FRAMEWORK_LIB" != x])
+
+AX_BOOST_PYTHON
+AM_CONDITIONAL([HAVE_BOOST_PYTHON], [test x"$BOOST_PYTHON_LIB" != x])
+# check for Python
+if [ test x$python = xtrue ]; then
+  AM_PATH_PYTHON(2.7,, :)
+  if [test "$PYTHON" != :]; then
+    AM_CONDITIONAL(HAVE_PYTHON, true)
+    AC_CACHE_CHECK(
+      [if boost_python is available],
+      [boost_python_cpplib_avail_cv_],
+      [boost_python_save_libs=$LIBS
+       LIBS="-lboost_python$BOOST_SUFFIX -lpython$PYTHON_VERSION $LIBS"
+       AC_LANG_PUSH(C++)
+       AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+            [[#include <boost/python.hpp>
+              using namespace boost::python;
+              class foo {};
+              BOOST_PYTHON_MODULE(samp) {
+                class_< foo > ("foo") ;
+              }]],
+            [[return 0]])],
+         [boost_python_cpplib_avail_cv_=true],
+         [boost_python_cpplib_avail_cv_=false])
+       AC_LANG_POP
+       LIBS=$boost_python_save_libs])
+  
+    if [ test x$boost_python_cpplib_avail_cv_ = xtrue ]; then
+      AC_DEFINE([HAVE_BOOST_PYTHON], [1], [Whether Boost.Python is available])
+      LIBS="-lboost_python$BOOST_SUFFIX -lpython$PYTHON_VERSION $LIBS"
+    fi
+  else
+    AM_CONDITIONAL(HAVE_PYTHON, false)
+  fi
+  AM_CONDITIONAL(HAVE_BOOST_PYTHON, test x$boost_python_cpplib_avail_cv_ = xtrue)
+else
+  AM_CONDITIONAL(HAVE_PYTHON, false)
+  AM_CONDITIONAL(HAVE_BOOST_PYTHON, false)
+fi
+
+
 #AX_BOOST_IOSTREAMS # BOOST_IOSTREAMS_LIB
+
 
 
 # doxygen

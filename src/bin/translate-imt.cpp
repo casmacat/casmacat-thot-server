@@ -25,11 +25,11 @@
 #include <cstdlib>
 #include <casmacat/compat.h>
 #include <casmacat/utils.h>
-#include <casmacat/IMtEngine.h>
+#include <casmacat/IImtEngine.h>
 #include <casmacat/Plugin.h>
 #include <iostream>
-#include <iterator>
 #include <fstream>
+#include <iterator>
 #include <cassert>
 #include <jsoncpp/json.h>
 
@@ -57,10 +57,10 @@ int main(int argc, char* argv[]) {
     cerr << config.toStyledString() << "\n";
 
 
-    Plugin<IMtEngine> mt_plugin(config["mt"]);
+    Plugin<IImtEngine> imt_plugin(config["interactive-mt"]);
 
-    IMtEngine *mt = mt_plugin.create();
-    if (mt == 0) {
+    IImtEngine *imt = imt_plugin.create();
+    if (imt == 0) {
       cerr << "Plugin could not be instantiated\n";
     }
     else {
@@ -74,11 +74,14 @@ int main(int argc, char* argv[]) {
         while(getline(file, source)) {
           tokenize(source, tok_source);
 
+          IImtSession *session = imt->newSession(tok_source);
+
+          session->setPrefix(vector<string>(), vector<string>(), tok_target);
+
           cout << source << "|||";
-          mt->translate(tok_source, tok_target);
           copy(tok_target.begin(), tok_target.end(), ostream_iterator<string>(cout, " "));
           cout << "\n";
-          mt->update(tok_source, tok_target);
+          imt->validate(tok_source, tok_target, vector<bool>(tok_target.size(), true));
         }
       }
     }

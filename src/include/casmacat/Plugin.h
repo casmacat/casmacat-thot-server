@@ -128,7 +128,7 @@ namespace casmacat {
 #endif
     };
 
-    // Note: value_type needs to be explicitely declared so that SWIG does not complain
+    // Note: value_type needs to be explicitly declared so that SWIG does not complain
     value_type *create(int argc, char *argv[]) {
       return create_(argc, argv);
     }

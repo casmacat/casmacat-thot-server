@@ -51,8 +51,6 @@ public:
   // otherwise define the destructor with an empty body
   virtual ~RandomAligner() {}
 
-private:
-  size_t lineCount;
 };
 
 

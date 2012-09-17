@@ -9,7 +9,7 @@
 # Because a.out is only a sample program we don't want it to be installed.
 # The 'noinst_' prefix indicates that the following targets are not to be
 # installed.
-bin_PROGRAMS=casmacat-translate casmacat-aligner
+bin_PROGRAMS=casmacat-translate casmacat-align casmacat-estimate-confidences casmacat-imt
 noinst_PROGRAMS=echo_server
 LDADD= -ljsoncpp -lwebsocketpp -lboost_system -lboost_date_time -lboost_regex -lboost_program_options -lboost_thread -lltdl
 
@@ -28,8 +28,18 @@ casmacat_translate_SOURCES= translate.cpp
 casmacat_translate_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
 casmacat_translate_CPPFLAGS = -I$(top_srcdir)/src/include
 
+###### translate imt
+casmacat_imt_SOURCES= translate-imt.cpp
+casmacat_imt_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
+casmacat_imt_CPPFLAGS = -I$(top_srcdir)/src/include
+
 ###### aligner
-casmacat_aligner_SOURCES= aligner.cpp
-casmacat_aligner_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
-casmacat_aligner_CPPFLAGS = -I$(top_srcdir)/src/include
+casmacat_align_SOURCES= align.cpp
+casmacat_align_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
+casmacat_align_CPPFLAGS = -I$(top_srcdir)/src/include
+
+###### confidence estimator
+casmacat_estimate_confidences_SOURCES= estimate-confidences.cpp
+casmacat_estimate_confidences_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
+casmacat_estimate_confidences_CPPFLAGS = -I$(top_srcdir)/src/include
 

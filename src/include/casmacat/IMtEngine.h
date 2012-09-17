@@ -50,8 +50,8 @@ namespace casmacat {
      * @param[in] source a sentence in the source language
      * @param[out] target a translation of source in the target language
      */
-    virtual void translate(const std::string &source, 
-                                 std::string &target
+    virtual void translate(const std::vector<std::string> &source,
+                                 std::vector<std::string> &target
                           ) { throw NotImplementedException(METHOD_DEFINITION); }
 
     /**
@@ -68,8 +68,8 @@ namespace casmacat {
      * @param[in] source a sentence in the source language
      * @param[in] target a sentence in the target language that is a valid translation of source
      */
-    virtual void update(const std::string &source,
-                        const std::string &target
+    virtual void update(const std::vector<std::string> &source,
+                        const std::vector<std::string> &target
                           ) { throw NotImplementedException(METHOD_DEFINITION); }
 
   private:

@@ -25,10 +25,9 @@
 #include <cstdlib>
 #include <casmacat/compat.h>
 #include <casmacat/utils.h>
-#include <casmacat/IMtEngine.h>
+#include <casmacat/IConfidenceEngine.h>
 #include <casmacat/Plugin.h>
 #include <iostream>
-#include <iterator>
 #include <fstream>
 #include <cassert>
 #include <jsoncpp/json.h>
@@ -38,13 +37,13 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 
-    if (argc != 3) {
-      cerr << "Usage: " << argv[0] << " config.js test\n";
+    if (argc != 4) {
+      cerr << "Usage: " << argv[0] << " config.js source target\n";
       return EXIT_FAILURE;
     }
 
     Json::Value config(Json::objectValue);
-//    config["mt"] = "nothing";
+//    config["aligner"] = "nothing";
 //    cerr << config.toStyledString() << "\n";
 
     {
@@ -57,29 +56,40 @@ int main(int argc, char* argv[]) {
     cerr << config.toStyledString() << "\n";
 
 
-    Plugin<IMtEngine> mt_plugin(config["mt"]);
+    Plugin<IConfidenceEngine> confidence_estimator_plugin(config["confidence-estimator"]);
 
-    IMtEngine *mt = mt_plugin.create();
-    if (mt == 0) {
+    IConfidenceEngine *confidence_estimator = confidence_estimator_plugin.create();
+    if (confidence_estimator == 0) {
       cerr << "Plugin could not be instantiated\n";
     }
     else {
       cerr << "Plugin loaded\n";
+      ifstream source_file(argv[2]);
+      ifstream target_file(argv[3]);
+      string source, target;
+      vector<string> tok_source, tok_target;
+      std::vector<bool> validated;
 
-      for (int i = 2; i < argc; i++) {
-        ifstream file(argv[i]);
-        string source;
-        vector<string> tok_source, tok_target;
+      float sentence_confidence;
+      std::vector<float> confidences;
 
-        while(getline(file, source)) {
-          tokenize(source, tok_source);
+      cout.setf(ios::fixed, ios::floatfield);
+      cout.precision(2);
 
-          cout << source << "|||";
-          mt->translate(tok_source, tok_target);
-          copy(tok_target.begin(), tok_target.end(), ostream_iterator<string>(cout, " "));
-          cout << "\n";
-          mt->update(tok_source, tok_target);
+      while(getline(source_file, source) and getline(target_file, target)) {
+        cout << "source: " << source << "\n";
+
+        tokenize(source, tok_source);
+        tokenize(target, tok_target);
+
+        sentence_confidence = confidence_estimator->getSentenceConfidence(tok_source, tok_target, validated);
+        confidence_estimator->getWordConfidences(tok_source, tok_target, validated, confidences);
+
+        cout << sentence_confidence;
+        for (size_t t = 0; t < confidences.size(); t++) {
+          cout << " " << tok_target[t] << "(" << confidences[t] << ")";
         }
+        cout << "\n";
       }
     }
 
