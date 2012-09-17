@@ -1,6 +1,9 @@
 #ifndef PLUGIN_HPP
 #define PLUGIN_HPP
 
+// Based on 
+// http://www.isotton.com/devel/docs/C++-dlopen-mini-HOWTO/C++-dlopen-mini-HOWTO.html
+
 #include <iostream>
 #include <cassert>
 #include <stdexcept>
@@ -45,7 +48,7 @@ namespace casmacat {
   public:
 
     Plugin(const std::string &_plugin_fn, const std::string &_default_args = "",
-    		const std::string &_create_symbol_name = "new_plugin", const std::string &_destroy_symbol_name = "delete_plugin")
+    		   const std::string &_create_symbol_name = "new_plugin", const std::string &_destroy_symbol_name = "delete_plugin")
            : plugin_fn(_plugin_fn), default_args(_default_args),
              create_symbol_name(_create_symbol_name),destroy_symbol_name(_destroy_symbol_name)
     {
