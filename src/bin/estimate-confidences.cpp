@@ -36,24 +36,25 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 
-    if (argc != 4) {
-      cerr << "Usage: " << argv[0] << " config.js source target\n";
+    if (argc < 4) {
+      cerr << "Usage: " << argv[0] << " source target plugin args\n";
       return EXIT_FAILURE;
     }
 
-    string confidence_estimator_plugin_fn = "";
+    string confidence_estimator_plugin_fn = argv[3];
     string args = "";
 
     Plugin<IConfidenceEngine> confidence_estimator_plugin(confidence_estimator_plugin_fn, args);
 
     IConfidenceEngine *confidence_estimator = confidence_estimator_plugin.create();
+    cout << "Is confidence estimator? " << provides<IConfidenceEngine>(confidence_estimator) << "\n";
     if (confidence_estimator == 0) {
       cerr << "Plugin could not be instantiated\n";
     }
     else {
       cerr << "Plugin loaded\n";
-      ifstream source_file(argv[2]);
-      ifstream target_file(argv[3]);
+      ifstream source_file(argv[1]);
+      ifstream target_file(argv[2]);
       string source, target;
       vector<string> tok_source, tok_target;
       std::vector<bool> validated;

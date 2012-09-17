@@ -9,7 +9,7 @@
 # See http://APIBook.com/ for the latest version.
 #
 
-from pycasmacat import *
+from casmacat import *
 
 plugin = ConfidencePlugin(".libs/random-confidence-estimator.so")
 c = plugin.create()

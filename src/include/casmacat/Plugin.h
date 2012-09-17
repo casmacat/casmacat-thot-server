@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cassert>
 #include <stdexcept>
+#include <typeinfo>
 
 #include <string>
 #include <vector>
@@ -44,7 +45,7 @@ namespace casmacat {
   public:
 
     Plugin(const std::string &_plugin_fn, const std::string &_default_args = "",
-    		const std::string &_create_symbol_name = "", const std::string &_destroy_symbol_name = "")
+    		const std::string &_create_symbol_name = "new_plugin", const std::string &_destroy_symbol_name = "delete_plugin")
            : plugin_fn(_plugin_fn), default_args(_default_args),
              create_symbol_name(_create_symbol_name),destroy_symbol_name(_destroy_symbol_name)
     {
@@ -92,7 +93,6 @@ namespace casmacat {
       }
   
       // load the creator
-      if (create_symbol_name == "") create_symbol_name = "new_plugin";
       create_ = reinterpret_cast<create_fn>(plugin_dlsym(library_h_, create_symbol_name.c_str()));
       dlsym_error = plugin_dlerror();
       if (dlsym_error) {
@@ -105,7 +105,6 @@ namespace casmacat {
       }
 
        // load the destroyer 
-      if (destroy_symbol_name == "") destroy_symbol_name = "delete_plugin";
       destroy_ = reinterpret_cast<destroy_fn>(plugin_dlsym(library_h_, destroy_symbol_name.c_str()));
       dlsym_error = plugin_dlerror();
       if (dlsym_error) {
@@ -177,7 +176,18 @@ namespace casmacat {
     Plugin& operator=(const Plugin&); // Disallow assignment operator
 
   };
-  
+
+  template<typename Interface, typename Class>
+  bool provides(Class *_object) {
+    Interface *object = dynamic_cast<Interface *>(_object);
+    return object != 0;
+  }
+
+  template<typename Interface>
+  Interface *as(void *_object) {
+    return dynamic_cast<Interface *>(_object);
+  }
+
 }
 
 #endif

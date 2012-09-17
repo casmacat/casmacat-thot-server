@@ -43,15 +43,15 @@ pycasmacat_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(PYTHON_INCLUDE_DIR)
 endif
 
 if HAVE_SWIG
-BUILT_SOURCES = $(builddir)/pycasmacat_swig_wrap.cpp
-SWIG_SOURCES = pycasmacat.i
+BUILT_SOURCES = $(builddir)/casmacat_swig_wrap.cpp
+SWIG_SOURCES = casmacat.i
 
-pkgpython_PYTHON = pycasmacat.py
-pkgpyexec_LTLIBRARIES   = _pycasmacat.la
-_pycasmacat_la_SOURCES  = $(BUILT_SOURCES) $(SWIG_SOURCES)
-_pycasmacat_la_CXXFLAGS = $(COMPILANCE_CXXFLAGS) $(AX_SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/src/include 
-_pycasmacat_la_LDFLAGS  = -version-info 0:0:0 -export-dynamic -module $(PYTHON_LDFLAGS) $(LDFLAGS)
+pkgpython_PYTHON = casmacat.py
+pkgpyexec_LTLIBRARIES   = _casmacat.la
+_casmacat_la_SOURCES  = $(BUILT_SOURCES) $(SWIG_SOURCES)
+_casmacat_la_CXXFLAGS = $(COMPILANCE_CXXFLAGS) $(AX_SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/src/include 
+_casmacat_la_LDFLAGS  = -version-info 0:0:0 -export-dynamic -module $(PYTHON_LDFLAGS) $(LDFLAGS)
 
-$(builddir)/pycasmacat_swig_wrap.cpp : $(SWIG_SOURCES) 
+$(builddir)/casmacat_swig_wrap.cpp : $(SWIG_SOURCES) 
 	$(SWIG) $(AX_SWIG_PYTHON_OPT) -I$(top_srcdir)/src/include -o $@ $<
 endif
