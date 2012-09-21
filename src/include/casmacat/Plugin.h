@@ -28,6 +28,17 @@
 
 namespace casmacat {
 
+  template<typename Interface, typename Class>
+  bool provides(Class *_object) {
+    Interface *object = dynamic_cast<Interface *>(_object);
+    return object != 0;
+  }
+
+  template<typename Interface>
+  Interface *as(void *_object) {
+    return dynamic_cast<Interface *>(_object);
+  }
+
   template <typename value_type>
   class Plugin {
     typedef value_type* (*create_fn)(int argc, char *argv[]);
@@ -202,17 +213,6 @@ namespace casmacat {
     Plugin& operator=(const Plugin&); // Disallow assignment operator
 
   };
-
-  template<typename Interface, typename Class>
-  bool provides(Class *_object) {
-    Interface *object = dynamic_cast<Interface *>(_object);
-    return object != 0;
-  }
-
-  template<typename Interface>
-  Interface *as(void *_object) {
-    return dynamic_cast<Interface *>(_object);
-  }
 
 }
 

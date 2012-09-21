@@ -25,7 +25,7 @@
 
 #include <string>
 #include <vector>
-#include <casmacat/plugin-utils.h>
+#include <casmacat/IPluginFactory.h>
 
 
 namespace casmacat {
@@ -52,7 +52,6 @@ namespace casmacat {
                           ) = 0;
   };
 
-
   class IInteractiveMtEngine {
   public:
     virtual ~IInteractiveMtEngine() {};
@@ -74,23 +73,7 @@ namespace casmacat {
                          ) = 0;
   };
 
-  class IInteractiveMtFactory {
-  public:
-    virtual ~IInteractiveMtFactory() {};
-    /**
-     * initialize the IMT Factory with main-like parameters
-     */
-    virtual int init(int argc, char *argv[]) = 0;
-    virtual std::string getVersion() = 0;
-
-    /**
-     * create an instance of a confidence engine
-     * @param[in] specialization_id returns a specialized version of the confidence engine,
-     *            for instance, for user specific models
-     */
-    virtual IInteractiveMtEngine *createInstance(const std::string &specialization_id = "") = 0;
-  };
-
+  typedef IPluginFactory<IInteractiveMtEngine> IInteractiveMtFactory;
 }
 
 #endif /* CASMACAT_IIMTENGINE_H_ */

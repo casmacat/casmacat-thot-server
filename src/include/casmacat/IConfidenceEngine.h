@@ -23,10 +23,9 @@
 #ifndef CASMACAT_ICONFIDENCEENGINE_H_
 #define CASMACAT_ICONFIDENCEENGINE_H_
 
-
 #include <string>
 #include <vector>
-#include <casmacat/plugin-utils.h>
+#include <casmacat/IPluginFactory.h>
 
 namespace casmacat {
 
@@ -47,23 +46,7 @@ namespace casmacat {
                                         const std::vector<bool> &validated) = 0;
   };
 
-  class IConfidenceFactory {
-  public:
-    virtual ~IConfidenceFactory() {};
-    /**
-     * initialize the Confidence engine with main-like parameters
-     */
-    virtual int init(int argc, char *argv[]) = 0;
-    virtual std::string getVersion() = 0;
-
-    /**
-     * create an instance of a confidence engine
-     * @param[in] specialization_id returns a specialized version of the confidence engine,
-     *            for instance, for user specific models
-     */
-    virtual IConfidenceEngine *createInstance(const std::string &specialization_id = "") = 0;
-  };
-
+  typedef IPluginFactory<IConfidenceEngine> IConfidenceFactory;
 }
 
 

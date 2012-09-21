@@ -9,12 +9,14 @@
 
 #include <casmacat/config.h>
 #include <casmacat/IConfidenceEngine.h>
+#include <casmacat/IPluginFactory.h>
 #include <casmacat/utils.h>
 
 using namespace std;
 using namespace casmacat;
 
-class RandomConfidencer: public IConfidenceEngine {
+class RandomConfidencer: public IConfidenceEngine, Loggable {
+  Logger *_logger;
 public:
   RandomConfidencer() { }
   // do not forget to free all allocated resources
@@ -27,6 +29,7 @@ public:
                                   const std::vector<bool> &validated,
                                   std::vector<float> &confidences)
   {
+    LOG(INFO) << "I'm getting word confidences";
     confidences.resize(target.size());
     if (validated.empty() or validated.size() != target.size()) {
       for (size_t t = 0; t < target.size(); t++) {
@@ -52,14 +55,21 @@ public:
     return rand() / double(RAND_MAX);
   }
 
+  virtual void setLogger(Logger *logger) {
+    _logger = logger;
+    LOG(INFO) << "I'm joining the logger";
+  }
 };
 
 class RandomConfidenceFactory: public IConfidenceFactory {
+  Logger *_logger;
 public:
   RandomConfidenceFactory() { }
   // do not forget to free all allocated resources
   // otherwise define the destructor with an empty body
-  virtual ~RandomConfidenceFactory() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
+  virtual ~RandomConfidenceFactory() {
+    LOG(INFO) << "I, " << typeid(*this).name() <<  ", am free!!!";
+  };
 
   virtual int init(int argc, char *argv[]) {
     if (argc > 2) { // invalid number of arguments
@@ -80,13 +90,19 @@ public:
   }
 
   virtual string getVersion() { return PACKAGE_VERSION; }
+  virtual void setLogger(Logger *logger) {
+    _logger = logger;
+    LOG(INFO) << "I'm joining the logger";
+  }
 
   virtual IConfidenceEngine *createInstance(const std::string &specialization_id = "") {
-    return new RandomConfidencer();
+    RandomConfidencer *rc = new RandomConfidencer();
+    rc->setLogger(_logger);
+    return rc;
   }
 
 };
 
 
-EXPORT_CASMACAT_PLUGIN(IConfidenceFactory, RandomConfidenceFactory);
+EXPORT_CASMACAT_PLUGIN(IConfidenceEngine, RandomConfidenceFactory);
 

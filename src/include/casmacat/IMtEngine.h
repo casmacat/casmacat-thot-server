@@ -10,7 +10,7 @@
 
 #include <string>
 #include <vector>
-#include <casmacat/plugin-utils.h>
+#include <casmacat/IPluginFactory.h>
 
 
 namespace casmacat {
@@ -65,23 +65,8 @@ namespace casmacat {
                         const std::vector<std::string> &target) = 0;
   };
 
-  class IMtFactory {
-  public:
-    virtual ~IMtFactory() {};
-    /**
-     * initialize the IMT Factory with main-like parameters
-     */
-    virtual int init(int argc, char *argv[]) = 0;
-    virtual std::string getVersion() = 0;
+  typedef IPluginFactory<IMtEngine> IMtFactory;
 
-    /**
-     * create an instance of a confidence engine
-     * @param[in] specialization_id returns a specialized version of the confidence engine,
-     *            for instance, for user specific models
-     */
-    virtual IMtEngine *createInstance(const std::string &specialization_id = "") = 0;
-  };
-
-  }
+}
 
 #endif // CASMACAT_IMTENGINE_HPP

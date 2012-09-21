@@ -99,4 +99,4 @@ public:
   }
 };
 
-EXPORT_CASMACAT_PLUGIN(ITextProcessorFactory, SpaceTokenizerFactory);
+EXPORT_CASMACAT_PLUGIN(ITextProcessor, SpaceTokenizerFactory);

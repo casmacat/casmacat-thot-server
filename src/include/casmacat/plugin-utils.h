@@ -28,9 +28,9 @@
 #include <iterator>
 
 #define EXPORT_CASMACAT_PLUGIN_NAME(I, C, name) \
-  extern "C" casmacat::I * new_##name(int argc, char *argv[]) { return casmacat::new_object<casmacat::I, C>(argc, argv); } \
-  extern "C" void delete_##name(casmacat::I * c) { casmacat::delete_object<casmacat::I, C>(c); } \
-  extern "C" const std::type_info& name##_type() { return casmacat::plugin_type<casmacat::I>(); }
+  extern "C" casmacat::IPluginFactory<casmacat::I> * new_##name(int argc, char *argv[]) { return casmacat::new_object<casmacat::IPluginFactory<casmacat::I>, C>(argc, argv); } \
+  extern "C" void delete_##name(casmacat::IPluginFactory<casmacat::I> * c) { casmacat::delete_object<casmacat::IPluginFactory<casmacat::I>, C>(c); } \
+  extern "C" const std::type_info& name##_type() { return casmacat::plugin_type<casmacat::IPluginFactory<casmacat::I> >(); }
 
 #define EXPORT_CASMACAT_PLUGIN(I, C) EXPORT_CASMACAT_PLUGIN_NAME(I, C, plugin)
 

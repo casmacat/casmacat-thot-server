@@ -23,6 +23,8 @@
 #ifndef CASMACAT_ITEXTPROCESSOR_H_
 #define CASMACAT_ITEXTPROCESSOR_H_
 
+#include <casmacat/IPluginFactory.h>
+
 namespace casmacat {
 
 /**
@@ -40,22 +42,7 @@ namespace casmacat {
                               std::vector< std::pair<size_t, size_t> > &segmentation) = 0;
   };
 
-  class ITextProcessorFactory {
-  public:
-    virtual ~ITextProcessorFactory() {};
-    /**
-     * initialize the Confidence engine with main-like parameters
-     */
-    virtual int init(int argc, char *argv[]) = 0;
-    virtual std::string getVersion() = 0;
-
-    /**
-     * create an instance of a confidence engine
-     * @param[in] specialization_id returns a specialized version of the confidence engine,
-     *            for instance, for user specific models
-     */
-    virtual ITextProcessor *createInstance(const std::string &specialization_id = "") = 0;
-  };
+  typedef IPluginFactory<ITextProcessor> ITextProcessorFactory;
 
 }
 

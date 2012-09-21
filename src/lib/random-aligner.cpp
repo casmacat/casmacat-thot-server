@@ -7,6 +7,7 @@
 
 #include <casmacat/config.h>
 #include <casmacat/IAlignmentEngine.h>
+#include <casmacat/IPluginFactory.h>
 #include <casmacat/utils.h>
 
 using namespace std;
@@ -67,6 +68,5 @@ public:
 };
 
 
-EXPORT_CASMACAT_PLUGIN(IAlignmentFactory, RandomAlignerFactory);
-
+EXPORT_CASMACAT_PLUGIN(IAlignmentEngine, RandomAlignerFactory);
 

@@ -25,7 +25,7 @@
 
 #include <string>
 #include <vector>
-#include <casmacat/plugin-utils.h>
+#include <casmacat/IPluginFactory.h>
 
 namespace casmacat {
 
@@ -45,26 +45,7 @@ namespace casmacat {
                        std::vector< std::vector<float> > &alignments) = 0;
   };
 
-
-  class IAlignmentFactory {
-  public:
-    virtual ~IAlignmentFactory() {};
-
-    /**
-     * initialize the alignment factory with main-like parameters
-     */
-    virtual int init(int argc, char *argv[]) = 0;
-    virtual std::string getVersion() = 0;
-
-    /**
-     * create an instance of an alignment engine
-     * @param[in] specialization_id returns a specialized version of the alignment engine,
-     *            for instance, for user specific models
-     */
-    virtual IAlignmentEngine *createInstance(const std::string &specialization_id = "") = 0;
-  };
-
-
+  typedef IPluginFactory<IAlignmentEngine> IAlignmentFactory;
 }
 
 #endif /* CASMACAT_IALIGNMENTENGINE_H_ */

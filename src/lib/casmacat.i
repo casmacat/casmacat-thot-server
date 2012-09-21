@@ -1,4 +1,4 @@
-%module casmacat 
+%module(directors="1") casmacat 
 
 %{
 #define SWIG_FILE_WITH_INIT
@@ -8,6 +8,7 @@
 #include <casmacat/IImtEngine.h>
 #include <casmacat/ITextProcessor.h>
 #include <casmacat/Plugin.h>
+#include <casmacat/Logger.h>
 using namespace casmacat;
 
 %}
@@ -27,6 +28,18 @@ typedef unsigned int uint32_t;
 %template(FloatVector)  std::vector<float>;
 %template(BoolVector)   std::vector<bool>;
 
+// generate directors for all virtual methods in class Logger
+%feature("director") casmacat::Logger;
+
+%newobject *::create();
+%newobject *::createStringArgs(const std::string &);
+%newobject *::createInstance();
+%newobject *::createInstance(const std::string &);
+
+
+// the directors must be parsed before they are used by others
+%include <casmacat/Logger.h>
+%include <casmacat/IPluginFactory.h>
 %include <casmacat/IAlignmentEngine.h>
 %include <casmacat/IConfidenceEngine.h>
 %include <casmacat/IMtEngine.h>
@@ -35,11 +48,15 @@ typedef unsigned int uint32_t;
 %include <casmacat/Plugin.h>
 
 namespace casmacat {
+  %template(IAlignmentFactory)           IPluginFactory<IAlignmentEngine>;
+  %template(IConfidenceFactory)          IPluginFactory<IConfidenceEngine>;
+  %template(ITextProcessorFactory)       IPluginFactory<ITextProcessor>;
+  %template(IMtFactory)                  IPluginFactory<IMtEngine>;
+  %template(IInteractiveMtFactory)       IPluginFactory<IInteractiveMtEngine>;
   %template(AlignmentPlugin)             Plugin<IAlignmentFactory>;
   %template(ConfidencePlugin)            Plugin<IConfidenceFactory>;
   %template(TextProcessorPlugin)         Plugin<ITextProcessorFactory>;
   %template(MtPlugin)                    Plugin<IMtFactory>;
   %template(ImtPlugin)                   Plugin<IInteractiveMtFactory>;
 }
-
 

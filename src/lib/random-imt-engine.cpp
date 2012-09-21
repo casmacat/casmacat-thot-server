@@ -10,6 +10,7 @@
 
 #include <casmacat/config.h>
 #include <casmacat/IImtEngine.h>
+#include <casmacat/IPluginFactory.h>
 #include <casmacat/utils.h>
 
 using namespace std;
@@ -152,5 +153,5 @@ public:
   }
 };
 
-EXPORT_CASMACAT_PLUGIN(IInteractiveMtFactory, RandomImtFactory);
+EXPORT_CASMACAT_PLUGIN(IInteractiveMtEngine, RandomImtFactory);
 

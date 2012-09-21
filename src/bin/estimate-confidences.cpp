@@ -44,9 +44,10 @@ int main(int argc, char* argv[]) {
     string confidence_estimator_plugin_fn = argv[3];
     string args = "";
 
-    Plugin<IConfidenceEngine> confidence_estimator_plugin(confidence_estimator_plugin_fn, args);
+    Plugin<IConfidenceFactory> confidence_estimator_plugin(confidence_estimator_plugin_fn, args);
+    IConfidenceFactory *confidence_estimator_factory = confidence_estimator_plugin.create();
 
-    IConfidenceEngine *confidence_estimator = confidence_estimator_plugin.create();
+    IConfidenceEngine *confidence_estimator = confidence_estimator_factory->createInstance();
     cout << "Is confidence estimator? " << provides<IConfidenceEngine>(confidence_estimator) << "\n";
     if (confidence_estimator == 0) {
       cerr << "Plugin could not be instantiated\n";
@@ -82,6 +83,8 @@ int main(int argc, char* argv[]) {
       }
     }
 
+    delete confidence_estimator;
+    delete confidence_estimator_factory;
 
     return EXIT_SUCCESS;
 }

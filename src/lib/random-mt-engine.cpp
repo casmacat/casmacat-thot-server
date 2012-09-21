@@ -99,5 +99,5 @@ public:
   }
 };
 
-EXPORT_CASMACAT_PLUGIN(IMtFactory, RandomMtFactory);
+EXPORT_CASMACAT_PLUGIN(IMtEngine, RandomMtFactory);
 
