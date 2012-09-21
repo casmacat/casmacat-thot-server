@@ -1,1 +1,1 @@
-SUBDIRS=src/include/casmacat src/lib src/bin #src/test
+SUBDIRS=src/include/casmacat src/lib src/bin docs #src/test

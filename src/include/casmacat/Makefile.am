@@ -1,3 +1,3 @@
 # These files will end up in the install include directory
 # For example, /usr/include
-include_HEADERS = compat.h config.h
+include_HEADERS = compat.h config.h IAlignmentEngine.h IConfidenceEngine.h IImtEngine.h IMtEngine.h IPluginFactory.h ITextProcessor.h Logger.h NotImplementedException.h Plugin.h plugin-utils.h utils.h
