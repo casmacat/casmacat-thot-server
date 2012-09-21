@@ -35,7 +35,7 @@ public:
   virtual void log(log_t type, const std::string &msg) = 0;
 };
 
-#define LOG(TYPE) if (_logger) LoggerStream<TYPE##_LOG>(_logger).get() << __FUNCTION__
+#define LOG(TYPE) if (_logger) LoggerStream<TYPE##_LOG>(_logger).get() << __PRETTY_FUNCTION__ << ": "
 
 template <log_t type>
 class LoggerStream {
