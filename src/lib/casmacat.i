@@ -2,6 +2,7 @@
 
 %{
 #define SWIG_FILE_WITH_INIT
+#include <string>
 #include <casmacat/IAlignmentEngine.h>
 #include <casmacat/IConfidenceEngine.h>
 #include <casmacat/IMtEngine.h>
@@ -17,16 +18,23 @@ using namespace casmacat;
 
 %include <typemaps.i>
 %include <stl.i>
+%include <std_basic_string.i>
 %include <std_string.i>
 %include <std_vector.i>
+%include <std_pair.i>
 
 using namespace std;
 
 typedef unsigned int uint32_t;
+typedef std::string String; 
+
+%apply std::string& INOUT { std::string& str}
 
 %template(StringVector) std::vector<std::string>;
 %template(FloatVector)  std::vector<float>;
 %template(BoolVector)   std::vector<bool>;
+%template(FloatMatrix)  std::vector< std::vector<float> >;
+%template(Segmentation) std::vector< std::pair<size_t, size_t> >;
 
 // generate directors for all virtual methods in class Logger
 %feature("director") casmacat::Logger;

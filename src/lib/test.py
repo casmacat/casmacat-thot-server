@@ -13,7 +13,7 @@ from casmacat import *
 from sys import stderr, stdout
 
 class MyLogger(Logger):
-  tag = { ERROR_LOG: "ERROR:", WARN_LOG: "WARN:", INFO_LOG: "INFO:", DEBUG_LOG: "DEBUG" }
+  tag = { ERROR_LOG: "ERROR:", WARN_LOG: "WARN:", INFO_LOG: "INFO:", DEBUG_LOG: "DEBUG:" }
   def log(self, type, msg):
     if type in self.tag:
       print >> stderr, self.tag[type], msg
@@ -22,20 +22,47 @@ class MyLogger(Logger):
 
 logger = MyLogger()
 
-plugin = ConfidencePlugin(".libs/random-confidence-estimator.so")
-factory = plugin.create()
+text_p = TextProcessorPlugin(".libs/space-tokenizer.so")
+text_f = text_p.create()
+text_f.setLogger(logger)
+processor = text_f.createInstance()
 
-logger.log(DEBUG_LOG, "I exist")
-factory.setLogger(logger)
+mt_p = MtPlugin(".libs/random-mt-engine.so")
+mt_f = mt_p.create()
+mt_f.setLogger(logger)
+mt = mt_f.createInstance()
 
-print factory.getVersion()
-c = factory.createInstance()
 
-#print c.getSentenceConfidence(["a", "b"], ["A", "B"], [False, True])
+conf_p = ConfidencePlugin(".libs/random-confidence-estimator.so")
+conf_f = conf_p.create()
+conf_f.setLogger(logger)
+confidencer = conf_f.createInstance()
+
+alig_p = AlignmentPlugin(".libs/random-aligner.so")
+alig_f = alig_p.create()
+alig_f.setLogger(logger)
+aligner = alig_f.createInstance()
+
+source = "Hello World!"
+source_tok = StringVector()
+processor.preprocess(source, source_tok)
+
+target_tok = StringVector()
+mt.translate(source_tok, target_tok)
+
+target = ""
+target_seg = Segmentation()
+processor.postprocess(target_tok, target, target_seg)
 
 conf = FloatVector()
-c.getWordConfidences(StringVector("a b".split()), StringVector("c d".split()), BoolVector([False, True]), conf)
-print list(conf)
+confidencer.getWordConfidences(source_tok, target_tok, BoolVector([False for x in len(target_tok)]), conf)
+print conf
+
+
+matrix = FloatMatrix()
+aligner.align(source_tok, target_tok, matrix)
+print matrix
+
 
 #plugin.destroy(c)
 #plugin.destroy(factory)

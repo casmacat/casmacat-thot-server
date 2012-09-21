@@ -124,7 +124,9 @@ namespace casmacat {
           throw std::runtime_error(dlsym_error);
       }
 
-      if (plugin_type_() != typeid(value_type)) {
+      // check names instead of types since some c++ compilers do not work
+//      if (plugin_type_() != typeid(value_type)) {
+      if (strcmp(plugin_type_().name(), typeid(value_type).name()) != 0) {
         cerr << "Incompatible plugin: '" << plugin_fn << "' is a plugin of type '" << plugin_type_().name() << "' instead of '" << typeid(value_type).name() << "'" << std::endl;
         throw std::runtime_error(dlsym_error);
       }
