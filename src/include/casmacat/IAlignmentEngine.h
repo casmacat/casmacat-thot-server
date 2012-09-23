@@ -42,7 +42,7 @@ namespace casmacat {
      */
     virtual void align(const std::vector<std::string> &source,
                        const std::vector<std::string> &target,
-                       std::vector< std::vector<float> > &alignments) = 0;
+                       std::vector< std::vector<float> > &alignments_out) = 0;
   };
 
   typedef IPluginFactory<IAlignmentEngine> IAlignmentFactory;

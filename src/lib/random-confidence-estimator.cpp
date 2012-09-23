@@ -18,13 +18,13 @@ using namespace casmacat;
 class RandomConfidencer: public IConfidenceEngine, Loggable {
   Logger *_logger;
 public:
-  RandomConfidencer() { }
+  RandomConfidencer(): _logger(0) { }
   // do not forget to free all allocated resources
   // otherwise define the destructor with an empty body
   virtual ~RandomConfidencer() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
 
-  virtual void getWordConfidences(const std::vector<std::string> &source,
+  virtual float getWordConfidences(const std::vector<std::string> &source,
                                   const std::vector<std::string> &target,
                                   const std::vector<bool> &validated,
                                   std::vector<float> &confidences)
@@ -46,6 +46,7 @@ public:
         }
       }
     }
+    return rand() / double(RAND_MAX);
   }
 
   virtual float getSentenceConfidence(const std::vector<std::string> &source,
@@ -64,7 +65,7 @@ public:
 class RandomConfidenceFactory: public IConfidenceFactory {
   Logger *_logger;
 public:
-  RandomConfidenceFactory() { }
+  RandomConfidenceFactory(): _logger(0) { }
   // do not forget to free all allocated resources
   // otherwise define the destructor with an empty body
   virtual ~RandomConfidenceFactory() {

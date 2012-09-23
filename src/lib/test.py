@@ -44,22 +44,24 @@ alig_f.setLogger(logger)
 aligner = alig_f.createInstance()
 
 source = "Hello World!"
-source_tok = StringVector()
-processor.preprocess(source, source_tok)
+source_tok = processor.preprocess(source)
+print "Source tok:", source_tok
 
-target_tok = StringVector()
-mt.translate(source_tok, target_tok)
-
-conf = confidencer.getWordConfidences(source_tok, target_tok, BoolVector([False for x in range(len(target_tok))]))
-print "Confidences:", list(conf)
-
-
-matrix = aligner.align(source_tok, target_tok)
-print "Alignments:", list(matrix)
+target_tok = mt.translate(source_tok)
+print "Target tok:", target_tok
 
 target, target_seg = processor.postprocess(target_tok)
-print "target: '%s'" % target, list(target_tok)
-print "segmentation:", [(x, 0) for x in list(target_seg)]
+print "target: '%s'" % target
+print "segmentation:", target_seg
+
+correct = BoolVector([False for x in range(len(target_tok))])
+print confidencer.getWordConfidences(source_tok, target_tok, correct)
+sent, conf = confidencer.getWordConfidences(source_tok, target_tok, correct)
+print "Confidences:", conf
+
+matrix = aligner.align(source_tok, target_tok)
+print "Alignments:", matrix
+
 
 del processor, text_f, text_p
 del mt, mt_f, mt_p

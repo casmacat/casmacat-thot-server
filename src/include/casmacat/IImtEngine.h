@@ -40,15 +40,15 @@ namespace casmacat {
 
     /* Set partial validation of a translation */
     virtual void setPartialValidation(const std::vector<std::string> &partial_translation,
-                                      const std::vector<bool> &validated,
-                                            std::vector<std::string> &corrected_translation,
-                                            std::vector<bool> &corrected_validated
+                                          const std::vector<bool> &validated,
+                                                 std::vector<std::string> &corrected_translation_out,
+                                                 std::vector<bool> &corrected_validated_out
                                      ) = 0;
 
     /* Set prefix of a translation */
     virtual void setPrefix(const std::vector<std::string> &prefix,
-                           const std::vector<std::string> &suffix,
-                           std::vector<std::string> &corrected_suffix
+                              const std::vector<std::string> &suffix,
+                                    std::vector<std::string> &corrected_suffix_out
                           ) = 0;
   };
 

@@ -48,7 +48,7 @@ endif
 
 if HAVE_SWIG
 BUILT_SOURCES = $(builddir)/casmacat_swig_wrap.cpp
-SWIG_SOURCES = casmacat.i
+SWIG_SOURCES = casmacat.i extra_typemaps.i
 
 pkgpython_PYTHON = casmacat.py
 pkgpyexec_LTLIBRARIES   = _casmacat.la

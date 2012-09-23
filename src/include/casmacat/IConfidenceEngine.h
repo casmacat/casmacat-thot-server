@@ -37,10 +37,10 @@ namespace casmacat {
   public:
     virtual ~IConfidenceEngine() {};
 
-    virtual void getWordConfidences(const std::vector<std::string> &source,
+    virtual float getWordConfidences(const std::vector<std::string> &source,
                                     const std::vector<std::string> &target,
                                     const std::vector<bool> &validated,
-                                    std::vector<float> &confidences) = 0;
+                                    std::vector<float> &confidences_out) = 0;
     virtual float getSentenceConfidence(const std::vector<std::string> &source,
                                         const std::vector<std::string> &target,
                                         const std::vector<bool> &validated) = 0;

@@ -24,13 +24,18 @@ using namespace casmacat;
 
 using namespace std;
 
+
 // We have to specify the name of the variable used in the method getConfigData for
 // this typemap to work correctly
-//
-%RefOutputString( detokenized );
-%RefOutputSegmentation( segmentation );
-%RefOutputFloatVector( confidences );
-%RefOutputFloatMatrix( alignments );
+%RefOutputStringVector( tokenized_out );
+%RefOutputString( detokenized_out );
+%RefOutputSegmentation( segmentation_out );
+%RefOutputFloatVector( confidences_out );
+%RefOutputFloatMatrix( alignments_out );
+%RefOutputStringVector( target_out );
+%RefOutputStringVector( corrected_suffix_out );
+%RefOutputStringVector( corrected_translation_out );
+%RefOutputBoolVector( corrected_validated_out );
 
 
 // generate directors for all virtual methods in class Logger

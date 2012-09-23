@@ -45,7 +45,7 @@ namespace casmacat {
      * @param[out] target a translation of source in the target language
      */
     virtual void translate(const std::vector<std::string> &source,
-                                 std::vector<std::string> &target) = 0;
+                                 std::vector<std::string> &target_out) = 0;
 
     /**
      * updates translation models with source/target pair

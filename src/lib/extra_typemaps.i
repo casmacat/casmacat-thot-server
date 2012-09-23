@@ -77,16 +77,6 @@ typedef unsigned int uint32_t;
 	%RefOutputTypemapComplex( %arg(std::vector< std::pair<size_t, size_t> >), name );
 %enddef
 
-//%define %RefOutputSegmentation( name )
-//	%fragment("t_output_helper");
-//	%typemap(in,numinputs=0) std::vector< std::pair<size_t, size_t> >& name ($*1_ltype temp)  "$1 = &temp;"
-//	%typemap(argout, fragment=SWIG_Traits_frag(std::vector< std::pair<size_t, size_t> >)) std::vector< std::pair<size_t, size_t> >& name
-//	{
-//	    PyObject* o = swig::from(*$1);
-//	    $result = t_output_helper( $result, o ); 
-//	}
-//%enddef
-
 
 // -------------------------------------------------------------------------------
 
