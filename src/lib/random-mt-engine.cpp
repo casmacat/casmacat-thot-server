@@ -18,7 +18,7 @@ using namespace casmacat;
 string random_string() {
   static string charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-  size_t length = size_t(rand() % 10);
+  size_t length = size_t(rand() % 10) + 1;
   string result;
   result.resize(length);
 
@@ -41,9 +41,7 @@ public:
   {
     target.resize(source.size());
     for (size_t t = 0; t < target.size(); t++) {
-      if ((rand() / double(RAND_MAX)) > 0.5) {
-        target[t] = random_string();
-      }
+      target[t] = random_string();
     }
   }
 

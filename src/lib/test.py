@@ -50,21 +50,18 @@ processor.preprocess(source, source_tok)
 target_tok = StringVector()
 mt.translate(source_tok, target_tok)
 
-target = ""
-target_seg = Segmentation()
-processor.postprocess(target_tok, target, target_seg)
-
-conf = FloatVector()
-confidencer.getWordConfidences(source_tok, target_tok, BoolVector([False for x in len(target_tok)]), conf)
-print conf
+conf = confidencer.getWordConfidences(source_tok, target_tok, BoolVector([False for x in range(len(target_tok))]))
+print "Confidences:", list(conf)
 
 
-matrix = FloatMatrix()
-aligner.align(source_tok, target_tok, matrix)
-print matrix
+matrix = aligner.align(source_tok, target_tok)
+print "Alignments:", list(matrix)
 
+target, target_seg = processor.postprocess(target_tok)
+print "target: '%s'" % target, list(target_tok)
+print "segmentation:", [(x, 0) for x in list(target_seg)]
 
-#plugin.destroy(c)
-#plugin.destroy(factory)
-del c
-del factory
+del processor, text_f, text_p
+del mt, mt_f, mt_p
+del confidencer, conf_f, conf_p
+del aligner, alig_f, alig_p
