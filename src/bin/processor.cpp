@@ -60,12 +60,13 @@ int main(int argc, char* argv[]) {
 
       string text;
       vector<string> tokens;
+      vector< pair<size_t, size_t> > segmentation_orig;
       vector< pair<size_t, size_t> > segmentation;
 
       while(getline(file, text)) {
         cout << "text: " << text << "\n";
 
-        text_processor->preprocess(text, tokens);
+        text_processor->preprocess(text, tokens, segmentation_orig);
         text_processor->postprocess(tokens, text, segmentation);
 
         cout << "post-processed text: " << text << "\n";

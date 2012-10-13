@@ -36,7 +36,8 @@ namespace casmacat {
     virtual ~ITextProcessor() {};
 
     virtual void preprocess(const std::string &detokenized,
-                                      std::vector<std::string> &tokenized_out) = 0;
+                                      std::vector<std::string> &tokenized_out,
+                                      std::vector< std::pair<size_t, size_t> > &segmentation_out) = 0;
     virtual void postprocess(const std::vector<std::string> &tokenized,
                                        std::string &detokenized_out,
                                        std::vector< std::pair<size_t, size_t> > &segmentation_out) = 0;

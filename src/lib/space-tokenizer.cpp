@@ -48,11 +48,41 @@ public:
   virtual ~SpaceTokenizer() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
   virtual void preprocess(const std::string &detokenized,
-                          std::vector<std::string> &tokenized)
+                          std::vector<std::string> &tokenized,
+                          std::vector< std::pair<size_t, size_t> > &segmentation_out)
   {
     tokenized.clear();
-    tokenize(detokenized, tokenized, delimiters);
+    segmentation_out.clear();
+    if (delimiters == "") {
+      tokenized.reserve(detokenized.size());
+      int i = 0;
+      for (string::const_iterator it = detokenized.begin(); it != detokenized.end(); ++it, ++i) {
+        string tok;
+        tok.push_back(*it);
+        segmentation_out.push_back(make_pair(i, i+1));
+        tokenized.push_back(tok);
+      }
+    }
+    else {
+      tokenized.clear();
+
+      // Skip delimiters at beginning.
+      typename string::size_type lastPos = detokenized.find_first_not_of(delimiters, 0);
+      // Find first "non-delimiter".
+      typename string::size_type pos     = detokenized.find_first_of(delimiters, lastPos);
+
+      while (string::npos != pos || string::npos != lastPos) {
+          // Found a token, add it to the vector.
+          tokenized.push_back(detokenized.substr(lastPos, pos - lastPos));
+          segmentation_out.push_back(make_pair(lastPos, pos));
+          // Skip delimiters.  Note the "not_of"
+          lastPos = detokenized.find_first_not_of(delimiters, pos);
+          // Find next "non-delimiter"
+          pos = detokenized.find_first_of(delimiters, lastPos);
+      }
+    }
   }
+
   virtual void postprocess(const std::vector<std::string> &tokenized,
                             std::string &detokenized,
                             std::vector< std::pair<size_t, size_t> > &segmentation)
