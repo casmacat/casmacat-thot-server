@@ -74,7 +74,7 @@ public:
       while (string::npos != pos || string::npos != lastPos) {
           // Found a token, add it to the vector.
           tokenized.push_back(detokenized.substr(lastPos, pos - lastPos));
-          segmentation_out.push_back(make_pair(lastPos, pos));
+          segmentation_out.push_back(make_pair(lastPos, (pos != string::npos)?pos:detokenized.size()));
           // Skip delimiters.  Note the "not_of"
           lastPos = detokenized.find_first_not_of(delimiters, pos);
           // Find next "non-delimiter"
