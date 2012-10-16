@@ -62,6 +62,7 @@ public:
 
 
 class RandomMtFactory: public IMtFactory {
+  unsigned int seed;
 public:
   RandomMtFactory() { }
   // do not forget to free all allocated resources
@@ -76,7 +77,12 @@ public:
       return EXIT_FAILURE;
     }
 
-    unsigned int seed = time(NULL);
+    seed = time(NULL);
+    if (context) {
+      cerr << "setting seed to context: " << seed << "\n";
+      context->set<unsigned int>(string("seed"), &seed);
+    }
+
     if (argc == 2) {
       seed = casmacat::convert_string<unsigned int>(string(argv[1]));
       if (not finite(seed)) { // check if initialization went wrong

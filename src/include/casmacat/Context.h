@@ -64,7 +64,7 @@ public:
       return 0;
     }
     else {
-      return as<Interface>(it->second.pointer);
+      return reinterpret_cast<Interface *>(it->second.pointer);
     }
   }
 
@@ -72,7 +72,7 @@ private:
   std::map<std::string, _context_t> _objects;
 };
 
-
+Context *create_context() { return new Context(); };
 
 }
 

@@ -2,6 +2,7 @@
 
 %{
 #define SWIG_FILE_WITH_INIT
+#include <casmacat/Context.h>
 #include <casmacat/IAlignmentEngine.h>
 #include <casmacat/IConfidenceEngine.h>
 #include <casmacat/IMtEngine.h>
@@ -41,13 +42,15 @@ using namespace std;
 // generate directors for all virtual methods in class Logger
 %feature("director") casmacat::Logger;
 
-%newobject *::create();
-%newobject *::createStringArgs(const std::string &);
+%newobject casmacat::create_context();
+%newobject *::create(casmacat::Context *);
+%newobject *::createStringArgs(const std::string &, casmacat::Context *);
 %newobject *::createInstance();
 %newobject *::createInstance(const std::string &);
 
 
 // the directors must be parsed before they are used by others
+%include <casmacat/Context.h>
 %include <casmacat/Logger.h>
 %include <casmacat/IPluginFactory.h>
 %include <casmacat/IAlignmentEngine.h>

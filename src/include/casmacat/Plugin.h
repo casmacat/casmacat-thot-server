@@ -53,7 +53,7 @@ namespace casmacat {
   public:
 
     Plugin(const std::string &_plugin_fn, const std::string &_default_args = "",
-    		   const std::string &_plugin_name = "new_plugin")
+    		   const std::string &_plugin_name = "plugin")
            : plugin_fn(_plugin_fn), default_args(_default_args),
              create_symbol_name("new_" + _plugin_name), destroy_symbol_name("delete_" + _plugin_name),
              plugin_type_name(_plugin_name + "_type")
@@ -105,7 +105,7 @@ namespace casmacat {
       plugin_type_ = reinterpret_cast<plugin_type_fn>(plugin_dlsym(library_h_, plugin_type_name.c_str()));
       dlsym_error = plugin_dlerror();
       if (dlsym_error) {
-          cerr << "Cannot load symbol'" << plugin_type_name << "': " << dlsym_error << std::endl;
+          cerr << "Cannot load symbol '" << plugin_type_name << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error);
       }
       else if (not plugin_type_) {
@@ -124,7 +124,7 @@ namespace casmacat {
       create_ = reinterpret_cast<create_fn>(plugin_dlsym(library_h_, create_symbol_name.c_str()));
       dlsym_error = plugin_dlerror();
       if (dlsym_error) {
-          cerr << "Cannot load symbol'" << create_symbol_name << "': " << dlsym_error << std::endl;
+          cerr << "Cannot load symbol '" << create_symbol_name << "': " << dlsym_error << std::endl;
           throw std::runtime_error(dlsym_error); 
       }
       else if (not create_) {
