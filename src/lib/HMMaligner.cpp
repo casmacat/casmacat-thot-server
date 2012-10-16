@@ -72,7 +72,7 @@ public:
 //     delete ha;
   };
 
-  virtual int init(int argc, char *argv[]) {
+  virtual int init(int argc, char *argv[], Context *context = 0) {
     if (argc!=2) {
       cerr << "Invalid number of arguments for initialization of the aligner!\nReceived: " << argv[1] << endl;
       return EXIT_FAILURE;

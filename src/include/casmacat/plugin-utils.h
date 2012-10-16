@@ -26,9 +26,10 @@
 #include <typeinfo>
 #include <iostream>
 #include <iterator>
+#include <casmacat/Context.h>
 
 #define EXPORT_CASMACAT_PLUGIN_NAME(I, C, name) \
-  extern "C" casmacat::IPluginFactory<casmacat::I> * new_##name(int argc, char *argv[]) { return casmacat::new_object<casmacat::IPluginFactory<casmacat::I>, C>(argc, argv); } \
+  extern "C" casmacat::IPluginFactory<casmacat::I> * new_##name(int argc, char *argv[], Context *context) { return casmacat::new_object<casmacat::IPluginFactory<casmacat::I>, C>(argc, argv); } \
   extern "C" void delete_##name(casmacat::IPluginFactory<casmacat::I> * c) { casmacat::delete_object<casmacat::IPluginFactory<casmacat::I>, C>(c); } \
   extern "C" const std::type_info& name##_type() { return casmacat::plugin_type<casmacat::IPluginFactory<casmacat::I> >(); }
 
@@ -36,11 +37,11 @@
 
 namespace casmacat {
 
-template <typename I, typename C> I *new_object(int argc, char *argv[]) {
+template <typename I, typename C> I *new_object(int argc, char *argv[], Context *context = 0) {
   I* c = 0;
   try {
     c = new C();
-    c->init(argc, argv);
+    c->init(argc, argv, context);
   }
   catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;

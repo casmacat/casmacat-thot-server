@@ -141,7 +141,7 @@ public:
 
   // creation and initialization of the CM
   // only the prefix of the files is required
-  virtual int init(int argc, char *argv[]) {
+  virtual int init(int argc, char *argv[], Context *context = 0) {
 		if (argc != 2)
       return EXIT_FAILURE;
     

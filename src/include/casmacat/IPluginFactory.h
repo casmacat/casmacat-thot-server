@@ -35,7 +35,7 @@ namespace casmacat {
     /**
      * initialize the Confidence engine with main-like parameters
      */
-    virtual int init(int argc, char *argv[]) = 0;
+    virtual int init(int argc, char *argv[], Context *context = 0) = 0;
     virtual std::string getVersion() = 0;
 
     /**

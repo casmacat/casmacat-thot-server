@@ -150,7 +150,7 @@ public:
   // otherwise define the destructor with an empty body
   virtual ~SpaceTokenizerFactory() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; };
 
-  virtual int init(int argc, char *argv[]) {
+  virtual int init(int argc, char *argv[], Context *context = 0) {
     // invalid number of arguments
     if (argc > 2) { return EXIT_FAILURE; }
     if (argc == 2) { delimiters = argv[1]; }

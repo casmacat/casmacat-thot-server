@@ -15,6 +15,7 @@
 #include <cstring>
 
 #include <casmacat/utils.h>
+#include <casmacat/Context.h>
 
 //#define PLUGIN_USE_LIBTOOL
 
@@ -27,17 +28,6 @@
 
 
 namespace casmacat {
-
-  template<typename Interface, typename Class>
-  bool provides(Class *_object) {
-    Interface *object = dynamic_cast<Interface *>(_object);
-    return object != 0;
-  }
-
-  template<typename Interface>
-  Interface *as(void *_object) {
-    return dynamic_cast<Interface *>(_object);
-  }
 
   template <typename value_type>
   class Plugin {
@@ -167,12 +157,12 @@ namespace casmacat {
     };
 
     // Note: value_type needs to be explicitly declared so that SWIG does not complain
-    value_type *createCArgs(int argc, char *argv[]) {
+    value_type *createCArgs(int argc, char *argv[], Context *context = 0) {
       return create_(argc, argv);
     }
 
 
-    value_type *createVectorStringArgs(const std::vector<std::string> &args) {
+    value_type *createVectorStringArgs(const std::vector<std::string> &args, Context *context = 0) {
       int argc = args.size() + 1;
       char **argv = new char *[argc + 1];
       std::string name = plugin_fn;
@@ -194,14 +184,14 @@ namespace casmacat {
       return value;
     }
 
-    value_type *createStringArgs(const std::string &cmd) {
+    value_type *createStringArgs(const std::string &cmd, Context *context = 0) {
       std::vector<std::string> args;
       tokenize(cmd, args, std::string(" "));
-      return createVectorStringArgs(args);
+      return createVectorStringArgs(args, context);
     }
 
-    value_type *create() {
-      return createStringArgs(default_args);
+    value_type *create(Context *context = 0) {
+      return createStringArgs(default_args, context);
     }
 
     void destroy(value_type *obj) {
