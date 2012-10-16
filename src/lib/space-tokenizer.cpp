@@ -38,6 +38,30 @@ using namespace std;
 using namespace casmacat;
 
 
+size_t utf8_char_length(char ch) {
+  if (ch < 0x80)
+    return 1;
+  else if ((ch >> 5) == 0x6)
+    return 2;
+  else if ((ch >> 4) == 0xe)
+    return 3;
+  else if ((ch >> 3) == 0x1e)
+    return 4;
+  else
+    return 0;
+}
+
+size_t utf8_distance(string::const_iterator begin, const string::const_iterator& end) {
+  size_t dist = 0;
+
+  while (begin < end) {
+    dist++;
+    advance(begin, utf8_char_length(*begin));
+  }
+
+  return dist;
+}
+
 class SpaceTokenizer: public ITextProcessor {
   string delimiters;
 public:
@@ -58,27 +82,33 @@ public:
       int i = 0;
       for (string::const_iterator it = detokenized.begin(); it != detokenized.end(); ++it, ++i) {
         string tok;
-        tok.push_back(*it);
+        size_t char_len = utf8_char_length(*it);
+        copy(it, it + char_len, back_inserter(tok));
         segmentation_out.push_back(make_pair(i, i+1));
         tokenized.push_back(tok);
+        it += char_len - 1;
       }
     }
     else {
       tokenized.clear();
 
       // Skip delimiters at beginning.
-      typename string::size_type lastPos = detokenized.find_first_not_of(delimiters, 0);
+      typename string::size_type last_pos = detokenized.find_first_not_of(delimiters, 0);
       // Find first "non-delimiter".
-      typename string::size_type pos     = detokenized.find_first_of(delimiters, lastPos);
+      typename string::size_type pos     = detokenized.find_first_of(delimiters, last_pos);
 
-      while (string::npos != pos || string::npos != lastPos) {
-          // Found a token, add it to the vector.
-          tokenized.push_back(detokenized.substr(lastPos, pos - lastPos));
-          segmentation_out.push_back(make_pair(lastPos, (pos != string::npos)?pos:detokenized.size()));
-          // Skip delimiters.  Note the "not_of"
-          lastPos = detokenized.find_first_not_of(delimiters, pos);
-          // Find next "non-delimiter"
-          pos = detokenized.find_first_of(delimiters, lastPos);
+      while (string::npos != pos || string::npos != last_pos) {
+        // Found a token, add it to the vector.
+        tokenized.push_back(detokenized.substr(last_pos, pos - last_pos));
+
+        size_t seg_last_pos = utf8_distance(detokenized.begin(), detokenized.begin() + last_pos);
+        size_t seg_pos = utf8_distance(detokenized.begin(), (pos != string::npos)?(detokenized.begin() + pos):detokenized.end());
+
+        segmentation_out.push_back(make_pair(last_pos, (pos != string::npos)?pos:detokenized.size()));
+        // Skip delimiters.  Note the "not_of"
+        last_pos = detokenized.find_first_not_of(delimiters, pos);
+        // Find next "non-delimiter"
+        pos = detokenized.find_first_of(delimiters, last_pos);
       }
     }
   }
