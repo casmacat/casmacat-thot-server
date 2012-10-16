@@ -30,6 +30,11 @@ public:
                        vector< vector<float> > &alignments
                      ) {
       WordAligMatrix w;
+      if (source.size() == 0 || target.size() == 0) {
+        LOG(INFO) << "WARNING: HMMAligner received an empty source or target sentence!!" << endl << "WARNING: Returning empty alignment matrix!" << endl;
+        alignments.resize(0);
+        return;
+      }
       aligModel.obtainBestAlignment( aligModel.strVectorToSrcIndexVector(source), aligModel.strVectorToTrgIndexVector(target), w );
       
       alignments.resize(source.size());
