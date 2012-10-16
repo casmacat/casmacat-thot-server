@@ -54,7 +54,8 @@ public:
   /* Set prefix of a translation */
   virtual void setPrefix(const vector<string> &prefix,
                          const vector<string> &suffix,
-                         vector<string> &corrected_suffix)
+                         const bool last_token_is_partial,
+                               vector<string> &corrected_suffix)
   {
     vector<string> partial_translation(prefix), corrected_translation;
 
@@ -97,6 +98,30 @@ public:
     cout << "' as";
     for (size_t t = 0; t < target.size(); t++) {
       cout << " " << target[t] << "(" << validated[t] << ")";
+    }
+    cout << "\n";
+  }
+
+  /* Set partial validation of a translation */
+  virtual void translate(const std::vector<std::string> &source,
+                               std::vector<std::string> &target)
+  {
+    target.resize(source.size());
+    for (size_t t = 0; t < target.size(); t++) {
+      target[t] = random_string();
+    }
+  }
+
+
+  /* Update translation models with source/target pair (total or partial translation) */
+  virtual void update(const std::vector<std::string> &source,
+                      const std::vector<std::string> &target)
+  {
+    cout << "store validated sentence '";
+    copy(source.begin(), source.end(), ostream_iterator<string>(cout, " "));
+    cout << "' as";
+    for (size_t t = 0; t < target.size(); t++) {
+      cout << " " << target[t];
     }
     cout << "\n";
   }

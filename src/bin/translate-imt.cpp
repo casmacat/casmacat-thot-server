@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 
           IInteractiveMtSession *session = imt->newSession(tok_source);
 
-          session->setPrefix(vector<string>(), vector<string>(), tok_target);
+          session->setPrefix(vector<string>(), vector<string>(), false, tok_target);
 
           cout << source << "|||";
           copy(tok_target.begin(), tok_target.end(), ostream_iterator<string>(cout, " "));

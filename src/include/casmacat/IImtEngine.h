@@ -26,12 +26,20 @@
 #include <string>
 #include <vector>
 #include <casmacat/IPluginFactory.h>
+#include <casmacat/IMtEngine.h>
 
 
 namespace casmacat {
 
 /**
- * Interface for Machine Translation plug-ins
+ * @class IImtEngine
+ *
+ * @brief Interface for Interactive Machine Translation plug-in engines
+ *
+ * This class provides an interface for interactive-predictive machine translation.
+ * This class inherits from @link IMtEngine.
+ *
+ * @author Vicent Alabau
  */
 
   class IInteractiveMtSession {
@@ -40,19 +48,46 @@ namespace casmacat {
 
     /* Set partial validation of a translation */
     virtual void setPartialValidation(const std::vector<std::string> &partial_translation,
-                                          const std::vector<bool> &validated,
-                                                 std::vector<std::string> &corrected_translation_out,
-                                                 std::vector<bool> &corrected_validated_out
+                                      const std::vector<bool> &validated,
+                                            std::vector<std::string> &corrected_translation_out,
+                                            std::vector<bool> &corrected_validated_out
                                      ) = 0;
 
-    /* Set prefix of a translation */
+    /**
+     * translates a sentence in a source language into a sentence in a target language
+     *
+     * This is a simplified version of the MT engine in `D5.1: Specification of casmacat workbench'
+     * since this version does not take into account the optional parameters, as they are specific for
+     * Moses. The original description is the following:
+     *
+     * translates sentence specified as `text'. If `align' switch is on, phrase alignment is returned.
+     * If ’sg’ is on, search graph is returned. If ’topt’ is on, phrase options used are returned.
+     * If ’report-all-factors’ is on, all factors are included in output. ’presence’ means that the
+     * switch is on, if the category appears in the xml,value can be anything
+     *
+     * @param[in] source a sentence in the source language
+     * @param[out] target a translation of source in the target language
+     */
+
     virtual void setPrefix(const std::vector<std::string> &prefix,
-                              const std::vector<std::string> &suffix,
-                                    std::vector<std::string> &corrected_suffix_out
+                           const std::vector<std::string> &suffix,
+                           const bool last_token_is_partial,
+                                 std::vector<std::string> &corrected_suffix_out
                           ) = 0;
   };
 
-  class IInteractiveMtEngine {
+  /**
+   * @class IImtEngine
+   *
+   * @brief Interface for Interactive Machine Translation plug-in engines
+   *
+   * This class provides an interface for interactive-predictive machine translation.
+   * This class inherits from @link IMtEngine.
+   *
+   * @author Vicent Alabau
+  */
+
+  class IInteractiveMtEngine: public IMtEngine {
   public:
     virtual ~IInteractiveMtEngine() {};
 

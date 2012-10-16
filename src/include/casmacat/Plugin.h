@@ -63,11 +63,10 @@ namespace casmacat {
   public:
 
     Plugin(const std::string &_plugin_fn, const std::string &_default_args = "",
-    		   const std::string &_create_symbol_name = "new_plugin", const std::string &_destroy_symbol_name = "delete_plugin",
-    		   const std::string &_plugin_type_name = "plugin_type")
+    		   const std::string &_plugin_name = "new_plugin")
            : plugin_fn(_plugin_fn), default_args(_default_args),
-             create_symbol_name(_create_symbol_name), destroy_symbol_name(_destroy_symbol_name),
-             plugin_type_name(_plugin_type_name)
+             create_symbol_name("new_" + _plugin_name), destroy_symbol_name("delete_" + _plugin_name),
+             plugin_type_name(_plugin_name + "_type")
     {
       using std::cout;
       using std::cerr;
