@@ -38,7 +38,8 @@ using namespace std;
 using namespace casmacat;
 
 
-size_t utf8_char_length(char ch) {
+size_t utf8_char_length(char oc) {
+  unsigned char ch = static_cast<unsigned char>(0xff & oc);
   if (ch < 0x80)
     return 1;
   else if ((ch >> 5) == 0x6)
@@ -60,6 +61,10 @@ size_t utf8_distance(string::const_iterator begin, const string::const_iterator&
   }
 
   return dist;
+}
+
+size_t utf8_size(const string& str) {
+  return utf8_distance(str.begin(), str.end());
 }
 
 class SpaceTokenizer: public ITextProcessor {
@@ -104,7 +109,7 @@ public:
         size_t seg_last_pos = utf8_distance(detokenized.begin(), detokenized.begin() + last_pos);
         size_t seg_pos = utf8_distance(detokenized.begin(), (pos != string::npos)?(detokenized.begin() + pos):detokenized.end());
 
-        segmentation_out.push_back(make_pair(last_pos, (pos != string::npos)?pos:detokenized.size()));
+        segmentation_out.push_back(make_pair(seg_last_pos, seg_pos));
         // Skip delimiters.  Note the "not_of"
         last_pos = detokenized.find_first_not_of(delimiters, pos);
         // Find next "non-delimiter"
@@ -124,7 +129,7 @@ public:
     for (size_t i = 0; i < tokenized.size(); i++) {
       segmentation[i].first = pos;
       ss << tokenized[i];
-      pos = ss.str().size();
+      pos = utf8_size(ss.str());
       segmentation[i].second = pos;
       if (i + 1 != tokenized.size()) {
         ss << " ";
