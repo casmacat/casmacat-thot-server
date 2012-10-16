@@ -64,7 +64,7 @@ public:
 class RandomMtFactory: public IMtFactory {
   unsigned int seed;
 public:
-  RandomMtFactory() { }
+  RandomMtFactory(): seed(0) { }
   // do not forget to free all allocated resources
   // otherwise define the destructor with an empty body
   virtual ~RandomMtFactory() { cerr << "I, " << typeid(*this).name() <<  ", am free!!!" << endl; }
@@ -78,10 +78,6 @@ public:
     }
 
     seed = time(NULL);
-    if (context) {
-      cerr << "setting seed to context: " << seed << "\n";
-      context->set<unsigned int>(string("seed"), &seed);
-    }
 
     if (argc == 2) {
       seed = casmacat::convert_string<unsigned int>(string(argv[1]));
@@ -89,6 +85,11 @@ public:
         cerr << "Invalid seed = '" << argv[1] << "'\n";
         return EXIT_FAILURE;
       }
+    }
+
+    if (context) {
+      cerr << typeid(*this).name() << " - setting seed to context: " << seed << "\n";
+      context->set<unsigned int>(string("seed"), &seed);
     }
 
     srand(seed);

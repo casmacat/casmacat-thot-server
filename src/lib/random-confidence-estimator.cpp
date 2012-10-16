@@ -78,6 +78,11 @@ public:
     }
 
     unsigned int seed = time(NULL);
+    if (context and context->get<unsigned int>(string("seed")) != 0) {
+        seed = *context->get<unsigned int>(string("seed"));
+        cerr << typeid(*this).name() << " - retrieving seed from context: " << seed << "\n";
+    }
+
     if (argc == 2) {
       seed = casmacat::convert_string<unsigned int>(string(argv[1]));
       if (not finite(seed)) { // check if initialization went wrong

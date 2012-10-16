@@ -48,9 +48,9 @@ public:
     }
 
     unsigned int seed = time(NULL);
-    if (context) {
-      seed = *context->get<unsigned int>(string("seed"));
-      cerr << "retrieving seed from context: " << seed << "\n";
+    if (context and context->get<unsigned int>(string("seed")) != 0) {
+        seed = *context->get<unsigned int>(string("seed"));
+        cerr << typeid(*this).name() << " - retrieving seed from context: " << seed << "\n";
     }
 
     if (argc == 2) {

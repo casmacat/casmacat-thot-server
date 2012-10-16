@@ -29,7 +29,7 @@
 #include <casmacat/Context.h>
 
 #define EXPORT_CASMACAT_PLUGIN_NAME(I, C, name) \
-  extern "C" casmacat::IPluginFactory<casmacat::I> * new_##name(int argc, char *argv[], Context *context) { return casmacat::new_object<casmacat::IPluginFactory<casmacat::I>, C>(argc, argv); } \
+  extern "C" casmacat::IPluginFactory<casmacat::I> * new_##name(int argc, char *argv[], Context *context) { return casmacat::new_object<casmacat::IPluginFactory<casmacat::I>, C>(argc, argv, context); } \
   extern "C" void delete_##name(casmacat::IPluginFactory<casmacat::I> * c) { casmacat::delete_object<casmacat::IPluginFactory<casmacat::I>, C>(c); } \
   extern "C" const std::type_info& name##_type() { return casmacat::plugin_type<casmacat::IPluginFactory<casmacat::I> >(); }
 

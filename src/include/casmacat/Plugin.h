@@ -31,7 +31,7 @@ namespace casmacat {
 
   template <typename value_type>
   class Plugin {
-    typedef value_type* (*create_fn)(int argc, char *argv[]);
+    typedef value_type* (*create_fn)(int argc, char *argv[], Context *context);
     typedef void (*destroy_fn)(value_type *);
     typedef const std::type_info& (*plugin_type_fn)();
 
@@ -158,7 +158,7 @@ namespace casmacat {
 
     // Note: value_type needs to be explicitly declared so that SWIG does not complain
     value_type *createCArgs(int argc, char *argv[], Context *context = 0) {
-      return create_(argc, argv);
+      return create_(argc, argv, context);
     }
 
 
@@ -174,7 +174,7 @@ namespace casmacat {
       }
       argv[argc] = NULL;
 
-      value_type *value = create_(argc, argv);
+      value_type *value = create_(argc, argv, context);
 
       for (size_t i = 0; i < argc; i++) {
         delete[] argv[i];
