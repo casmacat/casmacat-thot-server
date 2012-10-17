@@ -14,7 +14,7 @@ $(function(){
         $('#source').editable('setText', source, source_seg);
         $('#target').editable('setText', target, target_seg);
 
-        updateTable($('#demo-table'), tok(source, source_seg), tok(target, target_seg));
+        updateTable($('#demo-table'), tokenize_by_segments(source, source_seg), tokenize_by_segments(target, target_seg));
         //createTable($('#source'), $('#target'));
 
         casmacat.getAlignments(source, target);
@@ -28,7 +28,7 @@ $(function(){
         $('#source').editable('setText', source, source_seg);
         $('#target').editable('setText', target, target_seg);
 
-        updateTable($('#demo-table'), tok(source, source_seg), tok(target, target_seg));
+        updateTable($('#demo-table'), tokenize_by_segments(source, source_seg), tokenize_by_segments(target, target_seg));
         //createTable($('#source'), $('#target'));
 
         casmacat.getAlignments(source, target);

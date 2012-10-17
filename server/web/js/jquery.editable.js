@@ -6,16 +6,7 @@
     return tokens;
   }
 
-  function makeArrayOf(length, value) {
-    var arr = new Array(), i = length;
-    while (i--) {
-      arr[i] = value;
-    }
-    return arr;
-  }
-
-
-  function tok(str, segs) {
+  function tokenize_by_segments(str, segs) {
     var tokens = [];
     for (var tok_id = 0; tok_id < segs.length; tok_id++) {
       var pos = segs[tok_id];
@@ -251,7 +242,7 @@
         }
 
         // get old tokens from data and new tokens
-        var new_tokens = tok(str, segs);
+        var new_tokens = tokenize_by_segments(str, segs);
         // diff both tokens to keep unchanged spans
         var merge = merge_tokens(old_tokens, new_tokens);
 
