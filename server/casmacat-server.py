@@ -170,7 +170,7 @@ if __name__ == "__main__":
     tokenizer = tokenizer_factory.createInstance()
     
 #    mt_plugin = MtPlugin("plugins/random-mt-engine.so")
-    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f /home/demo/casmacat-server/xerox.models/model/moses.ini")
+    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f /home/demo/software/casmacat-server-library/server/xerox.models/model/moses.ini")
     mt_factory = mt_plugin.create()
     mt_factory.setLogger(logger)
     mt = mt_factory.createInstance()
