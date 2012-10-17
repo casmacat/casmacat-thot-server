@@ -138,6 +138,10 @@
           $(this).data('editable', {ntok: 0});
         }
 
+        $this.bind('blur click mouseleave keyup', this, function(ev) {
+          $(ev.data).editable('updateCaret');
+        });
+
       });
     },
 
@@ -152,6 +156,89 @@
         data.editable.remove();
         $this.removeData('editable');
       })
+    },
+
+    getTokenAtCaretPos: function(pos) {
+      var $this = $(this),
+          node = $this.get(0),
+          elem;
+
+      var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false)
+
+      // find HTML text element in cursor position
+      while (walker.nextNode()) {
+        elem = walker.currentNode;
+        if ((pos - elem.length) > 0) pos -= elem.length;
+        else break;
+      }
+
+      return {elem: elem, pos: pos};
+    },
+
+    forgetCaret: function() {
+      var data = $(this).data('editable');
+      var oldSpan = data.currentElement;
+      data.currentElement = undefined;
+      data.lastPos = undefined;
+      if (oldSpan) {
+        var ev = { token: oldSpan }
+        $(oldSpan).trigger('caretleave', ev);
+      }
+    },
+
+
+    storeCaret: function(span, pos, absoluteCaretPos) {
+      var data = $(this).data('editable');
+      var ev = {
+        token: span,
+        caretPos: pos,
+        absoluteCaretPos: absoluteCaretPos
+      };
+      data.currentElement = span;
+      $(span).trigger('caretenter', ev);
+    },
+
+
+    updateCaret: function(pos) {
+      var $this = $(this),
+          data = $this.data('editable');
+
+      if (!$this.is(":focus")) {
+        $this.editable('forgetCaret');
+        return undefined;
+      }
+
+      if (!pos) pos = $this.editable('getCaretPos');
+      var absoluteCaretPos = pos;
+
+      var token = $this.editable('getTokenAtCaretPos', pos);
+      var elem = token.elem;
+
+      if (!elem) {
+        $this.editable('forgetCaret');
+        return undefined;
+      }
+
+      // emmit caretenter and caretleave events
+      var isToken = false;
+      var span = elem;
+      if (elem.parentNode && $(elem.parentNode).is('.editable-token')) {
+        span = elem.parentNode;
+        isToken = true;
+      }
+
+      if (data.currentElement !== span) {
+        $this.editable('forgetCaret');
+        if (isToken) {
+          $this.editable('storeCaret', span, pos, absoluteCaretPos);
+        }
+      }
+      
+      var ev = { target: this, pos: pos, lastPos: data.lastPos, token: token }
+      data.lastPos = (elem)?pos:undefined;
+      $this.trigger('caretmove', ev);
+
+      return token;
     },
 
     getCaretPos: function() { 
@@ -179,39 +266,14 @@
       return caretOffset;
     },
 
-    getElementAtCaretPos: function(pos) {
-      var $this = $(this),
-          data = $this.data('editable'),
-          node = $this.get(0),
-          w;
-
-      var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false)
-
-      while (walker.nextNode()) {
-        w = walker.currentNode;
-        if ((pos - w.length) > 0) pos -= w.length;
-        else break;
-      }
-
-      return w;
-    },
-
     setCaretPos: function(pos) {
-      var $this = $(this),
-          data = $this.data('editable'),
-          node = $this.get(0),
-          w;
+      var token = this.editable('updateCaret', pos);
+      var elem = token.elem;
+      pos = token.pos;
 
-      var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false)
-
-      while (walker.nextNode()) {
-        w = walker.currentNode;
-        if ((pos - w.length) > 0) pos -= w.length;
-        else break;
-      }
-
+      // place the cursor in the current element
       var range = document.createRange();
-      range.setStart(w, pos);
+      range.setStart(elem, pos);
       range.collapse(true);
 
       var sel = window.getSelection();
@@ -277,7 +339,7 @@
           }
           // else create a new node 
           else { 
-            span = $('<span/>');
+            span = $('<span/>', {class: 'editable-token'});
           }
 
           // if the text changed (not action none) 
