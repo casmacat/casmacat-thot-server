@@ -161,6 +161,7 @@ $(function(){
         };
       })();
 
+	  var throttle_ms = 50;
 
       // #source events
       $('#source').keydown(function(e) {
@@ -171,9 +172,15 @@ $(function(){
         }
       })
       .keyup(function(e) {
-        throttle(function () {
-          casmacat.translate($(this).text());
-        }, 50);
+        var $this = $(this),
+            data = $this.data('editable'),
+            source = $this.editable('getText');
+
+        if (data.str != source) { 
+          throttle(function () {
+            casmacat.translate(source);
+          }, throttle_ms);
+        }
       });
 
       $('#source, #target').bind('caretenter', function(e, d) {
@@ -181,17 +188,6 @@ $(function(){
       })
       .bind('caretleave', function(e, d) {
           $(d.token).trigger('mouseleave');
-      })
-      .keyup(function(e) {
-        var $this = $(this),
-            data = $this.data('editable'),
-            str = $this.editable('getText');
-
-        if (data.str != str) { 
-          throttle(function () {
-            casmacat.getTokens($('#source').text(), $('#target').text());
-          }, 50);
-        }
       });
       //.bind('blur', function(e) {
       //    $('.editable-token').trigger('mouseleave');
@@ -209,7 +205,20 @@ $(function(){
           e.stopPropagation();
           e.preventDefault();
         }
+      })      
+      .keyup(function(e) {
+        var $this = $(this),
+            data = $this.data('editable'),
+            target = $this.editable('getText'),
+            source = $('#source').editable('getText');
+
+        if (data.str != target) { 
+          throttle(function () {
+            casmacat.getTokens(source, target);
+          }, throttle_ms);
+        }
       });
+
 
 
 
