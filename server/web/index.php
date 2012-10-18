@@ -1,4 +1,4 @@
-<?php if (empty($_GET['server'])) die('No server set: <a href="?server=kant3.iti.upv.es:3019">try this example</a>'); ?>
+<?php if (empty($_GET['server'])) die('No server set: <a href="?server='.$_SERVER['SERVER_NAME'].':3019">try this example</a>'); ?>
 <!DOCTYPE html>
 <html debug="true">
 <head>
