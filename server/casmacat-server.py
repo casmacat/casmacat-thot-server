@@ -71,7 +71,7 @@ class CasmacatConnection(SocketConnection):
       target_tok, target_seg = tokenizer.preprocess(target)
       matrix = aligner.align(source_tok, target_tok)
       logger.log(DEBUG_LOG, matrix);
-      self.emit('get_alignments_async', matrix, source, source_seg, target, target_seg)
+      self.emit('alignmentchange', matrix, source, source_seg, target, target_seg)
 
 #class ProcessorConnection(SocketConnection):
     @event
@@ -83,17 +83,17 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, "target tok: '%s' -> %s -> %s" % (target, str(target_tok), str(target_seg))
       logger.log(DEBUG_LOG, (source, source_tok))
       logger.log(DEBUG_LOG, (target, target_tok))
-      self.emit('get_tokens_async', source, source_seg, target, target_seg)
+      self.emit('translationchange', source, source_seg, target, target_seg)
 
 
 #class WordConfidenceConnection(SocketConnection):
-    @event
-    def get_translation_confidence(self, source, target, validated_words):
-      source, target = to_utf8(source), to_utf8(target)
-      source_tok, source_seg = tokenizer.preprocess(source)
-      target_tok, target_seg = tokenizer.preprocess(target)
-      conf = confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
-      self.emit('get_translation_confidence_async', conf, source, source_seg, target, target_seg)
+#    @event
+#    def get_translation_confidence(self, source, target, validated_words):
+#      source, target = to_utf8(source), to_utf8(target)
+#      source_tok, source_seg = tokenizer.preprocess(source)
+#      target_tok, target_seg = tokenizer.preprocess(target)
+#      conf = confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
+#      self.emit('confidencechange', conf, source, source_seg, target, target_seg)
 
     @event
     def get_word_confidences(self, source, target, validated_words):
@@ -101,7 +101,7 @@ class CasmacatConnection(SocketConnection):
       source_tok, source_seg = tokenizer.preprocess(source)
       target_tok, target_seg = tokenizer.preprocess(target)
       sent, conf = confidencer.getWordConfidences(source_tok, target_tok, validated_words)
-      self.emit('get_word_confidences_async', sent, conf, source, source_seg, target, target_seg)
+      self.emit('confidencechange', sent, conf, source, source_seg, target, target_seg)
 
 #class MtConnection(SocketConnection):
     @event
@@ -115,7 +115,7 @@ class CasmacatConnection(SocketConnection):
       target, target_seg = tokenizer.postprocess(target_tok)
       logger.log(DEBUG_LOG, ("source", source_tok));
       logger.log(DEBUG_LOG, ("target", target_tok));
-      self.emit('translate_async', source, source_seg, target, target_seg)
+      self.emit('contributionchange', source, source_seg, target, target_seg)
 
 
 #class LoggerConnection(SocketConnection, Logger):

@@ -27,3 +27,4 @@ textarea { width:100%; }
 .wordconf-bad { color:red; }
 .align { background-color: yellow; }
 #hidden { position: absolute; visibility: hidden; }
+.hidden { visibility: hidden; }

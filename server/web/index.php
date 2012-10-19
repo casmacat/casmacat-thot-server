@@ -21,12 +21,12 @@
   <div>
     Source: 
     <div id="source" class="editable">servicios de red de CasMaCat</div>
-    <input type="button" id="btn-translate" value="Translate" />
+    <input type="button" id="btn-translate" value="Translate"/>
   </div>
   <div>
     Target: 
     <div id="target" class="editable"></div>
-    <input type="button" id="btn-set-translation" value="Set translation" />
+    <input type="button" id="btn-set-translation" value="Set translation" disabled="true" class="hidden"/>
   </div>
   <div id="caret">undef</div>
   <div id="matrix">
@@ -36,9 +36,6 @@
       <tbody> <tr class="top noborderright"><th></th></tr> </tbody>
     </table>
   </div>
-  <!--div id="log">
-    <textarea rows="10" cols="30" readonly></textarea>
-  </div-->
   <div id="hidden"/>
 </body>
 </html>
