@@ -42,7 +42,11 @@ using namespace std;
 // generate directors for all virtual methods in class Logger
 %feature("director") casmacat::Logger;
 
+%inline %{
+  Context *create_context() { return new Context(); };
+%}
 %newobject casmacat::create_context();
+
 %newobject *::create(casmacat::Context *);
 %newobject *::createStringArgs(const std::string &, casmacat::Context *);
 %newobject *::createInstance();
@@ -59,6 +63,7 @@ using namespace std;
 %include <casmacat/IImtEngine.h>
 %include <casmacat/ITextProcessor.h>
 %include <casmacat/Plugin.h>
+
 
 namespace casmacat {
   %template(IAlignmentFactory)           IPluginFactory<IAlignmentEngine>;

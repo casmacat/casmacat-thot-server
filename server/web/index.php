@@ -25,7 +25,7 @@
   </div>
   <div>
     Target: 
-    <div id="target" class="editable"></div>
+    <div id="target" class="editable epen"></div>
     <input type="button" id="btn-set-translation" value="Set translation" disabled="true" class="hidden"/>
   </div>
   <div id="caret">undef</div>

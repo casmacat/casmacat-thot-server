@@ -76,8 +76,6 @@ private:
   std::map<std::string, _context_t> _objects;
 };
 
-Context *create_context() { return new Context(); };
-
 }
 
 
