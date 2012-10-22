@@ -42,15 +42,18 @@ using namespace std;
 // generate directors for all virtual methods in class Logger
 %feature("director") casmacat::Logger;
 
+%newobject create_context;
 %inline %{
-  Context *create_context() { return new Context(); };
+casmacat::Context *create_context() { return new casmacat::Context(); };
 %}
-%newobject casmacat::create_context();
 
-%newobject *::create(casmacat::Context *);
-%newobject *::createStringArgs(const std::string &, casmacat::Context *);
-%newobject *::createInstance();
-%newobject *::createInstance(const std::string &);
+
+%feature("compactdefaultargs") *::create;
+%newobject *::create;
+%feature("compactdefaultargs") *::createStringArgs;
+%newobject *::createStringArgs;
+%feature("compactdefaultargs") *::createInstance;
+%newobject *::createInstance;
 
 
 // the directors must be parsed before they are used by others
