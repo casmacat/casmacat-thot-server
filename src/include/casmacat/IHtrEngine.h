@@ -52,16 +52,10 @@ namespace casmacat {
     virtual ~IHtrEngine() {};
 
     /**
-     * create new HTR session from a partial validation of a translation
-     */
-    virtual IHtrSession *createSession(const std::vector<std::string> &partial_translation,
-                                       const std::vector<bool> &validated
-                                      ) = 0;
-
-    /**
      * create new HTR session from a validated prefix and not validated suffix
      */
-    virtual IHtrSession *createSessionFromPrefix(const std::vector<std::string> &prefix,
+    virtual IHtrSession *createSessionFromPrefix(const std::vector<std::string> &source,
+                                                 const std::vector<std::string> &prefix,
                                                  const std::vector<std::string> &suffix,
                                                  const bool last_token_is_partial
                                                 ) = 0;
