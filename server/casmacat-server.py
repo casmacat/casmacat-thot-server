@@ -177,13 +177,13 @@ if __name__ == "__main__":
     mt = mt_factory.createInstance()
     
 #alignment_plugin = AlignmentPlugin("plugins/random-aligner.so")
-    alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "thot/models/tm/my_ef_swm")
+    alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "thot/models/tm/my_ef_invswm")
     alignment_factory = alignment_plugin.create()
     alignment_factory.setLogger(logger)
     aligner = alignment_factory.createInstance()
     
 #    confidence_plugin = ConfidencePlugin("plugins/random-confidence-estimator.so")
-    confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "thot/models/tm/my_ef_swm")
+    confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "thot/models/tm/my_ef_invswm")
     confidence_factory = confidence_plugin.create()
     confidence_factory.setLogger(logger)
     confidencer = confidence_factory.createInstance()
