@@ -109,11 +109,6 @@ public:
   // cargamos los modelos ibm a partir del prefijo de los ficheros
   int init(string filesPrefix)
   {
-    string srcVocab(filesPrefix);
-    string trgVocab(filesPrefix);
-    
-    srcVocab+=".trn.src.vcb";
-    trgVocab+=".trn.trg.vcb";
     
     LOG(INFO) << "Initializing confidencer..." << endl;
     ibm.load(filesPrefix.c_str());
