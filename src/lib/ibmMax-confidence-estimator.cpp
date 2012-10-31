@@ -15,7 +15,7 @@
 #include <cmath>
 #include <string>
 #include <vector>
-#include "Ibm1AligModel.h"
+#include "SmoothedIncrIbm1AligModel.h"
 
 //#include <casmacat/config.h>
 #include <casmacat/IConfidenceEngine.h>
@@ -27,7 +27,7 @@ using namespace casmacat;
 
 class IBMConfidencer: public IConfidenceEngine, Loggable {
   Logger *_logger;
-  Ibm1AligModel ibm;
+  SmoothedIncrIbm1AligModel ibm;
 public:
   IBMConfidencer(): _logger(0) { }
   
@@ -116,7 +116,7 @@ public:
     trgVocab+=".trn.trg.vcb";
     
     LOG(INFO) << "Initializing confidencer..." << endl;
-    ibm.loadmv(filesPrefix.c_str(), srcVocab.c_str(), trgVocab.c_str());
+    ibm.load(filesPrefix.c_str());
     
     return EXIT_SUCCESS;
   }
