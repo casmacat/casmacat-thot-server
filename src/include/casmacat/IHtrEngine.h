@@ -36,12 +36,15 @@ namespace casmacat {
 
   class IHtrSession {
   public:
-    typedef enum { PEN_UP, PEN_DOWN } stroke_type_t;
+    typedef enum { PEN_UP = 0, PEN_DOWN = 1 } stroke_type_t;
 
     virtual ~IHtrSession() {};
 
     /* Set partial validation of a translation */
     virtual void addPoint(float x, float y, stroke_type_t type) = 0;
+
+    /* Set prefix of a translation */
+    virtual void decodePartially(std::vector<std::string> &corrected_suffix_out) = 0;
 
     /* Set prefix of a translation */
     virtual void decode(std::vector<std::string> &corrected_suffix_out) = 0;

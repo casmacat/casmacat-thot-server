@@ -7,6 +7,7 @@
 #include <casmacat/IConfidenceEngine.h>
 #include <casmacat/IMtEngine.h>
 #include <casmacat/IImtEngine.h>
+#include <casmacat/IHtrEngine.h>
 #include <casmacat/ITextProcessor.h>
 #include <casmacat/Plugin.h>
 #include <casmacat/Logger.h>
@@ -64,6 +65,7 @@ casmacat::Context *create_context() { return new casmacat::Context(); };
 %include <casmacat/IConfidenceEngine.h>
 %include <casmacat/IMtEngine.h>
 %include <casmacat/IImtEngine.h>
+%include <casmacat/IHtrEngine.h>
 %include <casmacat/ITextProcessor.h>
 %include <casmacat/Plugin.h>
 

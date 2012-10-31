@@ -9,7 +9,7 @@
 # Because a.out is only a sample program we don't want it to be installed.
 # The 'noinst_' prefix indicates that the following targets are not to be
 # installed.
-bin_PROGRAMS=casmacat-translate casmacat-align casmacat-estimate-confidences casmacat-imt casmacat-processor
+bin_PROGRAMS=casmacat-translate casmacat-align casmacat-estimate-confidences casmacat-imt casmacat-processor casmacat-htr
 #noinst_PROGRAMS=echo_server
 LDADD= -lltdl
 
@@ -47,4 +47,9 @@ casmacat_estimate_confidences_CPPFLAGS = -I$(top_srcdir)/src/include
 casmacat_processor_SOURCES= processor.cpp
 casmacat_processor_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la 
 casmacat_processor_CPPFLAGS = -I$(top_srcdir)/src/include
+
+###### online htr
+casmacat_htr_SOURCES= htr.cpp
+casmacat_htr_LDFLAGS = $(top_srcdir)/src/lib/libcasmacat.la -lpthread
+casmacat_htr_CPPFLAGS = -I$(top_srcdir)/src/include
 

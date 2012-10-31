@@ -170,19 +170,20 @@ if __name__ == "__main__":
     tokenizer = tokenizer_factory.createInstance()
     
 #    mt_plugin = MtPlugin("plugins/random-mt-engine.so")
-    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
+#    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
+    mt_plugin = MtPlugin("plugins/libstack_dec.so", "-c /home/valabau/work/software/casmacat-server-library/server/thot/cfg/casmacat_xerox_enes_adapt_wg.cfg", "thot_mt_plugin")
     mt_factory = mt_plugin.create()
     mt_factory.setLogger(logger)
     mt = mt_factory.createInstance()
     
 #alignment_plugin = AlignmentPlugin("plugins/random-aligner.so")
-    alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "xerox.models/xerox.es-en/es-en")
+    alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "thot/models/tm/my_ef_swm")
     alignment_factory = alignment_plugin.create()
     alignment_factory.setLogger(logger)
     aligner = alignment_factory.createInstance()
     
 #    confidence_plugin = ConfidencePlugin("plugins/random-confidence-estimator.so")
-    confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "xerox.models/xerox.es-en/es-en")
+    confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "thot/models/tm/my_ef_swm")
     confidence_factory = confidence_plugin.create()
     confidence_factory.setLogger(logger)
     confidencer = confidence_factory.createInstance()
