@@ -2,11 +2,6 @@
 #include <iomanip>
 #include "IncrHmmAligModel.h"
 
-extern "C"
-{
-void *__dso_handle = NULL;
-}
-
 #include <casmacat/IAlignmentEngine.h>
 #include <casmacat/IPluginFactory.h>
 #include <casmacat/utils.h>
