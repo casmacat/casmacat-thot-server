@@ -40,12 +40,12 @@ conf_f = conf_p.create(context)
 conf_f.setLogger(logger)
 confidencer = conf_f.createInstance()
 
-alig_p = AlignmentPlugin(".libs/HMMAligner.so","/home/gsanchis/CasMaCat/sources/align/europarlf10/europarlf10_en_es")
+alig_p = AlignmentPlugin(".libs/random-aligner.so")
 alig_f = alig_p.create(context)
 alig_f.setLogger(logger)
 aligner = alig_f.createInstance()
 
-source = ""
+source = "Hello World!"
 source_tok, source_seg = processor.preprocess(source)
 print "Source tok:", source_tok
 
