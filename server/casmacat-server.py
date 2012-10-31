@@ -117,11 +117,54 @@ class CasmacatConnection(SocketConnection):
       logger.log(DEBUG_LOG, ("target", target_tok));
       self.emit('contributionchange', source, source_seg, target, target_seg)
 
+    @event
+    def update(self, source, target):
+      source = to_utf8(source)
+      source_tok, source_seg = tokenizer.preprocess(source)
+      target = to_utf8(target)
+      target_tok, target_seg = tokenizer.preprocess(target)
+      mt.update(source_tok, target_tok)
+
+#class ImtConnection(SocketConnection):
+    @event
+    def start_imt_session(self, source):
+      if imt:
+        if self.imt_session:
+          imt.deleteSession(self.imt_session)
+          self.imt_session = None
+          
+        source = to_utf8(source)
+        source_tok, source_seg = tokenizer.preprocess(source)
+        
+        self.imt_session = imt.newSession(source_tok)
+        
+    @event
+    def set_prefix(self, source, prefix, suffix, last_token_is_partial):
+      if imt and self.imt_session:
+        source = to_utf8(source)
+        source_tok, source_seg = tokenizer.preprocess(source)
+
+        prefix = to_utf8(prefix)
+        prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
+
+        suffix = to_utf8(suffix)
+        suffix_tok, suffix_seg = tokenizer.preprocess(suffix)
+
+        prediction_tok = self.imt_session.setPrefix(source_tok, prefix_tok, suffix_tok, last_token_is_partial)
+        prediction, prediction_seg = tokenizer.postprocess(prediction_tok)
+        self.emit('predictionchange', source, source_seg, prefix, prefix_seg, prediction, prediction_seg, last_token_is_partial)
+
+    @event
+    def end_imt_session(self, source):
+      if imt and self.imt_session:
+          imt.deleteSession(self.imt_session)
+          self.imt_session = None
 
 #class LoggerConnection(SocketConnection, Logger):
     @event
     def on_open(self, info):
       MyLogger.participants.add(self)
+      self.imt_session = None
 
     @event
     def on_close(self):
@@ -171,10 +214,12 @@ if __name__ == "__main__":
     
 #    mt_plugin = MtPlugin("plugins/random-mt-engine.so")
 #    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
-    mt_plugin = MtPlugin("plugins/libstack_dec.so", "-c /home/valabau/work/software/casmacat-server-library/server/thot/cfg/casmacat_xerox_enes_adapt_wg.cfg", "thot_mt_plugin")
+#    mt_plugin = MtPlugin("plugins/libstack_dec.so", "-c /home/valabau/work/software/casmacat-server-library/server/thot/cfg/casmacat_xerox_enes_adapt_wg.cfg", "thot_mt_plugin")
+    mt_plugin = ImtPlugin("plugins/libstack_dec.so", "-c /home/valabau/work/software/casmacat-server-library/server/thot/cfg/casmacat_xerox_enes_adapt_wg.cfg", "thot_imt_plugin")
     mt_factory = mt_plugin.create()
     mt_factory.setLogger(logger)
     mt = mt_factory.createInstance()
+    imt = mt
     
 #alignment_plugin = AlignmentPlugin("plugins/random-aligner.so")
     alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "thot/models/tm/my_ef_invswm")

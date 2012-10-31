@@ -30,6 +30,11 @@ $.extend(CasmacatClient.prototype, {
      this.server.emit('translate', {source: source});
    },
 
+   update: function(source, target) {
+     this.checkConnection();
+     this.server.emit('update', {source: source, target: target});
+   },
+
    // DocumentManager methods
    uploadDocument: function(doc, mt_sys_id, gen_wg) {
      this.checkConnection();

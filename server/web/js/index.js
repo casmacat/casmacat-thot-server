@@ -116,6 +116,10 @@ $(function(){
     casmacat.translate($('#source').text());
   });
 
+  $('#btn-update').click(function() {
+    casmacat.update($('#source').text(), $('#target').text());
+  });
+
   /*
   $('#btn-set-translation').click(function() {
     casmacat.getTokens($('#source').text(), $('#target').text());
