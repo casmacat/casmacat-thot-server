@@ -47,7 +47,7 @@ namespace casmacat {
                                 vector<double> *newWeights) = 0;
   };
 
-  typedef WeightUpdateFactory<WeightUpdateEngine> WeightUpdateFactory;
+  typedef IPluginFactory<WeightUpdateEngine> WeightUpdateFactory;
 }
 
 #endif /* CASMACAT_WEIGHTUPDATEENGINE_H_ */
