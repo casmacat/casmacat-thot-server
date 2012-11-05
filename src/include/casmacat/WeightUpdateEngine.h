@@ -44,7 +44,7 @@ namespace casmacat {
                                 string reference,
                                 const vector<string>& nblist,
                                 const vector<vector<double> >& scoreCompsVec,
-                                vector<double> *newWeights) = 0;
+                                vector<double>& newWeights) = 0;
   };
 
   typedef IPluginFactory<WeightUpdateEngine> WeightUpdateFactory;
