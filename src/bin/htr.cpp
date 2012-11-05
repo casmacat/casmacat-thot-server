@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
 
 
     string htr_plugin_fn = "/home/valabau/work/software/casmacat-server-library/server/plugins/iatros-plugin.so";
-    string args = "-c /home/valabau/corpora/xerox/epen/xerox.en.conf";
+    string args = "-c /home/valabau/work/software/casmacat-server-library/src/lib/.libs/xerox.en.conf";
 
     Plugin<IHtrFactory> htr_plugin(htr_plugin_fn, args);
     IHtrFactory *htr_factory = htr_plugin.create();
@@ -72,9 +72,9 @@ int main(int argc, char* argv[]) {
           getline(feat_file, suffix);
           tokenize(suffix, tok_suffix);
 
-          cerr << "source: " << source << "\n";
-          cerr << "prefix: " << prefix << "\n";
-          cerr << "suffix: " << suffix << "\n";
+          cerr << "source: " << source << endl;
+          cerr << "prefix: " << prefix << endl;
+          cerr << "suffix: " << suffix << endl;
 
           vector<string> tok_empty;
           IHtrSession *session = htr->createSessionFromPrefix(tok_empty, tok_empty, tok_empty, false);
@@ -82,6 +82,7 @@ int main(int argc, char* argv[]) {
           while(getline(feat_file, line)) {
             istringstream sline(line);
             if (sline >> x >> y >> pen_up) {
+              cerr << "add point: " << x << "," << y << " " << IHtrSession::stroke_type_t(pen_up) << endl;
               session->addPoint(x, y, IHtrSession::stroke_type_t(pen_up));
             }
           }

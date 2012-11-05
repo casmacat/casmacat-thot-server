@@ -81,5 +81,6 @@ namespace casmacat {
   %template(TextProcessorPlugin)         Plugin<ITextProcessorFactory>;
   %template(MtPlugin)                    Plugin<IMtFactory>;
   %template(ImtPlugin)                   Plugin<IInteractiveMtFactory>;
+  %template(HtrPlugin)                   Plugin<IHtrFactory>;
 }
 

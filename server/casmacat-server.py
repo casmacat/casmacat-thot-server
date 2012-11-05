@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import sys, os
 import datetime, time
@@ -68,9 +69,10 @@ def add_match(data, match):
   data['matches'].append(match)
 
 def prepare(data):
-  data['matches'].sort(key=lambda match: match['quality'], reverse=True)
-  data['translatedText'] = data['matches'][0]['translation']
-  data['translatedTextTokens'] = data['matches'][0]['translationTokens']
+  if len(data['matches']) > 0:
+    data['matches'].sort(key=lambda match: match['quality'], reverse=True)
+    data['translatedText'] = data['matches'][0]['translation']
+    data['translatedTextTokens'] = data['matches'][0]['translationTokens']
 
 
 ROOT = os.path.normpath(os.path.dirname(__file__))
@@ -188,14 +190,13 @@ class CasmacatConnection(SocketConnection):
         
     @event
     def set_prefix(self, target, caret_pos):
-      target = to_utf8(target)
-      logger.log(DEBUG_LOG, str(caret_pos) + " @ " + target);
+      logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target));
 
-      prefix = target[:caret_pos] 
+      prefix = to_utf8(target[:caret_pos]) 
       prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
       print >> sys.stderr, "prefix", prefix
 
-      suffix = target[caret_pos:] 
+      suffix = to_utf8(target[caret_pos:]) 
       suffix_tok, suffix_seg = tokenizer.preprocess(suffix)
       print >> sys.stderr, "suffix", suffix 
 
@@ -278,8 +279,10 @@ if __name__ == "__main__":
     
     tokenizer_plugin = TextProcessorPlugin("plugins/space-tokenizer.so")
     tokenizer_factory = tokenizer_plugin.create()
+    if not tokenizer_factory: raise Exception("Tokenizer plugin failed")
     tokenizer_factory.setLogger(logger)
     tokenizer = tokenizer_factory.createInstance()
+    if not tokenizer: raise Exception("Tokenizer instance failed")
     
 #    mt_plugin = MtPlugin("plugins/random-mt-engine.so")
 #    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
@@ -287,12 +290,16 @@ if __name__ == "__main__":
     mt_plugin = ImtPlugin("plugins/libstack_dec.so", "-c /home/valabau/work/software/casmacat-server-library/server/thot/cfg/casmacat_xerox_enes_adapt_wg.cfg", "thot_imt_plugin")
 
     mt_factory = mt_plugin.create()
+    if not mt_factory: raise Exception("MT plugin failed")
     mt_factory.setLogger(logger)
     static_mt = mt_factory.createInstance()
+    if not static_mt: raise Exception("Static MT instance failed")
 
     ol_factory = mt_plugin.create()
+    if not ol_factory: raise Exception("Online MT plugin failed")
     ol_factory.setLogger(logger)
     online_mt = ol_factory.createInstance()
+    if not online_mt: raise Exception("Online MT instance failed")
 
     mt_systems["MT"] = static_mt
     imt_systems["MT"] = static_mt
@@ -304,14 +311,19 @@ if __name__ == "__main__":
 #alignment_plugin = AlignmentPlugin("plugins/random-aligner.so")
     alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "thot/models/tm/my_ef_invswm")
     alignment_factory = alignment_plugin.create()
+    if not alignment_factory: raise Exception("Alignment plugin failed")
     alignment_factory.setLogger(logger)
     aligner = alignment_factory.createInstance()
+    if not aligner: raise Exception("Aligner instance failed")
+
     
 #    confidence_plugin = ConfidencePlugin("plugins/random-confidence-estimator.so")
     confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "thot/models/tm/my_ef_invswm")
     confidence_factory = confidence_plugin.create()
+    if not confidence_factory: raise Exception("Confidence plugin failed")
     confidence_factory.setLogger(logger)
     confidencer = confidence_factory.createInstance()
+    if not confidencer: raise Exception("Confidencer instance failed")
 
 #imt_plugin = ImtPlugin("plugins/random-imt-engine.so")
 #imt_factory = imt_plugin.create()

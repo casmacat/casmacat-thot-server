@@ -106,7 +106,7 @@ $(function(){
   })
   // on blur hide suggestions
   .blur(function(e) {
-    $('#suggestions').css({'visibility': 'hidden'});
+    //$('#suggestions').css({'visibility': 'hidden'});
   })
   // on key up throttle a new translation
   .keyup(function(e) {
@@ -119,6 +119,7 @@ $(function(){
     if (data.str != target) { 
       throttle(function () {
         casmacat.getTokens(source, target);
+        console.log("query prefix:", target);
         casmacat.setPrefix(target, pos);
       }, throttle_ms);
     }
@@ -153,13 +154,14 @@ $(function(){
     console.log(d, data);
 
     var count = 0;
-    var list = $('<ul/>');
+    var list = $('<dl/>');
     for (var i = 0; i < data.matches.length; i++) {
       var match = data.matches[i];
       if (current_target.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
-        var elem = $('<li/>');
-        elem.text(match.created_by + ": " + match.translation.substr(d.pos));
-        list.append(elem);
+        console.log('"'+match.translation+'"');
+        console.log('"'+match.translation.substr(d.pos)+'"');
+        list.append($('<dt/>').text(match.created_by));
+        list.append($('<dd/>').text(match.translation.substr(d.pos)));
         count++;
       }
     }

@@ -1,3 +1,4 @@
+body { margin-left: 50px; }
 #source, #target { display: block; width: 90%; border: 1px solid lightsteelblue; white-space: pre; }
 #source:hover, #target:hover { border: 1px solid steelblue; cursor: text; }
 #source:focus, #source > span:focus, #target:focus, #target > span:focus { outline: none; }
@@ -5,6 +6,7 @@
 #target { background-color:#EEE; }
 .prefix { color: darkgreen; }
 .suffix { color: red; }
+#matrix { overflow: hidden; }
 table { margin:1em; text-align:center; }
 table div.rotated { 
   /* writing-mode:tb-rl; */ 
@@ -28,10 +30,12 @@ textarea { width:100%; }
 .align { background-color: yellow; }
 #hidden { position: absolute; visibility: hidden; }
 .hidden { visibility: hidden; }
+
 #suggestions { 
-  margin-top: 4px;
-  margin-left: -6px;
-  padding-left: 4px;
+  margin: 0px;
+  margin-top: -1px;
+  margin-left: -2.5em;
+  padding: 0px;
   padding-right: 4px;
   padding-bottom: 4px;
   position: absolute; 
@@ -41,8 +45,17 @@ textarea { width:100%; }
   border: 1px solid black; 
   border-top: 1px solid #EEE;
 }
-#suggestions > ul { 
+#suggestions dl { 
   list-style: none;
   margin: 0;
   padding: 0;
+}
+#suggestions dt {
+  border-right: 1px solid black;
+  width: 2.5em;
+  text-align: center;
+  float: left;
+}
+#suggestions dd { 
+  margin-left: 2.5em;
 }

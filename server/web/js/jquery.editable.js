@@ -276,12 +276,22 @@
 
       var absolutePos = $this.editable('getCaretPos');
       var token = $this.editable('getTokenAtCaretPos', absolutePos);
+      var caretRect;
 
       token.range = document.createRange();
-      token.range.setStart(token.elem, token.pos);
-      token.range.collapse(true);
+      try {
+        token.range.setStart(token.elem, token.pos);
+        token.range.collapse(true);
+        caretRect = token.range.getClientRects()[0];
+      }
+      catch (err) {
+        console.warn(err);
+        caretRect = this.get(0).getClientRects()[0];
+        absolutePos = 0;
+        token = undefined;
+      }
  
-      return { pos: absolutePos, token: token, caretRect: token.range.getClientRects()[0] }
+      return { pos: absolutePos, token: token, caretRect: caretRect }
     },
 
     setCaretPos: function(pos) {
