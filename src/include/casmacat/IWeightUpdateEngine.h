@@ -20,8 +20,8 @@
  *      Author: gsanchis
  */
 
-#ifndef CASMACAT_WEIGHTUPDATEENGINE_H_
-#define CASMACAT_WEIGHTUPDATEENGINE_H_
+#ifndef CASMACAT_IWEIGHTUPDATEENGINE_H_
+#define CASMACAT_IWEIGHTUPDATEENGINE_H_
 
 #include <string>
 #include <vector>
@@ -33,9 +33,9 @@ namespace casmacat {
  * Interface for Weight update plug-ins
  */
 
-  class WeightUpdateEngine {
+  class IWeightUpdateEngine {
   public:
-    virtual ~WeightUpdateEngine() {};
+    virtual ~IWeightUpdateEngine() {};
 
     /**
      * obtain updated weight vector from the nbest list and nbest features
@@ -47,7 +47,7 @@ namespace casmacat {
                                 vector<double>& newWeights) = 0;
   };
 
-  typedef IPluginFactory<WeightUpdateEngine> WeightUpdateFactory;
+  typedef IPluginFactory<IWeightUpdateEngine> IWeightUpdateFactory;
 }
 
-#endif /* CASMACAT_WEIGHTUPDATEENGINE_H_ */
+#endif /* CASMACAT_IWEIGHTUPDATEENGINE_H_ */
