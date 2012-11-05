@@ -26,6 +26,7 @@
 #include <typeinfo>
 #include <iostream>
 #include <iterator>
+#include <cerrno>
 #include <casmacat/Context.h>
 
 #define EXPORT_CASMACAT_PLUGIN_NAME(I, C, name) \
@@ -41,7 +42,13 @@ template <typename I, typename C> I *new_object(int argc, char *argv[], Context 
   I* c = 0;
   try {
     c = new C();
-    c->init(argc, argv, context);
+    int status = c->init(argc, argv, context);
+    if (status != 0) {
+      std::cerr << "Plugin initialization failed with status " << status << std::endl;
+      errno = status;
+      delete c;
+      c = 0;
+    }
   }
   catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
