@@ -28,3 +28,21 @@ textarea { width:100%; }
 .align { background-color: yellow; }
 #hidden { position: absolute; visibility: hidden; }
 .hidden { visibility: hidden; }
+#suggestions { 
+  margin-top: 4px;
+  margin-left: -6px;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-bottom: 4px;
+  position: absolute; 
+  visibility: hidden; 
+  white-space: pre; 
+  background: #EEE; 
+  border: 1px solid black; 
+  border-top: 1px solid #EEE;
+}
+#suggestions > ul { 
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

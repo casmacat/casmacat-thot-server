@@ -13,20 +13,22 @@ $(function(){
 
 
   // handle translation responses
-  casmacat.on('contributionchange', function(source, source_seg, target, target_seg) {
+  casmacat.on('contributionchange', function(data) {
     // make sure new data still applies to current source
-    if (source !== $('#source').editable('getText')) return;
+    if (data.text !== $('#source').editable('getText')) return;
 
-  	update_translation_display(source, source_seg, target, target_seg);
+    casmacat.startImtSession(data.text);
+  	update_translation_display(data);
+    update_suggestions(data);
   });
 
   // handle post-editing (target has changed but not source)
-  casmacat.on('translationchange', function(source, source_seg, target, target_seg) {
+  casmacat.on('translationchange', function(data) {
     // make sure new data still applies to current source and target texts
-    if (source !== $('#source').editable('getText')) return;
-    if (target !== $('#target').editable('getText')) return;
+    if (data.text !== $('#source').editable('getText')) return;
+    if (data.translatedText !== $('#target').editable('getText')) return;
 
-  	update_translation_display(source, source_seg, target, target_seg);
+  	update_translation_display(data);
   });
 
   // handle alignment changes (updates highlighting and alignment matrix) 
@@ -37,6 +39,11 @@ $(function(){
   // handle confidence changes (updates highlighting) 
   casmacat.on('confidencechange', function(sent, confidences, source, source_seg, target, target_seg) {
     update_word_confidences_display(sent, confidences, source, source_seg, target, target_seg);
+  });
+
+  // handle confidence changes (updates highlighting) 
+  casmacat.on('predictionchange', function(data) {
+    update_suggestions(data);
   });
 
 
@@ -97,16 +104,22 @@ $(function(){
     var text = $(this).text();
     $('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
   })
+  // on blur hide suggestions
+  .blur(function(e) {
+    $('#suggestions').css({'visibility': 'hidden'});
+  })
   // on key up throttle a new translation
   .keyup(function(e) {
     var $this = $(this),
         data = $this.data('editable'),
         target = $this.editable('getText'),
-        source = $('#source').editable('getText');
+        source = $('#source').editable('getText'),
+        pos = $('#target').editable('getCaretPos');
 
     if (data.str != target) { 
       throttle(function () {
         casmacat.getTokens(source, target);
+        casmacat.setPrefix(target, pos);
       }, throttle_ms);
     }
   });
@@ -132,8 +145,44 @@ $(function(){
   /*           update the HTML display and attach events                         */
   /*******************************************************************************/
 
+
+
+  function update_suggestions(data) {
+    var d = $('#target').editable('getCaretXY');
+    var current_target = $('#target').text();
+    console.log(d, data);
+
+    var count = 0;
+    var list = $('<ul/>');
+    for (var i = 0; i < data.matches.length; i++) {
+      var match = data.matches[i];
+      if (current_target.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
+        var elem = $('<li/>');
+        elem.text(match.created_by + ": " + match.translation.substr(d.pos));
+        list.append(elem);
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      $('#suggestions').css({'top': d.caretRect.bottom, 'left': d.caretRect.left, 'visibility': 'visible'});
+      $('#suggestions').html(list);
+      //$('#target').editable('setText', target, target_seg);
+    }
+    else { 
+      $('#suggestions').css({'visibility': 'hidden'});
+      $('#suggestions').html('');
+    }
+  }
+
+
   // updates the translation display and queries for new alignments and word confidences
-  function update_translation_display(source, source_seg, target, target_seg) {
+  function update_translation_display(data) {
+    var source = data.text
+      , source_seg = data.textTokens
+      , target = data.translatedText
+      , target_seg = data.translatedTextTokens;
+
     // sets the text in the editable div. It tokenizes the sentence and wraps tokens in spans
     $('#source').editable('setText', source, source_seg);
     $('#target').editable('setText', target, target_seg);

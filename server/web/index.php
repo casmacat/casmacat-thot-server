@@ -20,7 +20,7 @@
   <h3>CasMaCat API demo</h3>
   <div>
     Source: 
-    <div id="source" class="editable">servicios de red de CasMaCat</div>
+    <div id="source" class="editable">CasMaCat network services</div> <!-- servicios de red de CasMaCat -->
     <input type="button" id="btn-translate" value="Translate"/>
   </div>
   <div>
@@ -37,6 +37,7 @@
       <tbody> <tr class="top noborderright"><th></th></tr> </tbody>
     </table>
   </div>
+  <div id="suggestions"/>
   <div id="hidden"/>
 </body>
 </html>

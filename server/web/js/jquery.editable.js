@@ -233,8 +233,13 @@
           $this.editable('storeCaret', span, pos, absoluteCaretPos);
         }
       }
-      
-      var ev = { target: this, pos: pos, lastPos: data.lastPos, token: token }
+
+       // place the cursor in the current element
+      token.range = document.createRange();
+      token.range.setStart(token.elem, token.pos);
+      token.range.collapse(true);
+     
+      var ev = { target: this, pos: pos, lastPos: data.lastPos, token: token, caretRect: token.range.getClientRects()[0] }
       data.lastPos = (elem)?pos:undefined;
       $this.trigger('caretmove', ev);
 
@@ -266,19 +271,25 @@
       return caretOffset;
     },
 
+    getCaretXY: function() { 
+      var $this = $(this);
+
+      var absolutePos = $this.editable('getCaretPos');
+      var token = $this.editable('getTokenAtCaretPos', absolutePos);
+
+      token.range = document.createRange();
+      token.range.setStart(token.elem, token.pos);
+      token.range.collapse(true);
+ 
+      return { pos: absolutePos, token: token, caretRect: token.range.getClientRects()[0] }
+    },
+
     setCaretPos: function(pos) {
       var token = this.editable('updateCaret', pos);
-      var elem = token.elem;
-      pos = token.pos;
-
-      // place the cursor in the current element
-      var range = document.createRange();
-      range.setStart(elem, pos);
-      range.collapse(true);
 
       var sel = window.getSelection();
       sel.removeAllRanges();
-      sel.addRange(range);
+      sel.addRange(token.range);
     },
 
     getText: function() {

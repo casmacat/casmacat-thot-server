@@ -24,8 +24,53 @@ class MyLogger(Logger):
     
 logger = MyLogger()
 
+mt_systems = {}
+imt_systems = {} 
+ol_systems = {} 
 
+def new_match(created_by, source, source_seg, target, target_seg):
+  match = {}
+  match['segment'] = source 
+  match['segmentTokens'] = source_seg
+  match['translation'] = target
+  match['translationTokens'] = target_seg
+  match['quality'] = 70
+  match['created_by'] = created_by
+  match['last_update_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S') 
+  match['match'] = 0.85
+  return match
 
+def new_prediction(created_by, prediction, prediction_seg):
+  match = {}
+  match['translation'] = prediction
+  match['translationTokens'] = prediction_seg
+  match['quality'] = 70
+  match['created_by'] = created_by
+  match['last_update_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S') 
+  match['match'] = 0.85
+  return match
+
+def new_contributions(source, source_seg):
+  data = {}
+  data['text'] = source
+  data['textTokens'] = source_seg
+  data['matches'] = []
+  return data
+
+def new_predictions(target, caret_pos):
+  data = {}
+  data['previousText'] = target 
+  data['caretPos'] = caret_pos 
+  data['matches'] = []
+  return data
+
+def add_match(data, match):
+  data['matches'].append(match)
+
+def prepare(data):
+  data['matches'].sort(key=lambda match: match['quality'], reverse=True)
+  data['translatedText'] = data['matches'][0]['translation']
+  data['translatedTextTokens'] = data['matches'][0]['translationTokens']
 
 
 ROOT = os.path.normpath(os.path.dirname(__file__))
@@ -79,11 +124,12 @@ class CasmacatConnection(SocketConnection):
       source, target = to_utf8(source), to_utf8(target)
       source_tok, source_seg = tokenizer.preprocess(source)
       target_tok, target_seg = tokenizer.preprocess(target)
-      print >> sys.stderr, "source tok: '%s' -> %s -> %s" % (source, str(source_tok), str(source_seg))
-      print >> sys.stderr, "target tok: '%s' -> %s -> %s" % (target, str(target_tok), str(target_seg))
-      logger.log(DEBUG_LOG, (source, source_tok))
-      logger.log(DEBUG_LOG, (target, target_tok))
-      self.emit('translationchange', source, source_seg, target, target_seg)
+
+      contributions = new_contributions(source, source_seg)
+      add_match(contributions, new_match('tokenizer', source, source_seg, target, target_seg))
+
+      prepare(contributions)
+      self.emit('translationchange', contributions)
 
 
 #class WordConfidenceConnection(SocketConnection):
@@ -106,16 +152,17 @@ class CasmacatConnection(SocketConnection):
 #class MtConnection(SocketConnection):
     @event
     def translate(self, source):
-      logger.log(DEBUG_LOG, "Hello Word of Debugging!!!");
       source = to_utf8(source)
       source_tok, source_seg = tokenizer.preprocess(source)
-      target_tok = mt.translate(source_tok)
-      logger.log(DEBUG_LOG, source_tok);
-      logger.log(DEBUG_LOG, target_tok);
-      target, target_seg = tokenizer.postprocess(target_tok)
-      logger.log(DEBUG_LOG, ("source", source_tok));
-      logger.log(DEBUG_LOG, ("target", target_tok));
-      self.emit('contributionchange', source, source_seg, target, target_seg)
+      contributions = new_contributions(source, source_seg)
+
+      for name, mt in mt_systems.iteritems():
+        target_tok = mt.translate(source_tok)
+        target, target_seg = tokenizer.postprocess(target_tok)
+        add_match(contributions, new_match(name, source, source_seg, target, target_seg))
+
+      prepare(contributions)
+      self.emit('contributionchange', contributions)
 
     @event
     def update(self, source, target):
@@ -123,48 +170,70 @@ class CasmacatConnection(SocketConnection):
       source_tok, source_seg = tokenizer.preprocess(source)
       target = to_utf8(target)
       target_tok, target_seg = tokenizer.preprocess(target)
-      mt.update(source_tok, target_tok)
+      for name, ol in ol_systems.iteritems():
+        ol.update(source_tok, target_tok)
 
 #class ImtConnection(SocketConnection):
     @event
     def start_imt_session(self, source):
-      if imt:
-        if self.imt_session:
-          imt.deleteSession(self.imt_session)
-          self.imt_session = None
-          
-        source = to_utf8(source)
-        source_tok, source_seg = tokenizer.preprocess(source)
-        
-        self.imt_session = imt.newSession(source_tok)
+      for name, session in self.imt_session.iteritems():
+          imt_systems[name].deleteSession(session)
+      self.imt_session = {} 
+
+      source = to_utf8(source)
+      source_tok, source_seg = tokenizer.preprocess(source)
+      logger.log(DEBUG_LOG, "starting imt session with " + str(source_tok));
+      for name, imt in imt_systems.iteritems():
+        self.imt_session[name] = imt.newSession(source_tok)
         
     @event
-    def set_prefix(self, source, prefix, suffix, last_token_is_partial):
-      if imt and self.imt_session:
-        source = to_utf8(source)
-        source_tok, source_seg = tokenizer.preprocess(source)
+    def set_prefix(self, target, caret_pos):
+      target = to_utf8(target)
+      logger.log(DEBUG_LOG, str(caret_pos) + " @ " + target);
 
-        prefix = to_utf8(prefix)
-        prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
+      prefix = target[:caret_pos] 
+      prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
+      print >> sys.stderr, "prefix", prefix
 
-        suffix = to_utf8(suffix)
-        suffix_tok, suffix_seg = tokenizer.preprocess(suffix)
+      suffix = target[caret_pos:] 
+      suffix_tok, suffix_seg = tokenizer.preprocess(suffix)
+      print >> sys.stderr, "suffix", suffix 
 
-        prediction_tok = self.imt_session.setPrefix(source_tok, prefix_tok, suffix_tok, last_token_is_partial)
+      last_token_is_partial = False
+      if len(suffix) != 0 and not suffix[0].isspace():
+        last_token_is_partial = True
+      print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
+
+      predictions = new_predictions(target, caret_pos)
+      for name, session in self.imt_session.iteritems():
+        prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
+        print >> sys.stderr, name, "prediction_tok", prediction_tok 
+
+        #if last_token_is_partial:
+        #  target_tok = list(prefix_tok[:-1]) + [prefix_tok[-1] + prediction_tok[0]] + list(prediction_tok[1:])
+        #else:
+        #  target_tok = list(prefix_tok) + list(prediction_tok)
+        #
+        #target, target_seg = tokenizer.postprocess(target_tok)
+        #self.emit('predictionchange', target, target_seg, caret_pos)
+
         prediction, prediction_seg = tokenizer.postprocess(prediction_tok)
-        self.emit('predictionchange', source, source_seg, prefix, prefix_seg, prediction, prediction_seg, last_token_is_partial)
+        add_match(predictions, new_prediction(name, prediction, prediction_seg))
+      prepare(predictions)
+      self.emit('predictionchange', predictions)
 
     @event
-    def end_imt_session(self, source):
-      if imt and self.imt_session:
-          imt.deleteSession(self.imt_session)
-          self.imt_session = None
+    def end_imt_session(self):
+      for name, session in self.imt_session.iteritems():
+          imt_systems[name].deleteSession(session)
+      self.imt_session = {} 
+      logger.log(DEBUG_LOG, "ending imt session");
 
 #class LoggerConnection(SocketConnection, Logger):
     @event
     def on_open(self, info):
       MyLogger.participants.add(self)
-      self.imt_session = None
+      self.imt_session = {} 
 
     @event
     def on_close(self):
@@ -216,10 +285,21 @@ if __name__ == "__main__":
 #    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
 #    mt_plugin = MtPlugin("plugins/libstack_dec.so", "-c /home/valabau/work/software/casmacat-server-library/server/thot/cfg/casmacat_xerox_enes_adapt_wg.cfg", "thot_mt_plugin")
     mt_plugin = ImtPlugin("plugins/libstack_dec.so", "-c /home/valabau/work/software/casmacat-server-library/server/thot/cfg/casmacat_xerox_enes_adapt_wg.cfg", "thot_imt_plugin")
+
     mt_factory = mt_plugin.create()
     mt_factory.setLogger(logger)
-    mt = mt_factory.createInstance()
-    imt = mt
+    static_mt = mt_factory.createInstance()
+
+    ol_factory = mt_plugin.create()
+    ol_factory.setLogger(logger)
+    online_mt = ol_factory.createInstance()
+
+    mt_systems["MT"] = static_mt
+    imt_systems["MT"] = static_mt
+
+    mt_systems["OL"] = online_mt
+    imt_systems["OL"] = online_mt
+    ol_systems["OL"] = online_mt
     
 #alignment_plugin = AlignmentPlugin("plugins/random-aligner.so")
     alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "thot/models/tm/my_ef_invswm")

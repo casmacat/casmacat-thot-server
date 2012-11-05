@@ -68,17 +68,17 @@ $.extend(CasmacatClient.prototype, {
    },
 
    // ITM methods
-   setPrefix: function(prefix, suffix) {
+   startImtSession: function(source) {
      this.checkConnection();
-     this.server.emit('set_prefix', {prefix: prefix, suffix: suffix});
+     this.server.emit('start_imt_session', {source: source});
    },
-   setPartialValidation: function(target, validated_words) {
+   setPrefix: function(target, caret_pos) {
      this.checkConnection();
-     this.server.emit('set_partial_validation', {target: target, validated_words: validated_words});
+     this.server.emit('set_prefix', {target: target, caret_pos: caret_pos});
    },
-   setPrefix: function(prefix, suffix) {
+   endImtSession: function() {
      this.checkConnection();
-     this.server.emit('set_prefix', {prefix: prefix, suffix: suffix});
+     this.server.emit('end_imt_session');
    },
 
 });
