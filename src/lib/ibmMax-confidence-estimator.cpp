@@ -158,6 +158,9 @@ public:
     //TODO: consider to generate one new based on specialization_id
     return rc;
   }
+  virtual void deleteInstance(IConfidenceEngine *instance) {
+    delete instance;
+  }
 
 };
 

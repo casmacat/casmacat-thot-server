@@ -89,6 +89,10 @@ public:
   virtual IAlignmentEngine *createInstance(const std::string &specialization_id = "") {
     return ha;
   }
+  virtual void deleteInstance(IAlignmentEngine *instance) {
+    delete instance;
+  }
+
 };
 
 

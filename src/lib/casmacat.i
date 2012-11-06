@@ -76,6 +76,7 @@ namespace casmacat {
   %template(ITextProcessorFactory)       IPluginFactory<ITextProcessor>;
   %template(IMtFactory)                  IPluginFactory<IMtEngine>;
   %template(IInteractiveMtFactory)       IPluginFactory<IInteractiveMtEngine>;
+  %template(IHtrFactory)                 IPluginFactory<IHtrEngine>;
   %template(AlignmentPlugin)             Plugin<IAlignmentFactory>;
   %template(ConfidencePlugin)            Plugin<IConfidenceFactory>;
   %template(TextProcessorPlugin)         Plugin<ITextProcessorFactory>;

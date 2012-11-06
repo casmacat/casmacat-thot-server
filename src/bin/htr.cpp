@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
 
 
     string htr_plugin_fn = "/home/valabau/work/software/casmacat-server-library/server/plugins/iatros-plugin.so";
-    string args = "-c /home/valabau/work/software/casmacat-server-library/src/lib/.libs/xerox.en.conf";
+    string args = "-c /home/valabau/work/software/casmacat-server-library/src/lib/.libs/xerox.plugin.conf";
 
     Plugin<IHtrFactory> htr_plugin(htr_plugin_fn, args);
     IHtrFactory *htr_factory = htr_plugin.create();

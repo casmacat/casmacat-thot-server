@@ -44,6 +44,7 @@ namespace casmacat {
      *            for instance, for user specific models
      */
     virtual C *createInstance(const std::string &specialization_id = "") = 0;
+    virtual void deleteInstance(C *instance) = 0;
   };
 }
 

@@ -70,6 +70,10 @@ public:
   virtual IAlignmentEngine *createInstance(const std::string &specialization_id = "") {
     return new RandomAligner();
   }
+
+  virtual void deleteInstance(IAlignmentEngine *instance) {
+    delete instance;
+  }
 };
 
 

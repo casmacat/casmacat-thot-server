@@ -107,6 +107,10 @@ public:
     return rc;
   }
 
+  virtual void deleteInstance(IConfidenceEngine *instance) {
+    delete instance;
+  }
+
 };
 
 

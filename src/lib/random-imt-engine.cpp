@@ -176,6 +176,11 @@ public:
   virtual IInteractiveMtEngine *createInstance(const std::string &specialization_id = "") {
     return new RandomImtEngine();
   }
+
+  virtual void deleteInstance(IInteractiveMtEngine *instance) {
+    delete instance;
+  }
+
 };
 
 EXPORT_CASMACAT_PLUGIN(IInteractiveMtEngine, RandomImtFactory);

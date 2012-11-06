@@ -162,6 +162,10 @@ public:
   virtual ITextProcessor *createInstance(const std::string &specialization_id = "") {
     return new SpaceTokenizer(delimiters);
   }
+  virtual void deleteInstance(ITextProcessor *instance) {
+    delete instance;
+  }
+
 };
 
 EXPORT_CASMACAT_PLUGIN(ITextProcessor, SpaceTokenizerFactory);
