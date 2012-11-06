@@ -81,5 +81,19 @@ $.extend(CasmacatClient.prototype, {
      this.server.emit('end_imt_session');
    },
 
+   // HTR methods
+   startHtrSession: function(source) {
+     this.checkConnection();
+     this.server.emit('start_htr_session', {source: source, target: target, caret_pos: caret_pos});
+   },
+   addStroke: function(points, is_pen_down) {
+     this.checkConnection();
+     this.server.emit('add_stroke', {points: points, is_pen_down: is_pen_down});
+   },
+   endHtrSession: function() {
+     this.checkConnection();
+     this.server.emit('end_htr_session');
+   },
+
 });
 
