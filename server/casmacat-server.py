@@ -216,7 +216,7 @@ class CasmacatConnection(SocketConnection):
         #  target_tok = list(prefix_tok) + list(prediction_tok)
         #
         #target, target_seg = tokenizer.postprocess(target_tok)
-        #self.emit('predictionchange', target, target_seg, caret_pos)
+        #add_match(predictions, new_prediction(name, target, target_seg))
 
         prediction, prediction_seg = tokenizer.postprocess(prediction_tok)
         add_match(predictions, new_prediction(name, prediction, prediction_seg))

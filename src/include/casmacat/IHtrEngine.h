@@ -66,7 +66,7 @@ namespace casmacat {
     /**
      * delete HTR session
      */
-    virtual void deleteSession(IHtrEngine *session) = 0;
+    virtual void deleteSession(IHtrSession *session) = 0;
 
   };
 

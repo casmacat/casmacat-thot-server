@@ -82,7 +82,7 @@ $.extend(CasmacatClient.prototype, {
    },
 
    // HTR methods
-   startHtrSession: function(source) {
+   startHtrSession: function(source, target, caret_pos) {
      this.checkConnection();
      this.server.emit('start_htr_session', {source: source, target: target, caret_pos: caret_pos});
    },
