@@ -97,9 +97,10 @@ class HtrConnection(SocketConnection):
         self.htr_session.addPoint(0, 0, False)
         
         if do_partial_recognition:
-            partial_result_tok = self.htr_session.decodePartially()
-            partial_result, partial_result_seg = tokenizer.postprocess(partial_result_tok)
-            self.emit('htrupdate', partial_result, partial_result_seg)
+            has_partial, partial_result_tok = self.htr_session.decodePartially()
+            if has_partial:
+              partial_result, partial_result_seg = tokenizer.postprocess(partial_result_tok)
+              self.emit('htrupdate', partial_result, partial_result_seg)
 
     @event
     def end_htr_session(self):

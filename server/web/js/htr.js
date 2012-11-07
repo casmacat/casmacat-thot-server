@@ -17,17 +17,14 @@ $(function(){
       events: {
         mouseDown: function(evt) {
           var strokes = cnv.sketchable('strokes');
-          console.log('n srtokes', strokes.length);
           if (strokes.length === 0) {
             var source = '', target = '', caret_pos = 0;
             casmacat.startHtrSession(source, target, caret_pos);
-            console.log('starting session');
           }
         },
         mouseUp: function(evt) {
           var strokes = cnv.sketchable('strokes');
           var stroke = strokes[strokes.length-1];
-          console.log('adding strokes', stroke);
           casmacat.addStroke(stroke, true);      
         },
      },
