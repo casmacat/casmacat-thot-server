@@ -17,7 +17,7 @@
   <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
 </head>
 <body>
-  <h3>CasMaCat API demo</h3>
+  <h3>CasMaCat API demo <button id="btn-epen"><img src="images/epen.png"/></button> </h3>
   <div>
     Source: 
     <div id="source" class="editable">CasMaCat network services</div> <!-- servicios de red de CasMaCat -->
@@ -25,11 +25,16 @@
   </div>
   <div>
     Target: 
+    <form id="show-options">
+      <input type="radio" name="show" value="list" checked> Show list (no suffix update)
+      <input type="radio" name="show" value="OL"> OL 
+      <input type="radio" name="show" value="IMT"> IMT
+    </form> 
     <div id="target" class="editable epen"></div>
     <input type="button" id="btn-update" value="Update models"/>
     <input type="button" id="btn-set-translation" value="Set translation" disabled="true" class="hidden"/>
   </div>
-  <div id="caret">undef</div>
+  <!--div id="caret">undef</div-->
   <div id="matrix">
     <table cellpadding="10" id="demo-table">
       <thead> <tr class="bottom"><th></th></tr> </thead>
@@ -37,7 +42,8 @@
       <tbody> <tr class="top noborderright"><th></th></tr> </tbody>
     </table>
   </div>
-  <div id="suggestions"/>
-  <div id="hidden"/>
+  <div id="suggestions"></div>
+  <div id="hidden"></div>
+  <canvas id="epen"></canvas>
 </body>
 </html>

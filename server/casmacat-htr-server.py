@@ -117,6 +117,7 @@ class HtrConnection(SocketConnection):
 #class LoggerConnection(SocketConnection, Logger):
     @event
     def on_open(self, info):
+      print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
       self.htr_session = None
 

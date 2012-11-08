@@ -101,8 +101,8 @@ $(function(){
   // caretmove is a new event from jquery.editable that is triggered
   // whenever the caret has changed position
   $('#target').bind('caretmove', function(e, d) {
-    var text = $(this).text();
-    $('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
+    //var text = $(this).text();
+    //$('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
   })
   // on blur hide suggestions
   .blur(function(e) {
@@ -114,7 +114,13 @@ $(function(){
         data = $this.data('editable'),
         target = $this.editable('getText'),
         source = $('#source').editable('getText'),
-        pos = $('#target').editable('getCaretPos');
+        pos = $('#target').editable('getCaretPos'),
+        updateBtn = $('#btn-update');
+
+    if (updateBtn.attr('disabled')) {
+      updateBtn.val('Update models');
+      updateBtn.removeAttr('disabled');
+    }
 
     if (data.str != target) { 
       throttle(function () {
@@ -125,13 +131,56 @@ $(function(){
     }
   });
 
+  $('#btn-epen').click(function() {
+    var $this = $('img', this);
+    var $epen = $('#epen');
+    var $target = $('#target');
+    
+    if ($this.data('mode') == 'epen') {
+      $this.attr('src', 'images/keyboard.png');
+      $this.data('mode', 'keyboard')
+      $epen.css({ visibility: 'hidden' })
+    }
+    else {
+      $this.attr('src', 'images/epen.png');
+      $this.data('mode', 'epen')
+      
+      var pos = $target.offset();
+      $epen.css({
+        visibility: 'visible',
+        top: pos.top - 50,
+        height: $target.outerHeight() + 100,
+        left: pos.left - 25,
+        width:  $target.outerWidth() + 50,
+      })
+    }
+  });
+
+  $('#epen').click(function(e) {
+    var $epen = $(this);
+    var $target = $('#target');
+    
+    var tokens = $target.editable('getTokensAtXY', e.clientX, e.clientY);
+    if (tokens.length > 0 && tokens[0].distance.d == 0) {
+      var $token = $(tokens[0].token);
+      $token.fadeOut(200).fadeIn(200).fadeOut(200).fadeIn(200);
+    }
+  });
+
 
   $('#btn-translate').click(function() {
     casmacat.translate($('#source').text());
   });
 
   $('#btn-update').click(function() {
+    var $this = $(this);
+    $this.val('Updated');
+    $this.attr('disabled', 'true');
     casmacat.update($('#source').text(), $('#target').text());
+  });
+
+  $('#show-options input').change(function() {
+    var show_type = $('input[@name=show]:checked').val();
   });
 
   /*
@@ -152,21 +201,34 @@ $(function(){
     var d = $('#target').editable('getCaretXY');
     var current_target = $('#target').text();
     console.log(d, data);
+    
+    var show_type = $('input[@name=show]:checked').val();
 
     var count = 0;
     var list = $('<dl/>');
     for (var i = 0; i < data.matches.length; i++) {
       var match = data.matches[i];
       if (current_target.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
-        console.log('"'+match.translation+'"');
-        console.log('"'+match.translation.substr(d.pos)+'"');
-        list.append($('<dt/>').text(match.created_by));
-        list.append($('<dd/>').text(match.translation.substr(d.pos)));
-        count++;
+        if (show_type == match.created_by) {
+          $('#target').editable('setText', match.translation, match.translationTokens);
+      
+          // requests the server for new alignment and confidence info
+          source = $('#source').editable('getText')
+          casmacat.getAlignments(source, match.translation);
+          casmacat.getWordConfidences(source, match.translation, []);
+        }
+        else {
+          console.log('"'+match.translation+'"');
+          console.log('"'+match.translation.substr(d.pos)+'"');
+          list.append($('<dt/>').text(match.created_by));
+          list.append($('<dd/>').text(match.translation.substr(d.pos)));
+          count++;
+        }
       }
     }
 
     if (count > 0) {
+      console.log(d.caretRect.bottom);
       $('#suggestions').css({'top': d.caretRect.bottom, 'left': d.caretRect.left, 'visibility': 'visible'});
       $('#suggestions').html(list);
       //$('#target').editable('setText', target, target_seg);

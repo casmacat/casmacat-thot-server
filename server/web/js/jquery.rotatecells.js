@@ -14,7 +14,7 @@
         , newInnerDiv = $('<div>', { text: newText, 'class': 'rotated' });
 
         cell.remove();
-
+        
         newInnerDiv.css('transform-origin',         (width / 2) + 'px ' + (width / 2) + 'px');
         newInnerDiv.css('-webkit-transform-origin', (width / 2) + 'px ' + (width / 2) + 'px');
         newInnerDiv.css('-moz-transform-origin',    (width / 2) + 'px ' + (width / 2) + 'px');

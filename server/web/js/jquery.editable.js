@@ -120,8 +120,47 @@
     return path.reverse();
   };
 
+  function rectDistance(rect, x, y, delta) {
+    var r = { 
+      x1: rect.left - delta,
+      x2: rect.left + rect.width + delta,
+      y1: rect.top - delta,
+      y2: rect.top + rect.height + delta,
+    };
 
+    var dist = { d: 0, dx: 0, dy: 0 };
+    if ((r.x1 <= x && x <= r.x2) && (r.y1 <= y && y <= r.y2)) return dist;
 
+    if (x < r.x1) dist.dx = x - r.x1;
+    else if (x > r.x2) dist.dx = x - r.x2;
+    else dist.dx = 0;
+
+    if (y < r.y1) dist.dy = y - r.y1;
+    else if (y > r.y2) dist.dy = y - r.y2;
+    else dist.dy = 0;
+    
+    dist.d = Math.sqrt(Math.pow(dist.dx, 2) + Math.pow(dist.dy, 2));
+    return dist;
+  }
+
+  function nodeDistance(node, x, y, delta) {
+    var rects = node.getClientRects();
+    var min = Number.MAX_VALUE;
+    var minDist;
+    
+    for (var i = 0; i < rects.length; i++) {
+      var dist = rectDistance(rects[i], x, y, delta);
+      if (dist.d < min) {
+        minDist = dist;
+      }
+    }
+    return minDist;
+  }
+
+  function nodeCenter(node) {
+    var r = node.getClientRects()[0];
+    return { x: r.x + r.width/2, y: r.y + r.height/2 } 
+  }
 
 (function($) {
 
@@ -173,6 +212,42 @@
       }
 
       return {elem: elem, pos: pos};
+    },
+
+    getTokensAtXY: function(x, y, delta) {
+      if (!delta) delta = 0; 
+      var $this = $(this);
+      var spans = $.makeArray($('span', $this));
+
+      var tokens = []
+      for (var i = 0; i < spans.length; i++) {
+        var distance = nodeDistance(spans[i], x, y, delta);
+        tokens.push({ token: spans[i], distance: distance });
+      }
+      tokens.sort(function(a,b){ return a.distance.d - b.distance.d});
+      return tokens;
+    },
+
+    getTokensAtRect: function(rect, delta) {
+      if (!delta) delta = 0; 
+      var $this = $(this);
+      var spans = $.makeArray($('span', $this));
+
+      var r = { 
+        x1: rect.x - delta,
+        x2: rect.x + rect.width + delta,
+        y1: rect.y - delta,
+        y2: rect.y + rect.height + delta
+      };
+
+      var tokens = [];
+      for (var i = 0; i < spans.length; i++) {
+        var center = nodeCenter(spans[i]);
+        var distance = rectDistance(rect, center.x, center.y, delta);
+        tokens.push({ token: spans[i], distance: distance });
+      }
+      tokens.sort(function(a,b){ return a.distance.d - b.distance.d});
+      return tokens;
     },
 
     forgetCaret: function() {
@@ -282,11 +357,16 @@
       try {
         token.range.setStart(token.elem, token.pos);
         token.range.collapse(true);
-        caretRect = token.range.getClientRects()[0];
+        caretRect = jQuery.extend({}, token.range.getClientRects()[0]);
       }
       catch (err) {
         console.warn(err);
-        caretRect = this.get(0).getClientRects()[0];
+        caretRect = jQuery.extend({}, this.get(0).getClientRects()[0]);
+        // Recompute caretRect to eliminate margins, borders and paddings
+        caretRect.top += parseFloat($this.css('margin-top')) + parseFloat($this.css('border-top-width')) + parseFloat($this.css('padding-top'));
+        caretRect.bottom = caretRect.top + $this.height() - 1
+        caretRect.left += parseFloat($this.css('margin-left')) + parseFloat($this.css('border-left-width')) + parseFloat($this.css('padding-left'));
+        caretRect.right = caretRect.left + $this.width() - 1
         absolutePos = 0;
         token = undefined;
       }

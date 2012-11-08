@@ -1,4 +1,6 @@
 body { margin-left: 50px; }
+button { vertical-align: middle; }
+button img { width: 25px; }
 #source, #target { display: block; width: 90%; border: 1px solid lightsteelblue; white-space: pre; }
 #source:hover, #target:hover { border: 1px solid steelblue; cursor: text; }
 #source:focus, #source > span:focus, #target:focus, #target > span:focus { outline: none; }
@@ -7,6 +9,7 @@ body { margin-left: 50px; }
 .prefix { color: darkgreen; }
 .suffix { color: red; }
 #matrix { overflow: hidden; }
+#btn-update { margin-top: 50px; }
 table { margin:1em; text-align:center; }
 table div.rotated { 
   /* writing-mode:tb-rl; */ 
@@ -31,19 +34,22 @@ textarea { width:100%; }
 #hidden { position: absolute; visibility: hidden; }
 .hidden { visibility: hidden; }
 
+#show-options {
+  display: inline;
+}
+
 #suggestions { 
   margin: 0px;
-  margin-top: -1px;
-  margin-left: -2.5em;
+  margin-top: 4px;
+  margin-left: -41px;
   padding: 0px;
   padding-right: 4px;
-  padding-bottom: 4px;
   position: absolute; 
   visibility: hidden; 
   white-space: pre; 
   background: #EEE; 
   border: 1px solid black; 
-  border-top: 1px solid #EEE;
+  border-top: 0px solid #EEE;
 }
 #suggestions dl { 
   list-style: none;
@@ -52,10 +58,18 @@ textarea { width:100%; }
 }
 #suggestions dt {
   border-right: 1px solid black;
-  width: 2.5em;
+  width: 40px;
   text-align: center;
   float: left;
 }
 #suggestions dd { 
-  margin-left: 2.5em;
+  margin-left: 40px;
+  height: 22px;
+}
+
+#epen {
+	position: absolute;
+	visibility: hidden;
+	z-index: 10;
+	border: 1px dashed black;
 }

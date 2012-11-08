@@ -36,6 +36,8 @@ def new_match(created_by, source, source_seg, target, target_seg):
   match['translation'] = target
   match['translationTokens'] = target_seg
   match['quality'] = 70
+  if created_by == 'OL':
+    match['quality'] = 75
   match['created_by'] = created_by
   match['last_update_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S') 
   match['match'] = 0.85
@@ -46,6 +48,8 @@ def new_prediction(created_by, prediction, prediction_seg):
   match['translation'] = prediction
   match['translationTokens'] = prediction_seg
   match['quality'] = 70
+  if created_by == 'OL':
+    match['quality'] = 75
   match['created_by'] = created_by
   match['last_update_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S') 
   match['match'] = 0.85
@@ -71,6 +75,7 @@ def add_match(data, match):
 def prepare(data):
   if len(data['matches']) > 0:
     data['matches'].sort(key=lambda match: match['quality'], reverse=True)
+    print data['matches']
     data['translatedText'] = data['matches'][0]['translation']
     data['translatedTextTokens'] = data['matches'][0]['translationTokens']
 
@@ -81,10 +86,13 @@ def filter_utf8(string):
   return string.encode('utf-8')
 
 def to_utf8(obj):
-  if isinstance(obj, basestring):
+  if obj == None:
+    return obj
+  elif isinstance(obj, basestring):
     return filter_utf8(obj)
   elif isinstance(obj, list): 
     return [to_utf8(w) for w in obj]
+  print "Unknown type", type(obj), "for object", obj
   raise "Unknown type"
 
 
@@ -193,12 +201,13 @@ class CasmacatConnection(SocketConnection):
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target));
 
       prefix = to_utf8(target[:caret_pos]) 
-      prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
-      print >> sys.stderr, "prefix", prefix
-
       suffix = to_utf8(target[caret_pos:]) 
+
+      print >> sys.stderr, "prefix '%s'" % prefix, type(prefix)
+      print >> sys.stderr, "suffix '%s'" % suffix, type(suffix) 
+
+      prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
       suffix_tok, suffix_seg = tokenizer.preprocess(suffix)
-      print >> sys.stderr, "suffix", suffix 
 
       last_token_is_partial = False
       if len(suffix) != 0 and not suffix[0].isspace():
@@ -233,6 +242,7 @@ class CasmacatConnection(SocketConnection):
 #class LoggerConnection(SocketConnection, Logger):
     @event
     def on_open(self, info):
+      print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
       self.imt_session = {} 
 
@@ -283,11 +293,12 @@ if __name__ == "__main__":
     tokenizer_factory.setLogger(logger)
     tokenizer = tokenizer_factory.createInstance()
     if not tokenizer: raise Exception("Tokenizer instance failed")
+
     
 #    mt_plugin = MtPlugin("plugins/random-mt-engine.so")
 #    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
-#    mt_plugin = MtPlugin("plugins/libstack_dec.so", "-c /home/valabau/work/software/casmacat-server-library/server/thot/cfg/casmacat_xerox_enes_adapt_wg.cfg", "thot_mt_plugin")
-    mt_plugin = ImtPlugin("plugins/libstack_dec.so", "-c /home/valabau/work/software/casmacat-server-library/server/thot/cfg/casmacat_xerox_enes_adapt_wg.cfg", "thot_imt_plugin")
+#    mt_plugin = MtPlugin("plugins/libstack_dec.so", "-c /home/dortiz/smt/software/stack_dec/aux_dirs/cfg_files/casmacat_xerox_enes_adapt_wg.cfg", "thot_mt_plugin")
+    mt_plugin = ImtPlugin("plugins/libstack_dec.so", "-c /home/dortiz/smt/software/stack_dec/aux_dirs/cfg_files/casmacat_xerox_enes_adapt_wg.cfg", "thot_imt_plugin")
 
     mt_factory = mt_plugin.create()
     if not mt_factory: raise Exception("MT plugin failed")
@@ -301,8 +312,8 @@ if __name__ == "__main__":
     online_mt = ol_factory.createInstance()
     if not online_mt: raise Exception("Online MT instance failed")
 
-    mt_systems["MT"] = static_mt
-    imt_systems["MT"] = static_mt
+    mt_systems["IMT"] = static_mt
+    imt_systems["IMT"] = static_mt
 
     mt_systems["OL"] = online_mt
     imt_systems["OL"] = online_mt
