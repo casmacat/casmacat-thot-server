@@ -40,7 +40,7 @@ def dump_strokes(strokes):
       print >> out, 1
     else: 
       print >> out, 0
-    for x, y in points:
+    for x, y, _ in points:
       print >> out, int(round(x)), int(round(y))
   out.close()
 
@@ -92,8 +92,8 @@ class HtrConnection(SocketConnection):
     def add_stroke(self, points, is_pen_down):
       if self.htr_session:
         self.strokes.append((points, is_pen_down)) 
-        for x, y in points:
-            self.htr_session.addPoint(x, y, is_pen_down)
+        for x, y, _ in points:
+            self.htr_session.addPoint(x, y, True)
         self.htr_session.addPoint(0, 0, False)
         
         if do_partial_recognition:

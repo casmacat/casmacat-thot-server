@@ -1,75 +1,166 @@
-body { margin-left: 50px; }
-button { vertical-align: middle; }
-button img { width: 25px; }
-#source, #target { display: block; width: 90%; border: 1px solid lightsteelblue; white-space: pre; }
-#source:hover, #target:hover { border: 1px solid steelblue; cursor: text; }
-#source:focus, #source > span:focus, #target:focus, #target > span:focus { outline: none; }
-#source, #target { padding:0.2em; min-height: 20px; }
-#target { background-color:#EEE; }
-.prefix { color: darkgreen; }
-.suffix { color: red; }
-#matrix { overflow: hidden; }
-#btn-update { margin-top: 50px; }
-table { margin:1em; text-align:center; }
-table div.rotated { 
-  /* writing-mode:tb-rl; */ 
-  transform: rotate(270deg); 
-  -webkit-transform: rotate(270deg); 
-  -moz-transform: rotate(270deg); 
-  -ms-transform: rotate(270deg); 
-  -o-transform: rotate(270deg); 
-  white-space: nowrap; 
+body {
+	margin-left: 50px;
 }
-table .vertical { white-space:nowrap; }
-table .right { text-align:right; }
-table .left { text-align:left; }
-table .top { vertical-align:top; }
-table .bottom { vertical-align:bottom; }
-table tbody td { border:1px solid gray; width:30px; height:30px; }
+button {
+	vertical-align: middle;
+}
+button img {
+	width: 25px;
+}
+#source, #target {
+	display: block;
+	width: 95%;
+	border: 1px solid lightsteelblue;
+	white-space: pre;
+}
+#source:hover, #target:hover {
+	border: 1px solid steelblue;
+	cursor: text;
+}
+#source:focus, #source > span:focus, #target:focus, #target > span:focus {
+	outline: none;
+}
+#source, #target {
+	padding: 0.2em;
+	min-height: 20px;
+}
+#target {
+	background-color: #EEE;
+	margin-top: 50px;
+	margin-bottom: 20px;
+}
+.prefix {
+	color: darkgreen;
+}
+.suffix {
+	color: red;
+}
+#matrix {
+	overflow: hidden;
+}
+#btn-update {
+	margin-top: 50px;
+}
+table {
+	margin: 1em;
+	text-align: center;
+}
+table div.rotated {
+	/* writing-mode:tb-rl; */
+	transform: rotate(270deg);
+	-webkit-transform: rotate(270deg);
+	-moz-transform: rotate(270deg);
+	-ms-transform: rotate(270deg);
+	-o-transform: rotate(270deg);
+	white-space: nowrap;
+}
+table .vertical {
+	white-space: nowrap;
+}
+table .right {
+	text-align: right;
+}
+table .left {
+	text-align: left;
+}
+table .top {
+	vertical-align: top;
+}
+table .bottom {
+	vertical-align: bottom;
+}
+table tbody td {
+	border: 1px solid gray;
+	width: 30px;
+	height: 30px;
+}
 /* See http://www.zachleat.com/test/writing-mode/ */
-textarea { width:100%; }
-.wordconf-ok { color:inherit; }
-.wordconf-bad { color:red; }
-.align { background-color: yellow; }
-#hidden { position: absolute; visibility: hidden; }
-.hidden { visibility: hidden; }
+textarea {
+	width: 100%;
+}
+.wordconf-ok {
+	color: inherit;
+}
+.wordconf-bad {
+	color: red;
+}
+.align {
+	background-color: yellow;
+}
+#hidden {
+	position: absolute;
+	visibility: hidden;
+}
+.hidden {
+	visibility: hidden;
+}
 
 #show-options {
-  display: inline;
+	display: inline;
 }
 
-#suggestions { 
-  margin: 0px;
-  margin-top: 4px;
-  margin-left: -41px;
-  padding: 0px;
-  padding-right: 4px;
-  position: absolute; 
-  visibility: hidden; 
-  white-space: pre; 
-  background: #EEE; 
-  border: 1px solid black; 
-  border-top: 0px solid #EEE;
+#suggestions {
+	margin: 0px;
+	margin-top: 4px;
+	margin-left: -41px;
+	padding: 0px;
+	padding-right: 4px;
+	position: absolute;
+	visibility: hidden;
+	white-space: pre;
+	background: #EEE;
+	border: 1px solid black;
+	border-top: 0px solid #EEE;
 }
-#suggestions dl { 
-  list-style: none;
-  margin: 0;
-  padding: 0;
+#suggestions dl {
+	list-style: none;
+	margin: 0;
+	padding: 0;
 }
 #suggestions dt {
-  border-right: 1px solid black;
-  width: 40px;
-  text-align: center;
-  float: left;
+	border-right: 1px solid black;
+	width: 40px;
+	text-align: center;
+	float: left;
 }
-#suggestions dd { 
-  margin-left: 40px;
-  height: 22px;
+#suggestions dd {
+	margin-left: 40px;
+	height: 22px;
 }
 
 #epen {
 	position: absolute;
 	visibility: hidden;
 	z-index: 10;
-	border: 1px dashed black;
+}
+
+#epen > canvas {
+	border: 3px solid #000000;
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+#epen > button {
+	float: right;
+}
+
+.drawhere {
+	position: relative;
+	top: -33px;
+	z-index: -1;
+	display: block;
+	margin: auto;
+}
+
+#htr-suggestions {
+	border: 1px dashed grey;
+	display: inline;
+	float:left;
+	white-space: nowrap;
+}
+
+#htr-suggestions:before {
+	content: 'recognition: ';
 }

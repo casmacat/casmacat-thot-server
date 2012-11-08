@@ -1,6 +1,6 @@
 /*!
  * jSketch 0.6 | Luis A. Leiva | MIT license
- * A simple JavaScript library for drawing facilities on HTML5 canvas.
+ * A lightweight JavaScript library for drawing facilities on HTML5 canvas.
  */
 /**
  * A simple JavaScript library for drawing facilities on HTML5 canvas.
@@ -51,12 +51,12 @@
       // make constructor chainable
       return this;
     };
-   /** 
-    * jSketch methods (publicly extensible).
-    * @class
-    * @memberOf jSketch
-    * @see jSketch
-    */    
+    /** 
+     * jSketch methods (publicly extensible).
+     * @class
+     * @memberOf jSketch
+     * @see jSketch
+     */    
     jSketch.fn = Sketch.prototype = {
       /**
        * Allows to change the drawing context at runtime.

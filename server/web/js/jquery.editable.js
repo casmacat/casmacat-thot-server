@@ -363,9 +363,9 @@
         console.warn(err);
         caretRect = jQuery.extend({}, this.get(0).getClientRects()[0]);
         // Recompute caretRect to eliminate margins, borders and paddings
-        caretRect.top += parseFloat($this.css('margin-top')) + parseFloat($this.css('border-top-width')) + parseFloat($this.css('padding-top'));
+        caretRect.top += parseFloat($this.css('border-top-width')) + parseFloat($this.css('padding-top')); // parseFloat($this.css('margin-top')) + 
         caretRect.bottom = caretRect.top + $this.height() - 1
-        caretRect.left += parseFloat($this.css('margin-left')) + parseFloat($this.css('border-left-width')) + parseFloat($this.css('padding-left'));
+        caretRect.left += parseFloat($this.css('border-left-width')) + parseFloat($this.css('padding-left')); // parseFloat($this.css('margin-left')) + 
         caretRect.right = caretRect.left + $this.width() - 1
         absolutePos = 0;
         token = undefined;

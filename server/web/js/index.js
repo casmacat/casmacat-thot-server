@@ -1,3 +1,4 @@
+var casmacat;
 $(function(){
 
   /*******************************************************************************/
@@ -5,7 +6,7 @@ $(function(){
   /*******************************************************************************/
 
   // connect to a server. casmacat will receive async server responses
-  var casmacat = new CasmacatClient('http://' + window.casmacatServer + '/casmacat');
+  casmacat = new CasmacatClient('http://' + window.casmacatServer + '/casmacat');
 
   // handle disconections and debug information
   casmacat.on('disconnect', function(){ this.socket.reconnect(); });
@@ -134,17 +135,19 @@ $(function(){
   $('#btn-epen').click(function() {
     var $this = $('img', this);
     var $epen = $('#epen');
+    var $canvas = $('#drawing-canvas');
     var $target = $('#target');
     
     if ($this.data('mode') == 'epen') {
-      $this.attr('src', 'images/keyboard.png');
+      $this.attr('src', 'images/epen.png');
       $this.data('mode', 'keyboard')
       $epen.css({ visibility: 'hidden' })
     }
     else {
-      $this.attr('src', 'images/epen.png');
+      $this.attr('src', 'images/keyboard.png');
       $this.data('mode', 'epen')
-      
+      $('#suggestions').css({'visibility': 'hidden'});
+
       var pos = $target.offset();
       $epen.css({
         visibility: 'visible',
@@ -152,11 +155,15 @@ $(function(){
         height: $target.outerHeight() + 100,
         left: pos.left - 25,
         width:  $target.outerWidth() + 50,
-      })
+      });
+
+      $canvas.attr('width', $canvas.width());
+      $canvas.attr('height', $canvas.height());
+      $canvas.sketchable('clear');
     }
   });
 
-  $('#epen').click(function(e) {
+  $('#epen').mousedown(function(e) {
     var $epen = $(this);
     var $target = $('#target');
     
@@ -183,11 +190,6 @@ $(function(){
     var show_type = $('input[@name=show]:checked').val();
   });
 
-  /*
-  $('#btn-set-translation').click(function() {
-    casmacat.getTokens($('#source').text(), $('#target').text());
-  });
-  */
 
 
 

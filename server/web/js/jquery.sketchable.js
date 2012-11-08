@@ -1,19 +1,19 @@
 /*!
- * jQuery sketchable 1.2 | Luis A. Leiva | MIT license
+ * jQuery sketchable 1.3 | Luis A. Leiva | MIT license
  * This is a jQuery plugin built on top of jSketch drawing class.
  */
 /**
-* @name $
-* @class 
-* See <a href="http://jquery.com/">the jQuery library</a> for full details.  
-* This just documents the method that is added to jQuery by this plugin.
-*/
+ * @name $
+ * @class 
+ * See <a href="http://jquery.com/">the jQuery library</a> for full details.  
+ * This just documents the method that is added to jQuery by this plugin.
+ */
 /**
-* @name $.fn
-* @class 
-* See <a href="http://jquery.com/">the jQuery library</a> for full details.  
-* This just documents the method that is added to jQuery by this plugin.
-*/
+ * @name $.fn
+ * @class 
+ * See <a href="http://jquery.com/">the jQuery library</a> for full details.  
+ * This just documents the method that is added to jQuery by this plugin.
+ */
 ;(function($){
   // config options + namespace ID
   var options, _ns = "sketchable";
@@ -61,6 +61,8 @@
             elem.bind("touchstart", touchHandler);
             elem.bind("touchend", touchHandler);
             elem.bind("touchmove", touchHandler);
+            // fix Chrome "bug"
+            this.onselectstart = function(){ return false };
           }
         }
         if (typeof options.events.create === 'function') {
@@ -70,7 +72,7 @@
     },
     /** 
      * Gets/Sets drawing data strokes sequence.
-     * @param Array arr data strokes: multidimensional array of {x,y,type}'s
+     * @param Array arr data strokes: multidimensional array of [x,y,status]'s; status = 0 (pen down) or 1 (pen up)
      * @return Strokes object on get, jQuery on set (with the new data attached)
      * @name strokes
      * @methodOf methods
@@ -178,7 +180,7 @@
    *  or a configuration object.
    * @returns jQuery
    * @class
-   * @version 1.2   
+   * @version 1.3
    * @example 
    * $(selector).sketchable();
    * $(selector).sketchable({interactive:false});
@@ -212,7 +214,7 @@
    *     mouseUp: function(evt){},      
    *   },
    *   graphics: {
-   *     lineWidth: 3,
+   *     lineWidth: 2,
    *     strokeStyle: '#F0F',
    *     fillStyle: '#F0F',
    *     lineCap: "round",
@@ -238,7 +240,7 @@
     graphics: {
       fillStyle: '#F0F', 
       strokeStyle: '#F0F',
-      lineWidth: 3
+      lineWidth: 2
       //lineCap: 
       //lineJoin: 
       //miterLimit: 
@@ -262,8 +264,8 @@
     if (!data.canvas.isDrawing) return;
     var p = getMousePos(e);
     data.canvas.lineTo(p.x, p.y);
-    //data.coords.push( {x:p.x, y:p.y, type:0} ); // shouldn't it be type:1?
-    data.coords.push( [p.x,p.y] );
+    //data.coords.push({ x:p.x, y:p.y, type:0 });
+    data.coords.push([ p.x, p.y, 0 ]);
     if (typeof options.events.mouseMove === 'function') {
       options.events.mouseMove(e);
     }     
@@ -274,9 +276,10 @@
     data.canvas.isDrawing = true;
     var p = getMousePos(e);
     data.canvas.beginPath();
-    data.canvas.fillCircle(p.x,p.y,2); // mark 1st point visually
-    //data.coords.push( {x:p.x, y:p.y, type:1} );
-    data.coords.push( [p.x,p.y] );
+    // mark visually 1st point of stroke
+    data.canvas.fillCircle(p.x,p.y,options.graphics.lineWidth);
+    //data.coords.push({ x:p.x, y:p.y, type:1 });
+    data.coords.push([ p.x, p.y, 1 ]);
     if (typeof options.events.mouseDown === 'function') {
       options.events.mouseDown(e);
     }
@@ -296,7 +299,8 @@
   function touchHandler(e) {
     e.preventDefault();
     var elem = $(e.target);
-    var touch = e.originalEvent.touches[0] || e.originalEvent.targetTouches[0];
+    var touch = e.originalEvent.changedTouches[0];
+    touch.type = e.type;
     // remove (emulated) mouse events on mobile devices
     switch(e.type) {
       case "touchstart": 

@@ -1,4 +1,4 @@
-<?php if (empty($_GET['server'])) die('No server set: <a href="?server='.$_SERVER['SERVER_NAME'].':3019">try this example</a>'); ?>
+<?php if (empty($_GET['server'])) die('No server set: <a href="?server='.$_SERVER['SERVER_NAME'].':3019&htr-server='.$_SERVER['SERVER_NAME'].':3020">try this example</a>'); ?>
 <!DOCTYPE html>
 <html debug="true">
 <head>
@@ -8,6 +8,7 @@
   <!--<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>-->
   <script type="text/javascript">
   window.casmacatServer = "<?=$_GET['server']?>";
+  window.casmacatHtrServer = "<?=$_GET['htr-server']?>";
   </script>
   <script type="text/javascript" src="js/jquery.js"></script>
   <script type="text/javascript" src="js/jquery.rotatecells.js"></script>
@@ -15,6 +16,9 @@
   <script type="text/javascript" src="js/socket.io.js"></script>
   <script type="text/javascript" src="js/casmacat.js?<?=time()?>"></script>
   <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
+  <script type="text/javascript" src="js/jsketch.js"></script>
+  <script type="text/javascript" src="js/jquery.sketchable.js"></script>
+  <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
 </head>
 <body>
   <h3>CasMaCat API demo <button id="btn-epen"><img src="images/epen.png"/></button> </h3>
@@ -44,6 +48,12 @@
   </div>
   <div id="suggestions"></div>
   <div id="hidden"></div>
-  <canvas id="epen"></canvas>
+  <div id="epen">
+    <canvas id="drawing-canvas"></canvas>
+    <div id="htr-suggestions"></div>
+    <button id="btn-decode">Decode</button>
+	<button id="btn-clear">Clear</button>
+    <img src="images/drawhere.png" class="drawhere" alt="Draw here!" />
+  </div>
 </body>
 </html>
