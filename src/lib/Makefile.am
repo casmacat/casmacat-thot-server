@@ -40,7 +40,7 @@ space_tokenizer_la_CPPFLAGS = -I$(top_srcdir)/src/include
 
 ### Thot plugins ###
 if HAVE_THOT
-lib_LTLIBRARIES += ibmMax_confidence_estimator.la HMMaligner.la 
+lib_LTLIBRARIES += ibmMax-confidence-estimator.la HMMaligner.la 
 ibmMax_confidence_estimator_la_SOURCES = ibmMax-confidence-estimator.cpp
 ibmMax_confidence_estimator_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic $(LDFLAGS)  
 ibmMax_confidence_estimator_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(THOT_INCLUDE_DIR)
