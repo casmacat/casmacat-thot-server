@@ -170,6 +170,9 @@ $(function(){
     var tokens = $target.editable('getTokensAtXY', e.clientX, e.clientY);
     if (tokens.length > 0 && tokens[0].distance.d === 0) {
       var $token = $(tokens[0].token);
+      var newtok = $token.clone();
+      console.log($token.offset());
+      console.log(newtok.offset());
       $token.fadeOut(200).fadeIn(200).fadeOut(200).fadeIn(200);
     }
   });

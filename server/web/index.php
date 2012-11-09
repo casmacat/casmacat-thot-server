@@ -6,6 +6,7 @@
   <title>CASMACAT demo</title>
   <link rel="stylesheet" type="text/css" media="screen,projection" href="css/index.css">
   <!--<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>-->
+  <script type="text/javascript" src="js/console.js"></script>
   <script type="text/javascript">
   window.casmacatServer = "<?=$_GET['server']?>";
   window.casmacatHtrServer = "<?=$_GET['htr-server']?>";
