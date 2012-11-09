@@ -320,7 +320,7 @@ if __name__ == "__main__":
     ol_systems["OL"] = online_mt
     
 #alignment_plugin = AlignmentPlugin("plugins/random-aligner.so")
-    alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "thot/models/tm/my_ef_invswm")
+    alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
     alignment_factory = alignment_plugin.create()
     if not alignment_factory: raise Exception("Alignment plugin failed")
     alignment_factory.setLogger(logger)
@@ -329,7 +329,7 @@ if __name__ == "__main__":
 
     
 #    confidence_plugin = ConfidencePlugin("plugins/random-confidence-estimator.so")
-    confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "thot/models/tm/my_ef_invswm")
+    confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
     confidence_factory = confidence_plugin.create()
     if not confidence_factory: raise Exception("Confidence plugin failed")
     confidence_factory.setLogger(logger)

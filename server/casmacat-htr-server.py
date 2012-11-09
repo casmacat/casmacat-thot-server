@@ -147,7 +147,7 @@ application = web.Application(
     CasmacatRouter.apply_routes([]),
     flash_policy_port = 843,
     flash_policy_file = os.path.join(ROOT, 'flashpolicy.xml'),
-    socket_io_port = 3020
+    socket_io_port = 3003
 )
 
 if __name__ == "__main__":

@@ -77,7 +77,7 @@ $(function(){
   })
   // prevent new lines
   .keydown(function(e) {
-    if (e.which == 13) {
+    if (e.which === 13) {
       e.stopPropagation();
       e.preventDefault();
     }
@@ -107,7 +107,7 @@ $(function(){
   })
   // on blur hide suggestions
   .blur(function(e) {
-    //$('#suggestions').css({'visibility': 'hidden'});
+    $('#suggestions').css({'visibility': 'hidden'});
   })
   // on key up throttle a new translation
   .keyup(function(e) {
@@ -138,7 +138,7 @@ $(function(){
     var $canvas = $('#drawing-canvas');
     var $target = $('#target');
     
-    if ($this.data('mode') == 'epen') {
+    if ($this.data('mode') === 'epen') {
       $this.attr('src', 'images/epen.png');
       $this.data('mode', 'keyboard')
       $epen.css({ visibility: 'hidden' })
@@ -146,7 +146,7 @@ $(function(){
     else {
       $this.attr('src', 'images/keyboard.png');
       $this.data('mode', 'epen')
-      $('#suggestions').css({'visibility': 'hidden'});
+      $target.blur();
 
       var pos = $target.offset();
       $epen.css({
@@ -168,7 +168,7 @@ $(function(){
     var $target = $('#target');
     
     var tokens = $target.editable('getTokensAtXY', e.clientX, e.clientY);
-    if (tokens.length > 0 && tokens[0].distance.d == 0) {
+    if (tokens.length > 0 && tokens[0].distance.d === 0) {
       var $token = $(tokens[0].token);
       $token.fadeOut(200).fadeIn(200).fadeOut(200).fadeIn(200);
     }
@@ -211,7 +211,7 @@ $(function(){
     for (var i = 0; i < data.matches.length; i++) {
       var match = data.matches[i];
       if (current_target.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
-        if (show_type == match.created_by) {
+        if (show_type === match.created_by) {
           $('#target').editable('setText', match.translation, match.translationTokens);
       
           // requests the server for new alignment and confidence info
@@ -229,7 +229,7 @@ $(function(){
       }
     }
 
-    if (count > 0) {
+    if (count > 0 && $('#btn-epen > img').data('mode') !== 'epen') {
       console.log(d.caretRect.bottom);
       $('#suggestions').css({'top': d.caretRect.bottom, 'left': d.caretRect.left, 'visibility': 'visible'});
       $('#suggestions').html(list);
@@ -426,7 +426,7 @@ $(function(){
           col        = tgt_merge[ml][1];
           merge_type = tgt_merge[ml][2];
 
-      if (merge_type == 'D') {
+      if (merge_type === 'D') {
         merge_pos += nins - ndel ;
         $('thead tr th:eq(' + (merge_pos + 1) + '), tbody tr:last th:eq(' + (merge_pos + 1) + ')', table).remove();
         $('tbody tr', table).not(':last').each(function () { $('td:eq(' + merge_pos + ')', this).remove();});
