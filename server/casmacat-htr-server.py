@@ -85,7 +85,8 @@ class HtrConnection(SocketConnection):
         last_token_is_partial = True
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
 
-      self.htr_session = htr.createSessionFromPrefix(source_tok, prefix_tok, suffix_tok, last_token_is_partial)
+      #self.htr_session = htr.createSessionFromPrefix(source_tok, prefix_tok, suffix_tok, last_token_is_partial)
+      self.htr_session = htr.createSessionFromPrefix([], [], [], False)
       self.strokes = []
 
     @event
@@ -100,13 +101,14 @@ class HtrConnection(SocketConnection):
             has_partial, partial_result_tok = self.htr_session.decodePartially()
             if has_partial:
               partial_result, partial_result_seg = tokenizer.postprocess(partial_result_tok)
+              print >> sys.stderr, "update", partial_result_tok
               self.emit('htrupdate', partial_result, partial_result_seg)
 
     @event
     def end_htr_session(self):
       if self.htr_session: 
           result_tok = self.htr_session.decode()
-          print >> sys.stderr, result_tok
+          print >> sys.stderr, "change", result_tok
           result, result_seg = tokenizer.postprocess(result_tok)
           self.emit('htrchange', result, result_seg)
           htr.deleteSession(self.htr_session)

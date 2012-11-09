@@ -28,11 +28,11 @@
     <input type="button" id="btn-translate" value="Translate"/>
   </div>
   <div>
-    Target: 
+    Target. Select mode of operation: 
     <form id="show-options">
-      <input type="radio" name="show" value="list" checked> Show list (no suffix update)
-      <input type="radio" name="show" value="OL"> OL 
+      <input type="radio" name="show" value="list" checked> Post-editing (no suffix update)
       <input type="radio" name="show" value="IMT"> IMT
+      <input type="radio" name="show" value="OL"> IMT-OL (online learning) 
     </form> 
     <div id="target" class="editable epen"></div>
     <input type="button" id="btn-update" value="Update models"/>

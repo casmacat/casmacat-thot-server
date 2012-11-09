@@ -13,11 +13,17 @@ $(function(){
   
   $('#btn-decode, #btn-clear').attr('disabled', 'true');
 
+  // helper function to limit the number of server requests
+  // at least throttle_ms have to pass for events to trigger 
+  var timerMs = 400;
+  var decoderTimer = 0;
+
   // instantiate a drawable canvas 
   var cnv = $('#drawing-canvas').sketchable({
       interactive: true,
       events: {
         mouseDown: function(e) {
+          clearTimeout (decoderTimer);
           var strokes = cnv.sketchable('strokes');
           if (strokes.length === 0) {
             var source = $('#source').editable('getText');
@@ -28,9 +34,17 @@ $(function(){
             var data = { x: e.clientX, y: e.clientY, target: null};
             var tokens = $('#target').editable('getTokensAtXY', e.clientX, e.clientY);
             if (tokens.length > 0) {
-              tokens.sort(function(a,b){ return Math.abs(a.distance.dx) - Math.abs(b.distance.dx); });
-              data.target = tokens[0];            
-              console.log(data.target);
+              tokens = tokens.filter(function(a){ return a.distance.dx <= 0});
+              if (tokens.length > 0) {
+                tokens.sort(function(a,b){ return Math.abs(a.distance.dx) - Math.abs(b.distance.dx); });
+                data.target = tokens[0];
+              }            
+            }
+            if (!data.target) {
+              data.target = {
+                token: $('#target').editable('appendWord', '', (target)?' ':''),
+                position: {d: 0, dx: 0, dy: 0}
+              }
             }
             cnv.data('htr', data);
 
@@ -41,6 +55,10 @@ $(function(){
           var strokes = cnv.sketchable('strokes');
           var stroke = strokes[strokes.length-1];
           casmacatHtr.addStroke(stroke, true);      
+          decoderTimer = setTimeout(function () {
+            $('#btn-decode').trigger('click');
+          }, timerMs);
+
         },
         clear: function(elem, data) {
           cnv.removeData('htr');
@@ -51,25 +69,11 @@ $(function(){
   });
   
   
-  // helper function to limit the number of server requests
-  // at least throttle_ms have to pass for events to trigger 
-  var throttle_ms = 2000;
-  var throttle = (function(){
-    var timer = 0;
-    return function(callback, ms){
-      clearTimeout (timer);
-      timer = setTimeout(callback, ms);
-    };
-  })();
   
   // handle HTR responses
   casmacatHtr.on('htrupdate', function(result, result_seg) {
     console.log('updated', result);
     update_htr_suggestions(result, result_seg, 'red');
-    throttle(function () {
-      $('#btn-decode').trigger('click');
-    }, throttle_ms);
-
   });
 
   // handle post-editing (target has changed but not source)
@@ -88,6 +92,7 @@ $(function(){
   // clear canvas
   $('#btn-clear').click(function(e){
     cnv.sketchable('clear');
+    $('#decode').attr('disabled', 'true');
     $(this).attr('disabled', 'true');
   });
 
@@ -97,16 +102,19 @@ $(function(){
 
 
   function update_htr_suggestions(result, result_seg, color) {
-    if (!color) color = "black";
+    if (result === "") return;
+    var is_final = false;
+    if (!color) {
+      color = "black";
+      is_final = true;
+    }
     console.log(result, result_seg);
 
     $('#htr-suggestions').text(result).css('color', color);
     var data = cnv.data('htr');
-    if (data.target === null) {
-      $('#target').editable('setText', result);
-    }
-    else if (data.target) {
-      $(data.target.token).text(result);
+    
+    if (data.target) {
+      $('#target').editable('replaceText', result, result_seg, data.target.token, is_final);
     }
   }
 

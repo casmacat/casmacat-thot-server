@@ -482,6 +482,132 @@
       }
     },
 
+    appendWord: function(str, trailingSpaces) {
+      var $this = $(this),
+          data = $this.data('editable');
+
+      var tok_id = 0;
+      var lastSpan = $('span:last-child', $this);
+      if (lastSpan) {
+        tok_id = lastSpan.data('tok') + 1;
+      }
+
+
+      // add trailing spaces
+      var spaces;
+      if (trailingSpaces) {
+        spaces = document.createTextNode(trailingSpaces);
+      }
+
+      // create a new node 
+      var span = $('<span/>', {
+          class: 'editable-token', 
+          text: str, 
+          id: $this.attr('id') + '_' + (data.ntok++)
+      });
+
+      span.data('tok', tok_id); 
+
+      var pos;
+      if ($this.is(':focus')) {
+        pos = $this.editable('getCaretPos');
+      }
+      if (spaces) $this.append(spaces);
+      $this.append(span);
+      if ($this.is(':focus')) {
+        $this.editable('setCaretPos', pos);
+      }
+
+      return span.get(0);
+    },
+
+    replaceText: function(str, segs, elemsToReplace, is_final) {
+      var $this = $(this),
+          data = $this.data('editable');
+
+      if (str === "" || segs.length == 0) return;
+
+      var replaceable = elemsToReplace; 
+      if (elemsToReplace instanceof Array) {
+        if (elemsToReplace.length > 0) {
+          replaceable = elemsToReplace[0];
+          for (var i = 1; i < elemsToReplace.length; i++) {
+            elemsToReplace[i].remove();
+          }          
+        }
+        else {
+          replaceable = undefined;
+        }
+      }
+
+      if (!replaceable) return;
+      replaceable = $(replaceable);
+
+      if (is_final) {
+        var tokens = $('<span/>'); 
+        if (segs && segs.length > 0) {
+  
+          // get old tokens from data and new tokens
+          var str_tokens = tokenize_by_segments(str, segs);
+  
+          var id = $this.attr('id');
+  
+          // add initial spaces
+          if (segs[0][0] > 0) {
+            var spaces = str.slice(0, segs[0][0]);
+            tokens.append(document.createTextNode(spaces));
+          }
+  
+          // add rest of tokens
+          for (var tok_id = 0; tok_id < str_tokens.length; tok_id++) {
+  
+            var pos = segs[tok_id];
+  
+            // create a new node 
+            var span = $('<span/>', {
+                class: 'editable-token', 
+                text: str_tokens[tok_id], 
+                id: id + '_' + (data.ntok++)
+            });
+  
+            span.data('tok', tok_id); 
+            tokens.append(span);
+  
+            // add space token
+            var spaces = '';
+            if (tok_id < segs.length - 1) {
+              spaces = str.slice(pos[1], segs[tok_id + 1][0]);
+            }
+            else {
+              spaces = str.slice(pos[1]);
+            }
+            //if (spaces.length > 0) {
+              tokens.append(document.createTextNode(spaces));
+            //}
+          }
+  
+        }
+        else { // not tokenization
+          tokens.append(document.createTextNode(str));
+        }
+  
+        if ($this.is(':focus')) {
+          var pos = $this.editable('getCaretPos');
+          replaceable.replaceWith(tokens.contents());
+          $this.editable('setCaretPos', pos);
+        }
+        else {
+          replaceable.replaceWith(tokens.contents());
+        }
+      }
+      else {
+        replaceable.text(str);
+      }
+
+      data['str'] = $this.text();
+
+    },
+
   };
 
 
