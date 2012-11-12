@@ -279,7 +279,7 @@ $(function(){
     // targetal stores ids of source spans aligned to it
     var targetal = new Array();
     targetal.length = alignments[0].length;
-    for (var v = 0; v < alignment.length; ++v) targetal[v] = new Array();
+    for (var v = 0; v < alignments[0].length; ++v) targetal[v] = new Array();
     
     for (var c = 0; c < alignments.length; ++c) {
       var alignment = alignments[c];          
