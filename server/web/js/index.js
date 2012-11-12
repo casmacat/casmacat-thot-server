@@ -123,12 +123,15 @@ $(function(){
       updateBtn.removeAttr('disabled');
     }
 
-    if (data.str != target) { 
-      throttle(function () {
-        casmacat.getTokens(source, target);
-        console.log("query prefix:", target);
-        casmacat.setPrefix(target, pos);
-      }, throttle_ms);
+    // if key is not backspace, supr
+    if ([8, 46].indexOf(e.which) === -1) {
+      if (data.str != target) { 
+        throttle(function () {
+          casmacat.getTokens(source, target);
+          console.log("query prefix:", target);
+          casmacat.setPrefix(target, pos);
+        }, throttle_ms);
+      }
     }
   });
 
