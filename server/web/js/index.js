@@ -274,16 +274,16 @@ $(function(){
     // sourceal stores ids of target spans aligned to it
     var sourceal = new Array();
     sourceal.length = alignments.length;
+    for (var c = 0; c < alignments.length; ++c) sourceal[c] = new Array();
+
     // targetal stores ids of source spans aligned to it
     var targetal = new Array();
     targetal.length = alignments[0].length;
+    for (var v = 0; v < alignment.length; ++v) targetal[v] = new Array();
     
     for (var c = 0; c < alignments.length; ++c) {
       var alignment = alignments[c];          
       for (var v = 0; v < alignment.length; ++v) {
-        if (!sourceal[c]) sourceal[c] = new Array();
-        if (!targetal[v]) targetal[v] = new Array();
-
         if (alignment[v] > 0.5) {
           sourceal[c].push('#' + targetspans[v].id);
           targetal[v].push('#' + sourcespans[c].id);
