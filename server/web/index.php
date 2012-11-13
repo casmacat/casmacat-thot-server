@@ -25,7 +25,7 @@
   <h3>CasMaCat API demo <button id="btn-epen"><img src="images/epen.png"/></button> </h3>
   <div>
     Source: 
-    <div id="source" class="editable">CasMaCat network services</div> <!-- servicios de red de CasMaCat -->
+    <div id="source" class="editable">If a particular capability is not available in your network environment , the option will not appear in the dialog .</div> <!-- servicios de red de CasMaCat -->
     <input type="button" id="btn-translate" value="Translate"/>
   </div>
   <div>
