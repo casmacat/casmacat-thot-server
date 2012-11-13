@@ -166,6 +166,8 @@ $(function(){
     }
   });
 
+
+/*
   $('#epen').mousedown(function(e) {
     var $epen = $(this);
     var $target = $('#target');
@@ -179,7 +181,7 @@ $(function(){
       $token.fadeOut(200).fadeIn(200).fadeOut(200).fadeIn(200);
     }
   });
-
+*/
 
   $('#btn-translate').click(function() {
     casmacat.translate($('#source').text());
