@@ -228,8 +228,6 @@ $(function(){
           casmacat.getWordConfidences(source, match.translation, []);
         }
         else {
-          console.log('"'+match.translation+'"');
-          console.log('"'+match.translation.substr(d.pos)+'"');
           list.append($('<dt/>').text(match.created_by));
           list.append($('<dd/>').text(match.translation.substr(d.pos)));
           count++;
@@ -238,7 +236,7 @@ $(function(){
     }
 
     if (count > 0 && $('#btn-epen > img').data('mode') !== 'epen') {
-      console.log(d.caretRect.bottom);
+      //console.log(d.caretRect.bottom);
       $('#suggestions').css({'top': d.caretRect.bottom, 'left': d.caretRect.left, 'visibility': 'visible'});
       $('#suggestions').html(list);
       //$('#target').editable('setText', target, target_seg);
