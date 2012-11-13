@@ -209,9 +209,9 @@ class CasmacatConnection(SocketConnection):
       prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
       suffix_tok, suffix_seg = tokenizer.preprocess(suffix)
 
-      last_token_is_partial = False
-      if len(suffix) != 0 and not suffix[0].isspace():
-        last_token_is_partial = True
+      last_token_is_partial = True
+      if len(prefix) == 0 or prefix[-1].isspace():
+        last_token_is_partial = False
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
 
       predictions = new_predictions(target, caret_pos)
