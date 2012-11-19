@@ -1,4 +1,6 @@
 var casmacat;
+var confThreshold = {};
+
 $(function(){
 
   /*******************************************************************************/
@@ -447,15 +449,25 @@ $(function(){
     // get target span tokens 
     var spans = $('#target > .editable-token');
 
-    // add class to color tokens 'wordconf-ok' or 'wordconf-bad'
+    // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
     for (var c = 0; c < confidences.length; ++c) {
       
       var conf = Math.round(confidences[c]*100)/100;
-      var cssClass = "wordconf-" + (conf > 0.5 ? "ok" : "bad");
-      var noCssClass = "wordconf-" + (conf <= 0.5 ? "ok" : "bad");
+      
+      var cssClass;
+      if (conf > confThreshold.doubt) {
+        cssClass = "wordconf-ok";
+      }
+      else if (conf > confThreshold.bad) {
+        cssClass = "wordconf-doubt";
+      }
+      else {
+        cssClass = "wordconf-bad";
+      }
 
+      $(spans[c]).data('confidence', conf);
+      $(spans[c]).removeClass("wordconf-ok wordconf-doubt wordconf-bad");
       $(spans[c]).addClass(cssClass);
-      $(spans[c]).removeClass(noCssClass);
 
       // also update bottom of alignment matrix with values
       $("#demo-table tfoot tr td:eq("+(c+1)+")").text(conf);
@@ -549,5 +561,51 @@ $(function(){
 
     table.rotateCells();
   };
-  
+
+  function setConfThreshold(bad, doubt) {
+    confThreshold.bad = bad; 
+    confThreshold.doubt = doubt;
+    
+    $('#slider-bad').text(bad.toFixed(2));
+    $('#slider-doubt').text(doubt.toFixed(2));
+  }
+
+  setConfThreshold(0.1, 0.5);
+
+  $("#slider-conf").empty().noUiSlider('init', {
+    scale: [0, 100],
+    change:
+      function(){
+        var values = $(this).noUiSlider('value');
+        
+        setConfThreshold(values[0]/100.0, values[1]/100.0);
+        
+        // get target span tokens 
+        var spans = $('#target > .editable-token');
+    
+        // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
+        for (var c = 0; c < spans.length; ++c) {
+          $(spans[c]).removeClass("wordconf-ok wordconf-doubt wordconf-bad");
+          
+          var conf = $(spans[c]).data('confidence');
+          if (conf) {
+            var cssClass;
+            if (conf > confThreshold.doubt) {
+              cssClass = "wordconf-ok";
+            }
+            else if (conf > confThreshold.bad) {
+              cssClass = "wordconf-doubt";
+            }
+            else {
+              cssClass = "wordconf-bad";
+            }
+      
+            $(spans[c]).addClass(cssClass);
+          }
+        }
+
+      },
+  })
+  $("#slider-conf").noUiSlider('move', { handle: 1, to: Math.round(confThreshold.doubt*100) });
+  $("#slider-conf").noUiSlider('move', { handle: 0, to: Math.round(confThreshold.bad*100) });
 });

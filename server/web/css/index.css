@@ -81,7 +81,17 @@ textarea {
 .wordconf-ok {
 	color: inherit;
 }
-.wordconf-bad {
+.noUi-upperHandle > div {
+	background-color: darkorange;	
+}
+.wordconf-doubt, #slider-doubt {
+	color: darkorange;
+}
+.noUi-lowerHandle > div {
+	background-color: red;	
+}
+
+.wordconf-bad, #slider-bad {
 	color: red;
 }
 .align {
@@ -163,4 +173,17 @@ textarea {
 
 #htr-suggestions:before {
 	content: 'recognition: ';
+}
+
+#options {
+	float: right;
+	margin-right: 20px; 
+}
+
+#options > div, #options > button {
+	float: left;
+}
+#options > div {
+	margin-top: 12px;
+	vertical-align: middle;
 }

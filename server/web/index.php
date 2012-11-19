@@ -4,6 +4,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
   <title>CASMACAT demo</title>
+  <link rel="stylesheet" type="text/css" media="screen,projection" href="css/nouislider.css">
   <link rel="stylesheet" type="text/css" media="screen,projection" href="css/index.css">
   <!--<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>-->
   <script type="text/javascript" src="js/console.js"></script>
@@ -16,16 +17,20 @@
   <script type="text/javascript" src="js/jquery.editable.js?<?=time()?>"></script>
   <script type="text/javascript" src="js/socket.io.js"></script>
   <script type="text/javascript" src="js/casmacat.js?<?=time()?>"></script>
+  <script type="text/javascript" src="js/jquery.nouislider.min.js"></script>
   <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
   <script type="text/javascript" src="js/jsketch.js"></script>
   <script type="text/javascript" src="js/jquery.sketchable.js"></script>
   <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
 </head>
 <body>
-  <h3>CasMaCat API demo
+  <div id="options">
+  	<div>Confidence thresholds: <span id="slider-bad"></span>/<span id="slider-doubt"></span></div> 
+  	<div id="slider-conf" class="noUiSlider"></div>
+  	<button title="toggle alignment matrix visualization" id="btn-show-alignments"><img src="images/matrix.png"/></button>
   	<button title="toggle e-pen interaction" id="btn-epen"><img src="images/epen.png"/></button> 
-  	<button title="toggle alignment matrix visualization" id="btn-show-alignments"><img src="images/matrix.png"/></button>  
-  </h3>
+  </div>
+  <h3>CasMaCat API demo</h3>
   <div>
     Source: 
     <div id="source" class="editable">If a particular capability is not available in your network environment , the option will not appear in the dialog .</div> <!-- servicios de red de CasMaCat -->
