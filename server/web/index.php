@@ -22,7 +22,10 @@
   <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
 </head>
 <body>
-  <h3>CasMaCat API demo <button id="btn-epen"><img src="images/epen.png"/></button> </h3>
+  <h3>CasMaCat API demo
+  	<button title="toggle e-pen interaction" id="btn-epen"><img src="images/epen.png"/></button> 
+  	<button title="toggle alignment matrix visualization" id="btn-show-alignments"><img src="images/matrix.png"/></button>  
+  </h3>
   <div>
     Source: 
     <div id="source" class="editable">If a particular capability is not available in your network environment , the option will not appear in the dialog .</div> <!-- servicios de red de CasMaCat -->

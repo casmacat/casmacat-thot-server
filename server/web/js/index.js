@@ -14,17 +14,29 @@ $(function(){
 
 
   // handle translation responses
-  casmacat.on('contributionchange', function(data) {
+  casmacat.on('contributionchange', function(obj) {
+    var data = obj.data;
     // make sure new data still applies to current source
     if (data.text !== $('#source').editable('getText')) return;
 
-    casmacat.startImtSession(data.text);
+    console.log('contribution changed', data);
+
+    var query = {
+      action: "startImtSession",
+      id_segment: 607906,
+      text: data.text,
+      id_job: 1135,
+      num_results: 2,
+      id_translator: "me!"
+    }
+    casmacat.startImtSession(query);
   	update_translation_display(data);
     update_suggestions(data);
   });
 
   // handle post-editing (target has changed but not source)
-  casmacat.on('translationchange', function(data) {
+  casmacat.on('translationchange', function(obj) {
+    var data = obj.data;
     // make sure new data still applies to current source and target texts
     if (data.text !== $('#source').editable('getText')) return;
     if (data.translatedText !== $('#target').editable('getText')) return;
@@ -33,17 +45,20 @@ $(function(){
   });
 
   // handle alignment changes (updates highlighting and alignment matrix) 
-  casmacat.on('alignmentchange', function(alignments, source, source_seg, target, target_seg) {
-    update_alignment_display(alignments, source, source_seg, target, target_seg);
+  casmacat.on('alignmentchange', function(obj) {
+    var data = obj.data;
+    update_alignment_display(data.matrix, data.source, data.source_seg, data.target, data.target_seg);
   });
 
   // handle confidence changes (updates highlighting) 
-  casmacat.on('confidencechange', function(sent, confidences, source, source_seg, target, target_seg) {
-    update_word_confidences_display(sent, confidences, source, source_seg, target, target_seg);
+  casmacat.on('confidencechange', function(obj) {
+    var data = obj.data;
+    update_word_confidences_display(data.quality, data.word_confidences, data.source, data.source_seg, data.target, data.target_seg);
   });
 
   // handle confidence changes (updates highlighting) 
-  casmacat.on('predictionchange', function(data) {
+  casmacat.on('predictionchange', function(obj) {
+    var data = obj.data;
     update_suggestions(data);
   });
 
@@ -93,7 +108,15 @@ $(function(){
 
     if (data.str != source) { 
       throttle(function () {
-        casmacat.translate(source);
+        var query = {
+          action: "getContribution",
+          id_segment: 607906,
+          text: source,
+          id_job: 1135,
+          num_results: 2,
+          id_translator: "me!"
+        }
+        casmacat.translate(query);
       }, throttle_ms);
     }
   });
@@ -127,9 +150,20 @@ $(function(){
     if ([8, 46].indexOf(e.which) === -1) {
       if (data.str != target) { 
         throttle(function () {
-          casmacat.getTokens(source, target);
+          var query = {
+            action: "getTokens",
+            id_segment: 607906,
+            text: source,
+            target: target,
+            caret_pos: pos,
+            id_job: 1135,
+            num_results: 2,
+            id_translator: "me!"
+          }
+          casmacat.getTokens(query);
           console.log("query prefix:", target);
-          casmacat.setPrefix(target, pos);
+          query.action = "getSuggestions";
+          casmacat.setPrefix(query);
         }, throttle_ms);
       }
     }
@@ -166,6 +200,11 @@ $(function(){
     }
   });
 
+  $('#btn-show-alignments').click(function() {
+    $('#matrix').toggle();
+  });
+  $('#matrix').toggle();
+
 
 /*
   $('#epen').mousedown(function(e) {
@@ -184,14 +223,31 @@ $(function(){
 */
 
   $('#btn-translate').click(function() {
-    casmacat.translate($('#source').text());
+    var query = {
+      action: "getContribution",
+      id_segment: 607906,
+      text: $('#source').text(),
+      id_job: 1135,
+      num_results: 2,
+      id_translator: "me!"
+    }
+    casmacat.translate(query);
   });
 
   $('#btn-update').click(function() {
     var $this = $(this);
     $this.val('Updated');
     $this.attr('disabled', 'true');
-    casmacat.update($('#source').text(), $('#target').text());
+    var query = {
+      action: "update",
+      id_segment: 607906,
+      text: $('#source').text(),
+      target: $('#target').text(),
+      id_job: 1135,
+      num_results: 2,
+      id_translator: "me!"
+    }
+    casmacat.update(query);
   });
 
   $('#show-options input').change(function() {
@@ -224,8 +280,19 @@ $(function(){
       
           // requests the server for new alignment and confidence info
           source = $('#source').editable('getText')
-          casmacat.getAlignments(source, match.translation);
-          casmacat.getWordConfidences(source, match.translation, []);
+          var query = {
+            action: "getAlignments",
+            id_segment: 607906,
+            text: source,
+            target: match.translation,
+            validated_words: [],
+            id_job: 1135,
+            num_results: 2,
+            id_translator: "me!"
+          }
+          casmacat.getAlignments(query);
+          query.action = "getWordConfidences";
+          casmacat.getWordConfidences(query);
         }
         else {
           list.append($('<dt/>').text(match.created_by));
@@ -264,8 +331,20 @@ $(function(){
     updateTable($('#demo-table'), tokenize_by_segments(source, source_seg), tokenize_by_segments(target, target_seg));
 
     // requests the server for new alignment and confidence info
-    casmacat.getAlignments(source, target);
-    casmacat.getWordConfidences(source, target, []);
+    var query = {
+      action: "getAlignments",
+      id_segment: 607906,
+      text: source,
+      target: target,
+      validated_words: [],
+      id_job: 1135,
+      num_results: 2,
+      id_translator: "me!"
+    }
+
+    casmacat.getAlignments(query);
+    query.actions = "getWordConfidences";
+    casmacat.getWordConfidences(query);
   }
 
 
@@ -297,7 +376,7 @@ $(function(){
   // add alignment events so that aligned words are highlighted
   function add_alignment_events(spans, aligids) {
     // add mouseenter mouseleave events to token spans
-    //XXX: what happens is the span had already been assigned alig visualization events? 
+    //XXX: what happens is the span had already been assigned align visualization events? 
     // many event (equal) handlers are called?
     for (var i = 0; i < spans.length; i++) {
       $(spans[i]).mouseenter(aligids[i], function (e) {
@@ -353,7 +432,9 @@ $(function(){
     // add mouseenter mouseleave events to target spans
     add_alignment_events(targetspans, targetal);
 
-    update_aligment_matrix(alignments);
+    if ($('#matrix').is(":visible")) {
+      update_aligment_matrix(alignments);
+    }
   }
 
 
@@ -387,6 +468,7 @@ $(function(){
   };
 
   function updateTable(table, src, tgt) {
+    if (!$('#matrix').is(":visible")) return;
     //console.log(table);
     var src_tok = getTokens($('tbody tr', table).find('th.right:eq(0)'));
     var tgt_tok = getTokens($('thead th:gt(0)', table));

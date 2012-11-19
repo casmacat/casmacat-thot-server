@@ -71,8 +71,8 @@ table .bottom {
 }
 table tbody td {
 	border: 1px solid gray;
-	width: 30px;
-	height: 30px;
+	width: 15px;
+	height: 15px;
 }
 /* See http://www.zachleat.com/test/writing-mode/ */
 textarea {

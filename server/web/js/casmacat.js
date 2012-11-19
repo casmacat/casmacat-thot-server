@@ -25,14 +25,14 @@ $.extend(CasmacatClient.prototype, {
    },
 
    // MT client methods
-   translate: function(source) {
+   translate: function(obj) {
      this.checkConnection();
-     this.server.emit('translate', {source: source});
+     this.server.emit('translate', {data: obj});
    },
 
-   update: function(source, target) {
+   update: function(obj) {
      this.checkConnection();
-     this.server.emit('update', {source: source, target: target});
+     this.server.emit('update', {data: obj});
    },
 
    // DocumentManager methods
@@ -44,37 +44,33 @@ $.extend(CasmacatClient.prototype, {
      this.checkConnection();
      this.server.emit('merge', {doc_id: doc_id});
    },
-   decodeEpenInteraction: function(source, target, validated_words, pen_strokes) {
-     this.checkConnection();
-     this.server.emit('decode_epen_interaction', {source: source, target: target, validated_words: validated_words, pen_strokes: pen_strokes});
-   },
 
    // Procesor methods
-   getTokens: function(source, target) {
+   getTokens: function(obj) {
      this.checkConnection();
-     this.server.emit('get_tokens', {source: source, target: target});
+     this.server.emit('get_tokens', {data: obj});
    },
 
    // Aligner methods
-   getAlignments: function(source, target) {
+   getAlignments: function(obj) {
      this.checkConnection();
-     this.server.emit('get_alignments', {source: source, target: target});
+     this.server.emit('get_alignments', {data: obj});
    },
 
    // WC client methods
-   getWordConfidences: function(source, target, validated_words) {
+   getWordConfidences: function(obj) {
      this.checkConnection();
-     this.server.emit('get_word_confidences', {source: source, target: target, validated_words: validated_words});
+     this.server.emit('get_word_confidences', {data: obj});
    },
 
    // ITM methods
-   startImtSession: function(source) {
+   startImtSession: function(obj) {
      this.checkConnection();
-     this.server.emit('start_imt_session', {source: source});
+     this.server.emit('start_imt_session', {data: obj});
    },
-   setPrefix: function(target, caret_pos) {
+   setPrefix: function(obj) {
      this.checkConnection();
-     this.server.emit('set_prefix', {target: target, caret_pos: caret_pos});
+     this.server.emit('set_prefix', {data: obj});
    },
    endImtSession: function() {
      this.checkConnection();
@@ -82,13 +78,13 @@ $.extend(CasmacatClient.prototype, {
    },
 
    // HTR methods
-   startHtrSession: function(source, target, caret_pos) {
+   startHtrSession: function(obj) {
      this.checkConnection();
-     this.server.emit('start_htr_session', {source: source, target: target, caret_pos: caret_pos});
+     this.server.emit('start_htr_session', {data: obj});
    },
-   addStroke: function(points, is_pen_down) {
+   addStroke: function(obj) {
      this.checkConnection();
-     this.server.emit('add_stroke', {points: points, is_pen_down: is_pen_down});
+     this.server.emit('add_stroke', {data: obj});
    },
    endHtrSession: function() {
      this.checkConnection();
