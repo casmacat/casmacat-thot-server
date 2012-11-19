@@ -35,8 +35,8 @@
     Target. Select mode of operation: 
     <form id="show-options">
       <input type="radio" name="show" value="list" checked> Post-editing (no suffix update)
-      <input type="radio" name="show" value="IMT"> IMT
-      <input type="radio" name="show" value="OL"> IMT-OL (online learning) 
+      <input type="radio" name="show" value="ITP"> ITP
+      <input type="radio" name="show" value="ITP-OL"> ITP-OL (online learning) 
     </form> 
     <div id="target" class="editable epen"></div>
     <input type="button" id="btn-update" value="Update models"/>

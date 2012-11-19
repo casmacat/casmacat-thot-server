@@ -430,12 +430,12 @@ if __name__ == "__main__":
     online_mt = ol_factory.createInstance()
     if not online_mt: raise Exception("Online MT instance failed")
 
-    mt_systems["IMT"] = static_mt
-    imt_systems["IMT"] = static_mt
+    mt_systems["ITP"] = static_mt
+    imt_systems["ITP"] = static_mt
 
-    mt_systems["OL"] = online_mt
-    imt_systems["OL"] = online_mt
-    ol_systems["OL"] = online_mt
+    mt_systems["ITP-OL"] = online_mt
+    imt_systems["ITP-OL"] = online_mt
+    ol_systems["ITP-OL"] = online_mt
     
 #alignment_plugin = AlignmentPlugin("plugins/random-aligner.so")
     alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
