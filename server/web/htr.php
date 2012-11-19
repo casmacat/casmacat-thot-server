@@ -1,4 +1,4 @@
-<?php if (empty($_GET['server'])) die('No server set: <a href="?server='.$_SERVER['SERVER_NAME'].':3020">try this example</a>'); ?>
+<?php if (empty($_GET['server'])) die('No server set: <a href="?server='.$_SERVER['SERVER_NAME'].':3011">try this example</a>'); ?>
 <!DOCTYPE html>
 <html debug="true">
 <head>
@@ -7,7 +7,7 @@
   <link rel="stylesheet" type="text/css" media="screen,projection" href="css/htr.css">
   <!--<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>-->
   <script type="text/javascript">
-  window.casmacatServer = "<?=$_GET['server']?>";
+  window.casmacatHtrServer = "<?=$_GET['server']?>";
   </script>
   <script type="text/javascript" src="js/jquery.js"></script>
   <script type="text/javascript" src="js/jquery.sketchable.js"></script>
@@ -15,7 +15,7 @@
   <script type="text/javascript" src="js/jquery.editable.js?<?=time()?>"></script>
   <script type="text/javascript" src="js/socket.io.js"></script>
   <script type="text/javascript" src="js/casmacat.js?<?=time()?>"></script>
-  <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
+  <script type="text/javascript" src="js/htr-index.js?<?=time()?>"></script>
 </head>
 <body>
 <h3>CasMaCat API proof of concept - HTR</h3>
@@ -25,9 +25,9 @@
 <form>
   Source: 
   <canvas id="drawing-canvas" style="vertical-align: middle; border: 1px solid black" width="1024" height="300"></canvas>
-  <input type="button" id="decode" value="Decode" />
-  <input type="button" id="clear" value="Clear" />
+  <input type="button" id="btn-decode" value="Decode" />
+  <input type="button" id="btn-clear" value="Clear" />
 </form> 
-<div id="suggestions"></div>
+<div id="htr-suggestions"></div>
 </body>
 </html>

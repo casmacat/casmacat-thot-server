@@ -1,5 +1,5 @@
 body {
-	margin-left: 50px;
+	margin-left: 70px;
 }
 button {
 	vertical-align: middle;
@@ -102,7 +102,7 @@ textarea {
 #suggestions {
 	margin: 0px;
 	margin-top: 4px;
-	margin-left: -41px;
+	margin-left: -61px;
 	padding: 0px;
 	padding-right: 4px;
 	position: absolute;
@@ -119,7 +119,7 @@ textarea {
 }
 #suggestions dt {
 	border-right: 1px solid black;
-	width: 40px;
+	width: 60px;
 	text-align: center;
 	float: left;
 }
