@@ -32,8 +32,17 @@
   </div>
   <h3>CasMaCat API demo</h3>
   <div>
-    Source: 
-    <div id="source" class="editable">If a particular capability is not available in your network environment , the option will not appear in the dialog .</div> <!-- servicios de red de CasMaCat -->
+    Source:
+    <select id="source-list">
+    	<option>Establecimiento de propiedades del historial 5-4</option>
+    	<option>La Utilidad de administración de fuentes es una herramienta que sirve para mantener las fuentes de las impresoras de red .</option>
+    	<option>1 Introduzca el CD de Controladores de impresión y fax de CentreWare en la unidad correspondiente .</option>
+    	<option>Para desinstalar la utilidad :</option>
+    	<option>Puede seleccionar varias fuentes .</option>
+    </select> 
+    <div id="source" class="editable"></div>
+    <!-- If a particular capability is not available in your network environment , the option will not appear in the dialog . --> 
+    <!-- servicios de red de CasMaCat -->
     <input type="button" id="btn-translate" value="Translate"/>
   </div>
   <div>

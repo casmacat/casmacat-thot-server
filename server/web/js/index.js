@@ -573,7 +573,7 @@ $(function(){
 
   setConfThreshold(0.1, 0.5);
 
-  $("#slider-conf").empty().noUiSlider('init', {
+  $('#slider-conf').empty().noUiSlider('init', {
     scale: [0, 100],
     change:
       function(){
@@ -586,19 +586,19 @@ $(function(){
     
         // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
         for (var c = 0; c < spans.length; ++c) {
-          $(spans[c]).removeClass("wordconf-ok wordconf-doubt wordconf-bad");
+          $(spans[c]).removeClass('wordconf-ok wordconf-doubt wordconf-bad');
           
           var conf = $(spans[c]).data('confidence');
           if (conf) {
             var cssClass;
             if (conf > confThreshold.doubt) {
-              cssClass = "wordconf-ok";
+              cssClass = 'wordconf-ok';
             }
             else if (conf > confThreshold.bad) {
-              cssClass = "wordconf-doubt";
+              cssClass = 'wordconf-doubt';
             }
             else {
-              cssClass = "wordconf-bad";
+              cssClass = 'wordconf-bad';
             }
       
             $(spans[c]).addClass(cssClass);
@@ -607,6 +607,13 @@ $(function(){
 
       },
   })
-  $("#slider-conf").noUiSlider('move', { handle: 1, to: Math.round(confThreshold.doubt*100) });
-  $("#slider-conf").noUiSlider('move', { handle: 0, to: Math.round(confThreshold.bad*100) });
+  $('#slider-conf').noUiSlider('move', { handle: 1, to: Math.round(confThreshold.doubt*100) });
+  $('#slider-conf').noUiSlider('move', { handle: 0, to: Math.round(confThreshold.bad*100) });
+  
+  $('#source').text($('#source-list').val());
+  $('#source-list').change(function (e) {
+    $('#source').text($('#source-list').val());
+    $('#btn-translate').click();
+  });
+  
 });
