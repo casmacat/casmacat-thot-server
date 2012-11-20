@@ -302,7 +302,6 @@ class CasmacatConnection(SocketConnection):
           imt_systems[name].deleteSession(session)
       self.imt_session = {} 
 
-      source = to_utf8(source)
       source_tok, source_seg = tokenizer.preprocess(source)
       logger.log(DEBUG_LOG, "starting imt session with " + str(source_tok));
       for name, imt in imt_systems.iteritems():
