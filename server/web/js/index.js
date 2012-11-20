@@ -465,6 +465,7 @@ $(function(){
         cssClass = "wordconf-bad";
       }
 
+      $(spans[c]).attr('title', 'conf: ' + conf);
       $(spans[c]).data('confidence', conf);
       $(spans[c]).removeClass("wordconf-ok wordconf-doubt wordconf-bad");
       $(spans[c]).addClass(cssClass);
