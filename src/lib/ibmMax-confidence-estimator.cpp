@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 #include "SmoothedIncrIbm1AligModel.h"
+#include <cctype>
+#include <algorithm>
 
 //#include <casmacat/config.h>
 #include <casmacat/IConfidenceEngine.h>
@@ -43,7 +45,8 @@ public:
 		vector<WordIndex> srcSnt;
 		vector<WordIndex> trgSnt;
 		vector<bool> valSnt=validated;
-    float nconf=0;
+    float nconf=0,nconf2=0;
+		string aux;
     
     // snt-ize source and target 
     srcSnt.clear();
@@ -74,12 +77,27 @@ public:
 				confidences[i]=float(ibm.pts(NULL_WORD,trgSnt[i]));
 				for(unsigned int j=0; j<srcSnt.size(); ++j){
 					nconf=float(ibm.pts(srcSnt[j],trgSnt[i]));
+					
+					aux=target[i];
+					//cout << target[i] << " " << aux << endl;
+					//exit(1);
+					
+					// heuristic Enrique is heuristic
+					if(isupper(aux[0]) && !isupper(aux[1])){
+						transform(aux.begin(), (aux.begin())+1, aux.begin(), ::tolower );
+						nconf2=ibm.pts(srcSnt[j],ibm.stringToTrgWordIndex(aux));
+						if( nconf2 > nconf)
+							nconf=nconf2;
+					}
+					
+					
 					if ( nconf > confidences[i] )
 						confidences[i]=nconf;
 				}
 			}else
 				confidences[i]=1.0;
     }
+		
     return EXIT_SUCCESS;
   }
 
