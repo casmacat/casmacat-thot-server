@@ -26,7 +26,7 @@ namespace casmacat {
  * @author Vicent Alabau
  */
 
-  class IMtEngine: public Updateable {
+  class IMtEngine: public IUpdateable {
   public:
     virtual ~IMtEngine() {};
 

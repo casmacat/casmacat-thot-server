@@ -27,9 +27,9 @@
 namespace casmacat {
 
 
-class Updateable {
+class IUpdateable {
 public:
-  virtual ~Updateable() {}
+  virtual ~IUpdateable() {}
 
   /**
    * updates translation models with source/target pair

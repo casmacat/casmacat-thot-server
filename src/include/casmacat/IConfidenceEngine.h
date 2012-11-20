@@ -34,7 +34,7 @@ namespace casmacat {
  * Interface for Confidence plug-ins
  */
 
-  class IConfidenceEngine: public Updateable {
+  class IConfidenceEngine: public IUpdateable {
   public:
     virtual ~IConfidenceEngine() {};
 

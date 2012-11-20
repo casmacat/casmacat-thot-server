@@ -34,7 +34,7 @@ namespace casmacat {
  * Interface for Alignment plug-ins
  */
 
-  class IAlignmentEngine: public Updateable {
+  class IAlignmentEngine: public IUpdateable {
   public:
     virtual ~IAlignmentEngine() {};
 
