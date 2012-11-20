@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <casmacat/IPluginFactory.h>
+#include <casmacat/IUpdateable.h>
 
 
 namespace casmacat {
@@ -25,7 +26,7 @@ namespace casmacat {
  * @author Vicent Alabau
  */
 
-  class IMtEngine {
+  class IMtEngine: public Updateable {
   public:
     virtual ~IMtEngine() {};
 
@@ -47,22 +48,6 @@ namespace casmacat {
     virtual void translate(const std::vector<std::string> &source,
                                  std::vector<std::string> &target_out) = 0;
 
-    /**
-     * updates translation models with source/target pair
-     *
-     * This is a simplified version of the MT engine in `D5.1: Specification of casmacat workbench'
-     * since this version does not take into account the optional parameters, as they are specific for
-     * Moses. The original description is the following:
-
-     * updates a suffix array phrase table. If `bounded' switch is on,
-     * seems to do nothing at the moment. If `updateORLM' is on, a suffix array language
-     * model is also updated.
-     *
-     * @param[in] source a sentence in the source language
-     * @param[in] target a sentence in the target language that is a valid translation of source
-     */
-    virtual void update(const std::vector<std::string> &source,
-                        const std::vector<std::string> &target) = 0;
   };
 
   typedef IPluginFactory<IMtEngine> IMtFactory;

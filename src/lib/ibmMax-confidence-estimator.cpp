@@ -119,6 +119,9 @@ public:
     return nconf;
   }
 	
+  virtual void update(const std::vector<std::string> &source,
+                      const std::vector<std::string> &target) {}
+
   virtual void setLogger(Logger *logger) {
     _logger = logger;
     LOG(INFO) << "IBMConfidencer is joining the logger";

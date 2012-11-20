@@ -60,6 +60,10 @@ public:
     _logger = logger;
     LOG(INFO) << "I'm joining the logger";
   }
+
+  virtual void update(const std::vector<std::string> &source,
+                      const std::vector<std::string> &target) {}
+
 };
 
 class RandomConfidenceFactory: public IConfidenceFactory {

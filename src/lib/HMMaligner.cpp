@@ -12,14 +12,14 @@ using namespace casmacat;
 class HMMAligner: public IAlignmentEngine, Loggable {
   IncrHmmAligModel aligModel;
   Logger *_logger;
-public: 
+public:
   HMMAligner(): _logger(0) { }
-  
+
   virtual ~HMMAligner() {
     LOG(INFO) << "HMMAligner is now free!" << endl;
 //     delete &aligModel;
   }
-  
+
   virtual void align(const vector<string> &source,
                        const vector<string> &target,
                        vector< vector<float> > &alignments
@@ -31,7 +31,7 @@ public:
         return;
       }
       aligModel.obtainBestAlignment( aligModel.strVectorToSrcIndexVector(source), aligModel.strVectorToTrgIndexVector(target), w );
-      
+
       alignments.resize(source.size());
       for (size_t s=0; s<source.size(); ++s) {
 	alignments[s].resize(target.size());
@@ -40,12 +40,15 @@ public:
 	}
       }
   }
-  
+
+  virtual void update(const std::vector<std::string> &source,
+                      const std::vector<std::string> &target) {}
+
   virtual void setLogger(Logger *logger) {
     _logger = logger;
     LOG(INFO) << "IBMAligner is joining the logger!" << endl;
   }
-  
+
   int init(char* filesPrefix) {
     if (aligModel.load(filesPrefix) == 0) { // 0 means OK
       LOG(INFO) << "Alignment model with prefix " << filesPrefix << "was loaded successfully!" << endl;
@@ -60,9 +63,9 @@ public:
 class HMMAlignerFactory: public IAlignmentFactory {
   Logger *_logger;
   HMMAligner *ha;
-public: 
+public:
   HMMAlignerFactory(): _logger(0) { };
-  virtual ~HMMAlignerFactory() { 
+  virtual ~HMMAlignerFactory() {
     LOG(INFO) << "HMMAligner is free!" << endl;
 //     delete ha;
   };
@@ -75,17 +78,17 @@ public:
     ha = new HMMAligner();
     ha->init(argv[1]);
     ha->setLogger(_logger);
-    
+
     return EXIT_SUCCESS;
   }
-    
+
   virtual string getVersion() { return "HMM Aligner"; }
 
   virtual void setLogger(Logger *logger) {
     _logger = logger;
     LOG(INFO) << "HMMAligner is joining the logger!" << endl;
   }
-  
+
   virtual IAlignmentEngine *createInstance(const std::string &specialization_id = "") {
     return ha;
   }

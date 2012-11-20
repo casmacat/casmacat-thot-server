@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include <cstdlib>
@@ -33,6 +34,8 @@ public:
     }
   }
 
+  virtual void update(const std::vector<std::string> &source,
+                      const std::vector<std::string> &target) {}
 };
 
 class RandomAlignerFactory: public IAlignmentFactory {

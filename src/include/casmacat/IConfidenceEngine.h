@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include <casmacat/IPluginFactory.h>
+#include <casmacat/IUpdateable.h>
 
 namespace casmacat {
 
@@ -33,7 +34,7 @@ namespace casmacat {
  * Interface for Confidence plug-ins
  */
 
-  class IConfidenceEngine {
+  class IConfidenceEngine: public Updateable {
   public:
     virtual ~IConfidenceEngine() {};
 

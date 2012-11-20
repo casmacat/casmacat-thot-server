@@ -571,7 +571,7 @@ $(function(){
     $('#slider-doubt').text(doubt.toFixed(2));
   }
 
-  setConfThreshold(0.1, 0.5);
+  setConfThreshold(0.02, 0.3);
 
   $('#slider-conf').empty().noUiSlider('init', {
     scale: [0, 100],

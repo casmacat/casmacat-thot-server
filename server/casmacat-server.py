@@ -444,6 +444,8 @@ if __name__ == "__main__":
     aligner = alignment_factory.createInstance()
     if not aligner: raise Exception("Aligner instance failed")
 
+    ol_systems["ALIGNER"] = aligner
+
     
 #    confidence_plugin = ConfidencePlugin("plugins/random-confidence-estimator.so")
     confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
@@ -452,6 +454,8 @@ if __name__ == "__main__":
     confidence_factory.setLogger(logger)
     confidencer = confidence_factory.createInstance()
     if not confidencer: raise Exception("Confidencer instance failed")
+
+    ol_systems["CONFIDENCER"] = confidencer
 
 #imt_plugin = ImtPlugin("plugins/random-imt-engine.so")
 #imt_factory = imt_plugin.create()
