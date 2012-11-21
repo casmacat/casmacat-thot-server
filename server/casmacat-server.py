@@ -10,6 +10,7 @@ from tornado import web
 from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 
 from casmacat import *
+#from numpy.testing.utils import elapsed
 
 
 # decorator to capture exceptions and return them as errors in json
@@ -29,8 +30,11 @@ class thrower(object):
     """
     def decorator(*args, **kwargs):
       try:
-        print function.__dict__
-        return function(*args, **kwargs)
+        start_time = datetime.datetime.now()
+        ret = function(*args, **kwargs)
+        elapsed_time = datetime.datetime.now() - start_time
+        print "TIME: calling '%s' took %.2fms" % (function.__name__, elapsed_time.microseconds/1000.0)
+        return ret
       except Exception, e:
         if self.emission:
           args[0].emit(self.emission, { 'errors': [traceback.format_exc()], 'data': None })
@@ -55,7 +59,7 @@ class MyLogger(Logger):
     
 logger = MyLogger()
 
-def new_match(created_by, source, source_seg, target, target_seg):
+def new_match(created_by, source, source_seg, target, target_seg, elapsed_time):
   match = {}
   match['id'] = random.randint(0,100000)
   match['segment'] = source 
@@ -74,9 +78,10 @@ def new_match(created_by, source, source_seg, target, target_seg):
   match['reference'] = source 
   match['usage_count'] = 1
   match['subject'] = "Printer Manuals"
+  match['elapsed_time'] = elapsed_time.microseconds/1000.0
   return match
 
-def new_prediction(created_by, prediction, prediction_seg):
+def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
   match = {}
   match['id'] = random.randint(0,100000)
   match['translation'] = prediction
@@ -91,6 +96,7 @@ def new_prediction(created_by, prediction, prediction_seg):
   match['match'] = 85
   match['usage_count'] = 1
   match['subject'] = "Printer Manuals"
+  match['elapsed_time'] = elapsed_time.microseconds/1000.0
   return match
 
 def new_contributions(source, source_seg):
@@ -164,13 +170,18 @@ class CasmacatConnection(SocketConnection):
       source, target = to_utf8(data['text']), to_utf8(data['target'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
       target_tok, target_seg = models.tokenizer.preprocess(target)
+
+      start_time = datetime.datetime.now()
       matrix = models.aligner.align(source_tok, target_tok)
+      elapsed_time = datetime.datetime.now() - start_time
+      
       logger.log(DEBUG_LOG, matrix);
       obj = { 'matrix': matrix, 
               'source': source, 
               'source_seg': source_seg, 
               'target': target, 
-              'target_seg': target_seg 
+              'target_seg': target_seg,
+              'elapsed_time': elapsed_time.microseconds/1000.0
             }
       self.emit('alignmentchange', { 'errors': [], 'data': obj })
 
@@ -180,8 +191,11 @@ class CasmacatConnection(SocketConnection):
     def get_tokens(self, data):
       print 'data:', data
       source, target = to_utf8(data['text']), to_utf8(data['target'])
+
+      start_time = datetime.datetime.now()
       source_tok, source_seg = models.tokenizer.preprocess(source)
       target_tok, target_seg = models.tokenizer.preprocess(target)
+      elapsed_time = datetime.datetime.now() - start_time
 
       contributions = new_contributions(source, source_seg)
       add_match(contributions, new_match('tokenizer', source, source_seg, target, target_seg))
@@ -206,14 +220,18 @@ class CasmacatConnection(SocketConnection):
       source, target = to_utf8(data['text']), to_utf8(data['target'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
       target_tok, target_seg = models.tokenizer.preprocess(target)
+
+      start_time = datetime.datetime.now()
       sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, data['validated_words'])
+      elapsed_time = datetime.datetime.now() - start_time
 
       obj = { 'quality': sent, 
         'word_confidences': conf, 
         'source': source, 
         'source_seg': source_seg, 
         'target': target, 
-        'target_seg': target_seg 
+        'target_seg': target_seg, 
+        'elapsed_time': elapsed_time.microseconds/1000.0
       }
       print 'confidences:', obj
       self.emit('confidencechange', { 'errors': [], 'data': obj })
@@ -273,9 +291,12 @@ class CasmacatConnection(SocketConnection):
       contributions = new_contributions(source, source_seg)
 
       for name, mt in models.mt_systems.iteritems():
+        start_time = datetime.datetime.now()
         target_tok = mt.translate(source_tok)
+        elapsed_time = datetime.datetime.now() - start_time
+
         target, target_seg = models.tokenizer.postprocess(target_tok)
-        add_match(contributions, new_match(name, source, source_seg, target, target_seg))
+        add_match(contributions, new_match(name, source, source_seg, target, target_seg, elapsed_time))
 
       prepare(contributions)
       self.emit('contributionchange', contributions)
@@ -329,7 +350,9 @@ class CasmacatConnection(SocketConnection):
       predictions = new_predictions(target, caret_pos)
       
       for name, session in self.imt_session.iteritems():
+        start_time = datetime.datetime.now()
         prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
+        elapsed_time = datetime.datetime.now() - start_time
         print >> sys.stderr, name, "prediction_tok", prediction_tok 
 
         #if last_token_is_partial:
@@ -341,7 +364,7 @@ class CasmacatConnection(SocketConnection):
         #add_match(predictions, new_prediction(name, target, target_seg))
 
         prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
-        add_match(predictions, new_prediction(name, prediction, prediction_seg))
+        add_match(predictions, new_prediction(name, prediction, prediction_seg, elapsed_time))
       prepare(predictions)
       self.emit('predictionchange', predictions)
 
@@ -354,8 +377,19 @@ class CasmacatConnection(SocketConnection):
 
     @event
     def reset(self):
+      start_time = datetime.datetime.now()
       models.reset()
-      self.emit('serverready', 'the server is ready')
+      elapsed_time = datetime.datetime.now() - start_time
+      
+      obj = { 'msg':  'the server is ready',
+              'elapsed_time': elapsed_time.microseconds/1000.0 
+             }
+      self.emit('serverready', { 'errors': [], 'data': obj })
+
+    @event
+    def configure(self, data):
+      self.config = data
+      print >> sys.stderr, self.config 
 
 #class LoggerConnection(SocketConnection, Logger):
     @event
