@@ -82,7 +82,7 @@ public:
 					//cout << target[i] << " " << aux << endl;
 					//exit(1);
 					
-					// heuristic Enrique is heuristic
+					// Eufemistic E. is heuristic
 					if(isupper(aux[0]) && !isupper(aux[1])){
 						transform(aux.begin(), (aux.begin())+1, aux.begin(), ::tolower );
 						nconf2=ibm.pts(srcSnt[j],ibm.stringToTrgWordIndex(aux));
@@ -120,7 +120,14 @@ public:
   }
 	
   virtual void update(const std::vector<std::string> &source,
-                      const std::vector<std::string> &target) {}
+                      const std::vector<std::string> &target) 
+	{
+		pair<unsigned int, unsigned int> sentRange;
+
+		ibm.addSentPair(source, target, 1, sentRange);
+		ibm.trainSentPairRange(sentRange,0);
+		LOG(INFO) << "Updated with new bilingual pair" << endl; 
+	}
 
   virtual void setLogger(Logger *logger) {
     _logger = logger;
