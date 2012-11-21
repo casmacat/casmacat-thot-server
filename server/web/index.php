@@ -29,6 +29,7 @@
   	<div id="slider-conf" class="noUiSlider"></div>
   	<button title="toggle alignment matrix visualization" id="btn-show-alignments"><img src="images/matrix.png"/></button>
   	<button title="toggle e-pen interaction" id="btn-epen"><img src="images/epen.png"/></button> 
+  	<button title="reset servers" id="btn-reset">reset</button> 
   </div>
   <h3>CasMaCat API demo</h3>
   <div>

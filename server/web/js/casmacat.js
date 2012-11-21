@@ -77,6 +77,11 @@ $.extend(CasmacatClient.prototype, {
      this.server.emit('end_imt_session');
    },
 
+   resetServer: function() {
+     this.checkConnection();
+     this.server.emit('reset_server');
+   },
+
    // HTR methods
    startHtrSession: function(obj) {
      this.checkConnection();

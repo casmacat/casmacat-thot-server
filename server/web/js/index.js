@@ -207,6 +207,9 @@ $(function(){
   });
   $('#matrix').toggle();
 
+  $('#btn-reset').click(function() {
+    casmacat.reset();
+  });
 
 /*
   $('#epen').mousedown(function(e) {

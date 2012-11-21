@@ -356,6 +356,12 @@ class CasmacatConnection(SocketConnection):
       self.imt_session = {} 
       logger.log(DEBUG_LOG, "ending imt session");
 
+    @event
+    def reset_server(self):
+      delete_plugins()
+      create_plugins()
+      self.emit('serverready', 'the server is ready')
+
 #class LoggerConnection(SocketConnection, Logger):
     @event
     def on_open(self, info):
@@ -396,14 +402,7 @@ application = web.Application(
     socket_io_port = 3019
 )
 
-if __name__ == "__main__":
-    from sys import argv
-    import logging
-    logging.getLogger().setLevel(logging.INFO)
-
-
-    
-    
+def create_plugins():
     tokenizer_plugin = TextProcessorPlugin("plugins/space-tokenizer.so")
     tokenizer_factory = tokenizer_plugin.create()
     if not tokenizer_factory: raise Exception("Tokenizer plugin failed")
@@ -412,9 +411,7 @@ if __name__ == "__main__":
     if not tokenizer: raise Exception("Tokenizer instance failed")
 
     
-#    mt_plugin = MtPlugin("plugins/random-mt-engine.so")
 #    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
-#    mt_plugin = MtPlugin("plugins/libstack_dec.so", "-c /home/dortiz/smt/software/stack_dec/aux_dirs/cfg_files/casmacat_xerox_enes_adapt_wg.cfg", "thot_mt_plugin")
     mt_plugin = ImtPlugin("plugins/libstack_dec.so", "-c /home/dortiz/smt/software/stack_dec/aux_dirs/cfg_files/casmacat_xerox_enes_adapt_wg.cfg", "thot_imt_plugin")
 
     mt_factory = mt_plugin.create()
@@ -436,8 +433,7 @@ if __name__ == "__main__":
     imt_systems["ITP-OL"] = online_mt
     ol_systems["ITP-OL"] = online_mt
     
-#alignment_plugin = AlignmentPlugin("plugins/random-aligner.so")
-    alignment_plugin = AlignmentPlugin("plugins/HMMAligner.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
+    alignment_plugin = AlignmentPlugin("plugins/HMMaligner.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
     alignment_factory = alignment_plugin.create()
     if not alignment_factory: raise Exception("Alignment plugin failed")
     alignment_factory.setLogger(logger)
@@ -447,7 +443,6 @@ if __name__ == "__main__":
     ol_systems["ALIGNER"] = aligner
 
     
-#    confidence_plugin = ConfidencePlugin("plugins/random-confidence-estimator.so")
     confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
     confidence_factory = confidence_plugin.create()
     if not confidence_factory: raise Exception("Confidence plugin failed")
@@ -456,19 +451,32 @@ if __name__ == "__main__":
     if not confidencer: raise Exception("Confidencer instance failed")
 
     ol_systems["CONFIDENCER"] = confidencer
-
-#imt_plugin = ImtPlugin("plugins/random-imt-engine.so")
-#imt_factory = imt_plugin.create()
-#imt_factory.setLogger(logger)
-#imt = imt_factory.createInstance()
+    
+    print >> sys.stderr, "Plugins loaded"
 
 
-
-    # Create and start tornadio server
-    SocketServer(application)
-
+def delete_plugins():
     del tokenizer, tokenizer_factory, tokenizer_plugin 
     del mt, mt_factory, mt_plugin
     del aligner, alignment_factory, alignment_plugin
     del confidencer, confidence_factory, confidence_plugin
-    del imt, imt_factory, imt_plugin
+
+    mt_systems = {}
+    imt_systems = {}
+    ol_systems = {}
+
+
+if __name__ == "__main__":
+    from sys import argv
+    import logging
+    import atexit
+
+    logging.getLogger().setLevel(logging.INFO)
+
+    create_plugins()
+    atexit.register(delete_plugins)
+    # Create and start tornadio server
+    SocketServer(application)
+    
+    print >> sys.stderr, "SocketServer exited"
+    
