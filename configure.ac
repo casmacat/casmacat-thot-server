@@ -168,15 +168,13 @@ AC_ARG_WITH(gprof, AC_HELP_STRING(--with-gprof, \
 CPPFLAGS="-DDEBUG=1" \
 CXXFLAGS+=" -pg"])
 
-HAVE_THOT=
-AC_ARG_WITH(thot, AC_HELP_STRING(--with-thot, \
-[enable thot plugins]), \
-THOT_INCLUDE_DIR="$with_thot")
+AC_ARG_WITH([thot], [AC_HELP_STRING([--with-thot], \
+[enable thot plugins])], \
+[THOT_DIR="$with_thot"], [THOT_DIR=""])
 
+AC_MSG_WARN([thot include dir $with_thot])
 AM_CONDITIONAL([HAVE_THOT], [test x"$with_thot" != x])
-AM_CONDITIONAL([THOT_INCLUDE_DIR], [test x"$with_thot" != x])
-AC_SUBST(HAVE_THOT)
-AC_SUBST(THOT_INCLUDE_DIR)
+AC_SUBST([THOT_DIR])
 
 
 # Checks for libraries.

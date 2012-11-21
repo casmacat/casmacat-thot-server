@@ -3,6 +3,7 @@
 %{
 #define SWIG_FILE_WITH_INIT
 #include <casmacat/Context.h>
+#include <casmacat/IUpdateable.h>
 #include <casmacat/IAlignmentEngine.h>
 #include <casmacat/IConfidenceEngine.h>
 #include <casmacat/IMtEngine.h>
@@ -61,6 +62,7 @@ casmacat::Context *create_context() { return new casmacat::Context(); };
 %include <casmacat/Context.h>
 %include <casmacat/Logger.h>
 %include <casmacat/IPluginFactory.h>
+%include <casmacat/IUpdateable.h>
 %include <casmacat/IAlignmentEngine.h>
 %include <casmacat/IConfidenceEngine.h>
 %include <casmacat/IMtEngine.h>
