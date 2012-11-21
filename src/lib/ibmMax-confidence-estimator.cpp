@@ -124,9 +124,11 @@ public:
 	{
 		pair<unsigned int, unsigned int> sentRange;
 
-		ibm.addSentPair(source, target, 1, sentRange);
-		ibm.trainSentPairRange(sentRange,0);
-		LOG(INFO) << "Updated with new bilingual pair" << endl; 
+		if(!source.empty() && !target.empty()){
+			ibm.addSentPair(source, target, 1, sentRange);
+			ibm.trainSentPairRange(sentRange,0);
+			LOG(INFO) << "Updated with new bilingual pair" << endl; 
+		}
 	}
 
   virtual void setLogger(Logger *logger) {
