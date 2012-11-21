@@ -159,6 +159,7 @@ public:
   virtual ~IBMConfidenceFactory() {
     // TODO: delete rc here?;
     LOG(INFO) << "IBMConfidencer freed.";
+    delete rc;
   };
 
 
@@ -187,7 +188,7 @@ public:
     return rc;
   }
   virtual void deleteInstance(IConfidenceEngine *instance) {
-    delete instance;
+    //delete instance;
   }
 
 };

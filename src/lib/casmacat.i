@@ -51,11 +51,11 @@ casmacat::Context *create_context() { return new casmacat::Context(); };
 
 
 %feature("compactdefaultargs") *::create;
-%newobject *::create;
+//%newobject *::create;
 %feature("compactdefaultargs") *::createStringArgs;
-%newobject *::createStringArgs;
+//%newobject *::createStringArgs;
 %feature("compactdefaultargs") *::createInstance;
-%newobject *::createInstance;
+//%newobject *::createInstance;
 
 
 // the directors must be parsed before they are used by others

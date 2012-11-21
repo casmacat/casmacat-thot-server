@@ -67,7 +67,7 @@ public:
   HMMAlignerFactory(): _logger(0) { };
   virtual ~HMMAlignerFactory() {
     LOG(INFO) << "HMMAligner is free!" << endl;
-//     delete ha;
+     delete ha;
   };
 
   virtual int init(int argc, char *argv[], Context *context = 0) {
@@ -93,7 +93,7 @@ public:
     return ha;
   }
   virtual void deleteInstance(IAlignmentEngine *instance) {
-    delete instance;
+    //delete instance;
   }
 
 };

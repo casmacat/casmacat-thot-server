@@ -403,6 +403,18 @@ class Models:
     self.imt_systems = {}
     self.ol_systems = {}
   
+  def assign_models(self):
+    self.mt_systems["ITP"] = self.static_mt
+    self.imt_systems["ITP"] = self.static_mt
+
+    self.mt_systems["ITP-OL"] = self.online_mt
+    self.imt_systems["ITP-OL"] = self.online_mt
+    self.ol_systems["ITP-OL"] = self.online_mt
+    
+    self.ol_systems["ALIGNER"] = self.aligner
+    self.ol_systems["CONFIDENCER"] = self.confidencer
+
+    
   def create_plugins(self):
     self.tokenizer_plugin = TextProcessorPlugin("plugins/space-tokenizer.so")
     self.tokenizer_factory = self.tokenizer_plugin.create()
@@ -427,21 +439,12 @@ class Models:
     self.online_mt = self.ol_factory.createInstance()
     if not self.online_mt: raise Exception("Online MT instance failed")
 
-    self.mt_systems["ITP"] = self.static_mt
-    self.imt_systems["ITP"] = self.static_mt
-
-    self.mt_systems["ITP-OL"] = self.online_mt
-    self.imt_systems["ITP-OL"] = self.online_mt
-    self.ol_systems["ITP-OL"] = self.online_mt
-    
     self.alignment_plugin = AlignmentPlugin("plugins/HMMaligner.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
     self.alignment_factory = self.alignment_plugin.create()
     if not self.alignment_factory: raise Exception("Alignment plugin failed")
     self.alignment_factory.setLogger(logger)
     self.aligner = self.alignment_factory.createInstance()
     if not self.aligner: raise Exception("Aligner instance failed")
-
-    self.ol_systems["ALIGNER"] = self.aligner
 
     
     self.confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
@@ -451,21 +454,71 @@ class Models:
     self.confidencer = self.confidence_factory.createInstance()
     if not self.confidencer: raise Exception("Confidencer instance failed")
 
-    self.ol_systems["CONFIDENCER"] = self.confidencer
-    
+    self.assign_models()    
     print >> sys.stderr, "Plugins loaded"
   
   
   def delete_plugins(self):
-    del self.tokenizer, self.tokenizer_factory, self.tokenizer_plugin 
-    del self.static_mt, self.mt_factory, self.mt_plugin
-    del self.online_mt, self.ol_factory
-    del self.aligner, self.alignment_factory, self.alignment_plugin
-    del self.confidencer, self.confidence_factory, self.confidence_plugin
+    self.confidence_factory.deleteInstance(self.confidencer);
+    self.confidence_plugin.destroy(self.confidence_factory)
+    self.confidencer, self.confidence_factory = None, None
+    del self.confidence_plugin
+
+    self.alignment_factory.deleteInstance(self.aligner);
+    self.alignment_plugin.destroy(self.alignment_factory)
+    self.aligner, self.alignment_factory = None, None
+    del self.alignment_plugin
+    
+    self.mt_factory.deleteInstance(self.static_mt);
+    self.mt_plugin.destroy(self.mt_factory)
+    self.static_mt, self.mt_factory = None, None
+
+    self.ol_factory.deleteInstance(self.online_mt);
+    self.ol_plugin.destroy(self.ol_factory)
+    self.online_mt, self.ol_factory = None, None
+    
+    del self.mt_plugin
+
+    self.tokenizer_factory.deleteInstance(self.tokenizer);
+    self.tokenizer_plugin.destroy(self.tokenizer_factory)
+    self.tokenizer, self.tokenizer_factory = None, None
+    del self.tokenizer_plugin
 
   def reset(self):
-    self.delete_plugins()
-    self.create_plugins()
+    self.confidence_factory.deleteInstance(self.confidencer);
+    self.confidence_plugin.destroy(self.confidence_factory)
+
+    a = self.confidence_plugin.create()
+    self.confidence_factory = a
+    if not self.confidence_factory: raise Exception("Confidence plugin failed")
+    self.confidence_factory.setLogger(logger)
+    self.confidencer = self.confidence_factory.createInstance()
+    if not self.confidencer: raise Exception("Confidencer instance failed")
+
+
+    self.alignment_factory.deleteInstance(self.aligner);
+    self.alignment_plugin.destroy(self.alignment_factory)
+
+    self.alignment_factory = self.alignment_plugin.create()
+    if not self.alignment_factory: raise Exception("Alignment plugin failed")
+    self.alignment_factory.setLogger(logger)
+    self.aligner = self.alignment_factory.createInstance()
+    if not self.aligner: raise Exception("Aligner instance failed")
+
+    
+    self.ol_factory.deleteInstance(self.online_mt);
+    self.mt_plugin.destroy(self.ol_factory)
+
+    self.ol_factory = self.mt_plugin.create()
+    if not self.ol_factory: raise Exception("Online MT plugin failed")
+    self.ol_factory.setLogger(logger)
+    self.online_mt = self.ol_factory.createInstance()
+    if not self.online_mt: raise Exception("Online MT instance failed")
+    
+    self.assign_models()
+    
+    print >> sys.stderr, "Reset finished"    
+    
 
 if __name__ == "__main__":
     from sys import argv
