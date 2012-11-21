@@ -393,6 +393,10 @@ class CasmacatConnection(SocketConnection):
       self.config = data
       print >> sys.stderr, self.config 
 
+    @event
+    def ping(self, data):
+      self.emit('pong', data)
+
 #class LoggerConnection(SocketConnection, Logger):
     @event
     def on_open(self, info):
