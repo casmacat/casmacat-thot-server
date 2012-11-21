@@ -1,5 +1,4 @@
 var casmacat;
-var confThreshold = {};
 
 $(function(){
 
@@ -13,8 +12,8 @@ $(function(){
   // handle disconections and debug information
   casmacat.on('disconnect', function(){ this.socket.reconnect(); });
   casmacat.on('receive_log', function(msg) { console.log('server says:', msg); });
-
-
+  casmacat.on('serverready', function() { $('body').unblock(); });
+  
   // handle translation responses
   casmacat.on('contributionchange', function(obj) {
     var data = obj.data;
@@ -22,6 +21,7 @@ $(function(){
     if (data.text !== $('#source').editable('getText')) return;
 
     console.log('contribution changed', data);
+    $('#btn-translate').val("Translate").attr("disabled", false);
 
     var query = {
       action: "startImtSession",
@@ -100,7 +100,6 @@ $(function(){
     }
   });
 
-
   // #source events
   // on key up throttle a new translation
   $('#source').keyup(function(e) {
@@ -124,6 +123,7 @@ $(function(){
   });
 
 
+  var set = {};
   // caretmove is a new event from jquery.editable that is triggered
   // whenever the caret has changed position
   $('#target').bind('caretmove', function(e, d) {
@@ -140,13 +140,10 @@ $(function(){
         data = $this.data('editable'),
         target = $this.editable('getText'),
         source = $('#source').editable('getText'),
-        pos = $('#target').editable('getCaretPos'),
-        updateBtn = $('#btn-update');
-
-    if (updateBtn.attr('disabled')) {
-      updateBtn.val('Update models');
-      updateBtn.removeAttr('disabled');
-    }
+        pos = $('#target').editable('getCaretPos');
+        
+    var spanElem = $('#target').editable('getTokenAtCaretPos', pos).elem.parentNode;
+    set[ $(spanElem).attr("id") ] = true;
 
     // if key is not backspace, supr
     if ([8, 46].indexOf(e.which) === -1) {
@@ -171,7 +168,7 @@ $(function(){
     }
   });
 
-  $('#btn-epen').click(function() {
+  $('#btn-epen').click(function(e) {
     var $this = $('img', this);
     var $epen = $('#epen');
     var $canvas = $('#drawing-canvas');
@@ -202,13 +199,18 @@ $(function(){
     }
   });
 
-  $('#btn-show-alignments').click(function() {
+  $('#btn-show-alignments').click(function(e) {
     $('#matrix').toggle();
   });
   $('#matrix').toggle();
 
-  $('#btn-reset').click(function() {
+  $('#btn-reset').click(function(e) {
+    if (!window.confirm("Are you sure you want to reset the models?")) return;
     casmacat.reset();
+    $('body').block({
+      message: '<h2>Reseting server...</h2>',
+      css: { fontSize:'150%', padding:'1% 2%', borderWidth:'3px', borderRadius:'10px', '-webkit-border-radius':'10px', '-moz-border-radius':'10px' }
+    });  
   });
 
 /*
@@ -227,7 +229,8 @@ $(function(){
   });
 */
 
-  $('#btn-translate').click(function() {
+  $('#btn-translate').click(function(e) {
+    $('#target').editable('setText', "");
     var query = {
       action: "getContribution",
       id_segment: 607906,
@@ -237,12 +240,11 @@ $(function(){
       id_translator: "me!"
     }
     casmacat.translate(query);
+    $(this).val("Loading...").attr("disabled", true);
   });
 
-  $('#btn-update').click(function() {
-    var $this = $(this);
-    $this.val('Updated');
-    $this.attr('disabled', 'true');
+  $('#btn-update').click(function(e) {
+    $(this).val('Updating...').attr('disabled', true);
     var query = {
       action: "update",
       id_segment: 607906,
@@ -257,6 +259,21 @@ $(function(){
 
   $('#show-options input').change(function() {
     var show_type = $('input[@name=show]:checked').val();
+    switch(show_type) {
+      case 'PE':
+      case 'ITP':
+        $('#btn-update').attr("disabled", true);
+        break;
+      case 'ITP-OL':
+        $('#btn-update').attr("disabled", false);
+        break;
+      default:
+        console.warning("#show-options changed, but no action was performed");
+        break;
+    }
+    if (!$('#target').is(':empty')) {
+      casmacat.configure({suggestions:$('#opt-suggestions').is(':checked'), mode:show_type});
+    }
   });
 
 
@@ -299,7 +316,7 @@ $(function(){
           query.action = "getWordConfidences";
           casmacat.getWordConfidences(query);
         }
-        else {
+        else if ($('#opt-suggestions').is(':checked')) {
           list.append($('<dt/>').text(match.created_by));
           list.append($('<dd/>').text(match.translation.substr(d.pos)));
           count++;
@@ -337,7 +354,7 @@ $(function(){
 
     // requests the server for new alignment and confidence info
     var query = {
-      action: "getAlignments",
+      action: "getWordConfidences",
       id_segment: 607906,
       text: source,
       target: target,
@@ -346,10 +363,10 @@ $(function(){
       num_results: 2,
       id_translator: "me!"
     }
-
-    casmacat.getAlignments(query);
-    query.actions = "getWordConfidences";
     casmacat.getWordConfidences(query);
+    
+    query.actions = "getAlignments";
+    casmacat.getAlignments(query);
   }
 
 
@@ -443,6 +460,7 @@ $(function(){
   }
 
 
+  var confThreshold = {};
   // updates the confidence display with new confidence info      
   function update_word_confidences_display(sent, confidences, source, source_seg, target, target_seg) {
     // make sure new data still applies to current text
@@ -454,11 +472,8 @@ $(function(){
 
     // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
     for (var c = 0; c < confidences.length; ++c) {
-      
-      var conf = Math.round(confidences[c]*100)/100;
-      
-      var cssClass;
-      if (conf > confThreshold.doubt) {
+      var $span = $(spans[c]), conf = Math.round(confidences[c]*100)/100, cssClass;
+      if (conf > confThreshold.doubt || set[$span.attr("id")]) {
         cssClass = "wordconf-ok";
       }
       else if (conf > confThreshold.bad) {
@@ -468,10 +483,10 @@ $(function(){
         cssClass = "wordconf-bad";
       }
 
-      $(spans[c]).attr('title', 'conf: ' + conf);
-      $(spans[c]).data('confidence', conf);
-      $(spans[c]).removeClass("wordconf-ok wordconf-doubt wordconf-bad");
-      $(spans[c]).addClass(cssClass);
+      $span.attr('title', 'conf: ' + Math.round(conf*100))
+           .data('confidence', conf)
+           .removeClass("wordconf-ok wordconf-doubt wordconf-bad")
+           .addClass(cssClass);
 
       // also update bottom of alignment matrix with values
       $("#demo-table tfoot tr td:eq("+(c+1)+")").text(conf);
@@ -534,7 +549,7 @@ $(function(){
         merge_pos += nins - ndel ;
         $('thead tr th:eq(' + (merge_pos + 1) + '), tbody tr:last th:eq(' + (merge_pos + 1) + ')', table).remove();
         $('tbody tr', table).not(':last').each(function () { $('td:eq(' + merge_pos + ')', this).remove();});
-        $('tfoot tr td:eq(' + (merge_pos + 1) + ')', table).remove();
+        //$('tfoot tr td:eq(' + (merge_pos + 1) + ')', table).remove();
         ndel++;
       }
       else if (merge_type === 'S') {
@@ -549,14 +564,14 @@ $(function(){
             $(this).after(th);
           });
           $('tbody tr', table).not(':last').each(function () { $('th:eq(0)', this).after('<td>&nbsp;</td>');});
-          $('tfoot tr td:first', table).after('<td></td>');
+          //$('tfoot tr td:first', table).after('<td></td>');
         } else {
           $('thead tr th:eq(' + col + '), tbody tr:last th:eq(' + col + ')', table).each(function() {
             var th = $('<th class="vertical">' + tgt[col] + '</th>');
             $(this).after(th);
           });
           $('tbody tr', table).not(':last').each(function () { $('td:eq(' + (col - 1) + ')', this).after('<td>&nbsp;</td>');});
-          $('tfoot tr td:eq(' + col + ')', table).after('<td></td>');
+          //$('tfoot tr td:eq(' + col + ')', table).after('<td></td>');
         }
         nins++;
       }
@@ -566,57 +581,86 @@ $(function(){
     table.rotateCells();
   };
 
-  function setConfThreshold(bad, doubt) {
-    confThreshold.bad = bad; 
-    confThreshold.doubt = doubt;
-    
-    $('#slider-bad').text(bad.toFixed(2));
-    $('#slider-doubt').text(doubt.toFixed(2));
-  }
 
-  setConfThreshold(0.02, 0.3);
-
-  $('#slider-conf').empty().noUiSlider('init', {
-    scale: [0, 100],
-    change:
-      function(){
-        var values = $(this).noUiSlider('value');
-        
-        setConfThreshold(values[0]/100.0, values[1]/100.0);
-        
-        // get target span tokens 
-        var spans = $('#target > .editable-token');
-    
-        // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
-        for (var c = 0; c < spans.length; ++c) {
-          $(spans[c]).removeClass('wordconf-ok wordconf-doubt wordconf-bad');
-          
-          var conf = $(spans[c]).data('confidence');
-          if (conf) {
-            var cssClass;
-            if (conf > confThreshold.doubt) {
-              cssClass = 'wordconf-ok';
-            }
-            else if (conf > confThreshold.bad) {
-              cssClass = 'wordconf-doubt';
-            }
-            else {
-              cssClass = 'wordconf-bad';
-            }
-      
-            $(spans[c]).addClass(cssClass);
-          }
-        }
-
-      },
-  })
-  $('#slider-conf').noUiSlider('move', { handle: 1, to: Math.round(confThreshold.doubt*100) });
-  $('#slider-conf').noUiSlider('move', { handle: 0, to: Math.round(confThreshold.bad*100) });
-  
   $('#source').text($('#source-list').val());
-  $('#source-list').change(function (e) {
+  $('#source-list').change(function(e) {
     $('#source').text($('#source-list').val());
     $('#btn-translate').click();
   });
+
+  
+  var $ctrlLegend = $('#control-panel legend');
+  $ctrlLegend.wrapInner('<a href="#toggle-options"/>');
+  $ctrlLegend.find('a').click(function(e){
+    e.preventDefault();
+    togglePanelControl();
+  });
+
+
+	$('#slider-conf').slider({
+    range: true,
+    min: 0,
+    max: 100,
+    values: [ 3, 30 ],
+    slide: function(event, ui) {
+      updateSlider(ui.values);
+    }
+  });
+  
+  function updateSlider(values) {
+    if (!values) values = $('#slider-conf').slider("option", "values");
+    confThreshold = {
+      bad: values[0]/100,
+      doubt: values[1]/100
+    };
+    
+    $('#slider-bad').text(values[0]);
+    $('#slider-doubt').text(values[1]);
+
+    // get target span tokens 
+    var spans = $('#target > .editable-token');    
+    // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
+    for (var c = 0; c < spans.length; ++c) {
+      $span = $(spans[c]);
+      $span.removeClass('wordconf-ok wordconf-doubt wordconf-bad');
+      var conf = $span.data('confidence');
+      if (conf) {
+        var cssClass;
+        if (conf > confThreshold.doubt || set[$span.attr("id")]) {
+          cssClass = 'wordconf-ok';
+        }
+        else if (conf > confThreshold.bad) {
+          cssClass = 'wordconf-doubt';
+        }
+        else {
+          cssClass = 'wordconf-bad';
+        }
+        $(spans[c]).addClass(cssClass);
+      }
+    }            
+  };
+
+  updateSlider();
+  
+  
+  function togglePanelControl() {
+    var $options = $('#options'), $summary = $('#options-summary');
+    $options.toggle();
+    if (!$options.is(':visible')) {
+      makeControlPanelSummary();
+      $summary.show();
+    } else {
+      $summary.hide();
+    }
+  };
+  
+  function makeControlPanelSummary() {
+    $('#set-mode').text( $('#show-options input[@name=show]:checked').val() );
+    $('#set-suggestions').text( $('#opt-suggestions').is(':checked') );
+    $('#set-confidences').text( confThreshold.bad*100 + "/"+ confThreshold.doubt*100  );
+    $('#set-alignments').text( $('#matrix').is(':visible') );
+  };
+  
+  togglePanelControl();
   
 });

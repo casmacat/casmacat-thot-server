@@ -1,6 +1,11 @@
+* { margin:0; padding:0; margin-before:0; margin-after:0; }
+
 body {
-	margin-left: 70px;
+	margin: auto 70px;
+	max-width: 900px;
+	padding:1em;
 }
+
 button {
 	vertical-align: middle;
 }
@@ -8,11 +13,11 @@ button img {
 	width: 25px;
 }
 #source, #target {
-	display: block;
 	width: 95%;
+	height: 10%;
 	border: 1px solid lightsteelblue;
-	white-space: pre;
 }
+
 #source:hover, #target:hover {
 	border: 1px solid steelblue;
 	cursor: text;
@@ -23,6 +28,7 @@ button img {
 #source, #target {
 	padding: 0.2em;
 	min-height: 20px;
+	margin-top:1em;
 }
 #target {
 	background-color: #EEE;
@@ -38,9 +44,7 @@ button img {
 #matrix {
 	overflow: hidden;
 }
-#btn-update {
-	margin-top: 50px;
-}
+
 table {
 	margin: 1em;
 	text-align: center;
@@ -71,8 +75,8 @@ table .bottom {
 }
 table tbody td {
 	border: 1px solid gray;
-	width: 15px;
-	height: 15px;
+	width: 18px;
+	height: 18px;
 }
 /* See http://www.zachleat.com/test/writing-mode/ */
 textarea {
@@ -107,6 +111,7 @@ textarea {
 
 #show-options {
 	display: inline;
+	margin-right:1em; 
 }
 
 #suggestions {
@@ -119,7 +124,7 @@ textarea {
 	visibility: hidden;
 	white-space: pre;
 	background: #EEE;
-	border: 1px solid black;
+	border: 1px solid #CCC;
 	border-top: 0px solid #EEE;
 }
 #suggestions dl {
@@ -175,15 +180,30 @@ textarea {
 	content: 'recognition: ';
 }
 
+select, input, button { padding:0.25em; }
+fieldset { border:1px solid #CCC; padding:1em; width:830px; }
+#control-panel { margin-bottom:1em; }
 #options {
-	float: right;
-	margin-right: 20px; 
+  clear:both;
+  overflow:auto;
+  overflow-y:hidden;
 }
 
-#options > div, #options > button {
-	float: left;
-}
-#options > div {
-	margin-top: 12px;
-	vertical-align: middle;
-}
+label { font-weight:bold; }
+form *, .control-panel-row *  { vertical-align:middle; }
+.control-panel-row { display:block; clear:both; margin:0.3em auto; }
+
+#conf-thresholds { margin-right:1em; margin-top:1em; }
+  #conf-thresholds p { margin-bottom:0.3em; /*text-align:center;*/ }
+
+#options-summary { color:#555; }
+
+.clear { clear:both; }
+.inline { display:inline; } 
+.mt { margin-top:1em; }
+.mt2 { margin-top:1.5em; }
+.mb { margin-bottom:1em; }
+.ml { margin-left:1em; }
+.mr { margin-right:1em; }
+.fl { float:left; }
+.fr { float:right; }

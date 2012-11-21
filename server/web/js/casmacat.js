@@ -12,7 +12,13 @@ $.extend(CasmacatClient.prototype, {
      this.url = url;
      this.server = new io.connect(this.url);
    },
-
+   
+   // { suggestions: true, mode:"PE" }
+   configure: function(obj) {
+     this.checkConnection();
+     this.server.emit('configure', {data: obj});
+   },
+   
    // Common event handler
    on: function(ev, func) {
      this.server.on(ev, func);
