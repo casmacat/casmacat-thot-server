@@ -67,6 +67,12 @@ $(function(){
   });
 
 
+  // receive server configuration 
+  casmacat.on('configuration', function(config) {
+    console.log("Server config:", config);
+  });
+
+
   /*******************************************************************************/
   /*           handle UI events                                                  */
   /*******************************************************************************/
