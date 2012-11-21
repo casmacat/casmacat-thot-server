@@ -55,10 +55,6 @@ class MyLogger(Logger):
     
 logger = MyLogger()
 
-mt_systems = {}
-imt_systems = {} 
-ol_systems = {} 
-
 def new_match(created_by, source, source_seg, target, target_seg):
   match = {}
   match['id'] = random.randint(0,100000)
@@ -166,9 +162,9 @@ class CasmacatConnection(SocketConnection):
     def get_alignments(self, data):
       print 'data:', data
       source, target = to_utf8(data['text']), to_utf8(data['target'])
-      source_tok, source_seg = tokenizer.preprocess(source)
-      target_tok, target_seg = tokenizer.preprocess(target)
-      matrix = aligner.align(source_tok, target_tok)
+      source_tok, source_seg = models.tokenizer.preprocess(source)
+      target_tok, target_seg = models.tokenizer.preprocess(target)
+      matrix = models.aligner.align(source_tok, target_tok)
       logger.log(DEBUG_LOG, matrix);
       obj = { 'matrix': matrix, 
               'source': source, 
@@ -184,8 +180,8 @@ class CasmacatConnection(SocketConnection):
     def get_tokens(self, data):
       print 'data:', data
       source, target = to_utf8(data['text']), to_utf8(data['target'])
-      source_tok, source_seg = tokenizer.preprocess(source)
-      target_tok, target_seg = tokenizer.preprocess(target)
+      source_tok, source_seg = models.tokenizer.preprocess(source)
+      target_tok, target_seg = models.tokenizer.preprocess(target)
 
       contributions = new_contributions(source, source_seg)
       add_match(contributions, new_match('tokenizer', source, source_seg, target, target_seg))
@@ -208,9 +204,9 @@ class CasmacatConnection(SocketConnection):
     def get_word_confidences(self, data):
       print 'data:', data
       source, target = to_utf8(data['text']), to_utf8(data['target'])
-      source_tok, source_seg = tokenizer.preprocess(source)
-      target_tok, target_seg = tokenizer.preprocess(target)
-      sent, conf = confidencer.getWordConfidences(source_tok, target_tok, data['validated_words'])
+      source_tok, source_seg = models.tokenizer.preprocess(source)
+      target_tok, target_seg = models.tokenizer.preprocess(target)
+      sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, data['validated_words'])
 
       obj = { 'quality': sent, 
         'word_confidences': conf, 
@@ -273,12 +269,12 @@ class CasmacatConnection(SocketConnection):
     def translate(self, data):
       print 'data:', data
       source = to_utf8(data['text'])
-      source_tok, source_seg = tokenizer.preprocess(source)
+      source_tok, source_seg = models.tokenizer.preprocess(source)
       contributions = new_contributions(source, source_seg)
 
-      for name, mt in mt_systems.iteritems():
+      for name, mt in models.mt_systems.iteritems():
         target_tok = mt.translate(source_tok)
-        target, target_seg = tokenizer.postprocess(target_tok)
+        target, target_seg = models.tokenizer.postprocess(target_tok)
         add_match(contributions, new_match(name, source, source_seg, target, target_seg))
 
       prepare(contributions)
@@ -287,10 +283,10 @@ class CasmacatConnection(SocketConnection):
     @event
     def update(self, data):
       source = to_utf8(data['text'])
-      source_tok, source_seg = tokenizer.preprocess(source)
+      source_tok, source_seg = models.tokenizer.preprocess(source)
       target = to_utf8(data['target'])
-      target_tok, target_seg = tokenizer.preprocess(target)
-      for name, ol in ol_systems.iteritems():
+      target_tok, target_seg = models.tokenizer.preprocess(target)
+      for name, ol in models.ol_systems.iteritems():
         ol.update(source_tok, target_tok)
 
 #class ImtConnection(SocketConnection):
@@ -299,12 +295,12 @@ class CasmacatConnection(SocketConnection):
       print 'data:', data
       source = to_utf8(data['text'])
       for name, session in self.imt_session.iteritems():
-          imt_systems[name].deleteSession(session)
+          models.imt_systems[name].deleteSession(session)
       self.imt_session = {} 
 
-      source_tok, source_seg = tokenizer.preprocess(source)
+      source_tok, source_seg = models.tokenizer.preprocess(source)
       logger.log(DEBUG_LOG, "starting imt session with " + str(source_tok));
-      for name, imt in imt_systems.iteritems():
+      for name, imt in models.imt_systems.iteritems():
         self.imt_session[name] = imt.newSession(source_tok)
         
     @event('set_prefix')
@@ -322,8 +318,8 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, "prefix '%s'" % prefix, type(prefix)
       print >> sys.stderr, "suffix '%s'" % suffix, type(suffix) 
 
-      prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
-      suffix_tok, suffix_seg = tokenizer.preprocess(suffix)
+      prefix_tok, prefix_seg = models.tokenizer.preprocess(prefix)
+      suffix_tok, suffix_seg = models.tokenizer.preprocess(suffix)
 
       last_token_is_partial = True
       if len(prefix) == 0 or prefix[-1].isspace():
@@ -344,7 +340,7 @@ class CasmacatConnection(SocketConnection):
         #target, target_seg = tokenizer.postprocess(target_tok)
         #add_match(predictions, new_prediction(name, target, target_seg))
 
-        prediction, prediction_seg = tokenizer.postprocess(prediction_tok)
+        prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
         add_match(predictions, new_prediction(name, prediction, prediction_seg))
       prepare(predictions)
       self.emit('predictionchange', predictions)
@@ -352,14 +348,13 @@ class CasmacatConnection(SocketConnection):
     @event
     def end_imt_session(self):
       for name, session in self.imt_session.iteritems():
-          imt_systems[name].deleteSession(session)
+          models.imt_systems[name].deleteSession(session)
       self.imt_session = {} 
       logger.log(DEBUG_LOG, "ending imt session");
 
     @event
-    def reset_server(self):
-      delete_plugins()
-      create_plugins()
+    def reset(self):
+      models.reset()
       self.emit('serverready', 'the server is ready')
 
 #class LoggerConnection(SocketConnection, Logger):
@@ -402,69 +397,75 @@ application = web.Application(
     socket_io_port = 3019
 )
 
-def create_plugins():
-    tokenizer_plugin = TextProcessorPlugin("plugins/space-tokenizer.so")
-    tokenizer_factory = tokenizer_plugin.create()
-    if not tokenizer_factory: raise Exception("Tokenizer plugin failed")
-    tokenizer_factory.setLogger(logger)
-    tokenizer = tokenizer_factory.createInstance()
-    if not tokenizer: raise Exception("Tokenizer instance failed")
+class Models:
+  def __init__(self):
+    self.mt_systems = {}
+    self.imt_systems = {}
+    self.ol_systems = {}
+  
+  def create_plugins(self):
+    self.tokenizer_plugin = TextProcessorPlugin("plugins/space-tokenizer.so")
+    self.tokenizer_factory = self.tokenizer_plugin.create()
+    if not self.tokenizer_factory: raise Exception("Tokenizer plugin failed")
+    self.tokenizer_factory.setLogger(logger)
+    self.tokenizer = self.tokenizer_factory.createInstance()
+    if not self.tokenizer: raise Exception("Tokenizer instance failed")
 
     
 #    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
-    mt_plugin = ImtPlugin("plugins/libstack_dec.so", "-c /home/dortiz/smt/software/stack_dec/aux_dirs/cfg_files/casmacat_xerox_enes_adapt_wg.cfg", "thot_imt_plugin")
+    self.mt_plugin = ImtPlugin("plugins/libstack_dec.so", "-c /home/dortiz/smt/software/stack_dec/aux_dirs/cfg_files/casmacat_xerox_enes_adapt_wg.cfg", "thot_imt_plugin")
 
-    mt_factory = mt_plugin.create()
-    if not mt_factory: raise Exception("MT plugin failed")
-    mt_factory.setLogger(logger)
-    static_mt = mt_factory.createInstance()
-    if not static_mt: raise Exception("Static MT instance failed")
+    self.mt_factory = self.mt_plugin.create()
+    if not self.mt_factory: raise Exception("MT plugin failed")
+    self.mt_factory.setLogger(logger)
+    self.static_mt = self.mt_factory.createInstance()
+    if not self.static_mt: raise Exception("Static MT instance failed")
 
-    ol_factory = mt_plugin.create()
-    if not ol_factory: raise Exception("Online MT plugin failed")
-    ol_factory.setLogger(logger)
-    online_mt = ol_factory.createInstance()
-    if not online_mt: raise Exception("Online MT instance failed")
+    self.ol_factory = self.mt_plugin.create()
+    if not self.ol_factory: raise Exception("Online MT plugin failed")
+    self.ol_factory.setLogger(logger)
+    self.online_mt = self.ol_factory.createInstance()
+    if not self.online_mt: raise Exception("Online MT instance failed")
 
-    mt_systems["ITP"] = static_mt
-    imt_systems["ITP"] = static_mt
+    self.mt_systems["ITP"] = self.static_mt
+    self.imt_systems["ITP"] = self.static_mt
 
-    mt_systems["ITP-OL"] = online_mt
-    imt_systems["ITP-OL"] = online_mt
-    ol_systems["ITP-OL"] = online_mt
+    self.mt_systems["ITP-OL"] = self.online_mt
+    self.imt_systems["ITP-OL"] = self.online_mt
+    self.ol_systems["ITP-OL"] = self.online_mt
     
-    alignment_plugin = AlignmentPlugin("plugins/HMMaligner.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
-    alignment_factory = alignment_plugin.create()
-    if not alignment_factory: raise Exception("Alignment plugin failed")
-    alignment_factory.setLogger(logger)
-    aligner = alignment_factory.createInstance()
-    if not aligner: raise Exception("Aligner instance failed")
+    self.alignment_plugin = AlignmentPlugin("plugins/HMMaligner.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
+    self.alignment_factory = self.alignment_plugin.create()
+    if not self.alignment_factory: raise Exception("Alignment plugin failed")
+    self.alignment_factory.setLogger(logger)
+    self.aligner = self.alignment_factory.createInstance()
+    if not self.aligner: raise Exception("Aligner instance failed")
 
-    ol_systems["ALIGNER"] = aligner
+    self.ol_systems["ALIGNER"] = self.aligner
 
     
-    confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
-    confidence_factory = confidence_plugin.create()
-    if not confidence_factory: raise Exception("Confidence plugin failed")
-    confidence_factory.setLogger(logger)
-    confidencer = confidence_factory.createInstance()
-    if not confidencer: raise Exception("Confidencer instance failed")
+    self.confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
+    self.confidence_factory = self.confidence_plugin.create()
+    if not self.confidence_factory: raise Exception("Confidence plugin failed")
+    self.confidence_factory.setLogger(logger)
+    self.confidencer = self.confidence_factory.createInstance()
+    if not self.confidencer: raise Exception("Confidencer instance failed")
 
-    ol_systems["CONFIDENCER"] = confidencer
+    self.ol_systems["CONFIDENCER"] = self.confidencer
     
     print >> sys.stderr, "Plugins loaded"
+  
+  
+  def delete_plugins(self):
+    del self.tokenizer, self.tokenizer_factory, self.tokenizer_plugin 
+    del self.static_mt, self.mt_factory, self.mt_plugin
+    del self.online_mt, self.ol_factory
+    del self.aligner, self.alignment_factory, self.alignment_plugin
+    del self.confidencer, self.confidence_factory, self.confidence_plugin
 
-
-def delete_plugins():
-    del tokenizer, tokenizer_factory, tokenizer_plugin 
-    del mt, mt_factory, mt_plugin
-    del aligner, alignment_factory, alignment_plugin
-    del confidencer, confidence_factory, confidence_plugin
-
-    mt_systems = {}
-    imt_systems = {}
-    ol_systems = {}
-
+  def reset(self):
+    self.delete_plugins()
+    self.create_plugins()
 
 if __name__ == "__main__":
     from sys import argv
@@ -473,10 +474,9 @@ if __name__ == "__main__":
 
     logging.getLogger().setLevel(logging.INFO)
 
-    create_plugins()
-    atexit.register(delete_plugins)
+    models = Models()
+    models.create_plugins()
+    atexit.register(models.delete_plugins)
     # Create and start tornadio server
     SocketServer(application)
-    
-    print >> sys.stderr, "SocketServer exited"
     
