@@ -458,7 +458,6 @@ class Models:
     if not self.tokenizer: raise Exception("Tokenizer instance failed")
 
     
-#    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
     self.mt_plugin = ImtPlugin(self.config["mt"]["module"], self.config["mt"]["parameters"], self.config["mt"]["name"])
 
     self.mt_factory = self.mt_plugin.create()

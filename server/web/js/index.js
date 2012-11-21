@@ -11,7 +11,7 @@ $(function(){
 
   // handle disconections and debug information
   casmacat.on('disconnect', function(){ this.socket.reconnect(); });
-  casmacat.on('receive_log', function(msg) { console.log('server says:', msg); });
+  //casmacat.on('receive_log', function(msg) { console.log('server says:', msg); });
   casmacat.on('serverready', function() { $('body').unblock(); });
   
   // handle translation responses
@@ -23,17 +23,12 @@ $(function(){
     console.log('contribution changed', data);
     $('#btn-translate').val("Translate").attr("disabled", false);
 
-    var query = {
-      action: "startImtSession",
-      id_segment: 607906,
-      text: data.text,
-      id_job: 1135,
-      num_results: 2,
-      id_translator: "me!"
-    }
-    casmacat.startImtSession(query);
   	update_translation_display(data);
     update_suggestions(data);
+
+    if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
+      startImt(data.text);
+    }
   });
 
   // handle post-editing (target has changed but not source)
@@ -55,13 +50,20 @@ $(function(){
   // handle confidence changes (updates highlighting) 
   casmacat.on('confidencechange', function(obj) {
     var data = obj.data;
+    var start_time = new Date().getTime();
     update_word_confidences_display(data.quality, data.word_confidences, data.source, data.source_seg, data.target, data.target_seg);
+    console.log("update_word_confidences_display:", new Date().getTime() - start_time, obj.data.elapsed_time);
   });
 
   // handle confidence changes (updates highlighting) 
   casmacat.on('predictionchange', function(obj) {
     var data = obj.data;
     update_suggestions(data);
+  });
+
+  // measures network latency
+  casmacat.on('pong', function(ms) {
+    console.log("Received ping:", new Date().getTime() - ms);
   });
 
 
@@ -276,7 +278,17 @@ $(function(){
     }
   });
 
-
+  function startImt(txt) {
+    var query = {
+      action: "startImtSession",
+      id_segment: 607906,
+      text: txt,
+      id_job: 1135,
+      num_results: 2,
+      id_translator: "me!"
+    }
+    casmacat.startImtSession(query);
+  };
 
 
   /*******************************************************************************/
@@ -662,5 +674,7 @@ $(function(){
   };
   
   togglePanelControl();
+  
+  casmacat.ping(new Date().getTime());
   
 });

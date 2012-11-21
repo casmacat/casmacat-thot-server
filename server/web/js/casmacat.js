@@ -30,6 +30,11 @@ $.extend(CasmacatClient.prototype, {
      }
    },
 
+   ping: function(ms) {
+     this.checkConnection();
+     this.server.emit('ping', {data: ms});
+   },
+   
    // MT client methods
    translate: function(obj) {
      this.checkConnection();
