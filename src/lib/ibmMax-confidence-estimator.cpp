@@ -78,14 +78,18 @@ public:
 				for(unsigned int j=0; j<srcSnt.size(); ++j){
 					nconf=float(ibm.pts(srcSnt[j],trgSnt[i]));
 					
-					aux=target[i];
-					//cout << target[i] << " " << aux << endl;
-					//exit(1);
-					
 					// Eufemistic E. is heuristic
+					aux=target[i];
 					if(isupper(aux[0]) && !isupper(aux[1])){
 						transform(aux.begin(), (aux.begin())+1, aux.begin(), ::tolower );
 						nconf2=ibm.pts(srcSnt[j],ibm.stringToTrgWordIndex(aux));
+						if( nconf2 > nconf)
+							nconf=nconf2;
+					}
+					aux=source[i];
+					if(isupper(aux[0]) && !isupper(aux[1])){
+						transform(aux.begin(), (aux.begin())+1, aux.begin(), ::tolower );
+						nconf2=ibm.pts(ibm.stringToSrcWordIndex(aux),trgSnt[i]);
 						if( nconf2 > nconf)
 							nconf=nconf2;
 					}
@@ -128,7 +132,7 @@ public:
 			ibm.addSentPair(source, target, 1, sentRange);
 			ibm.trainSentPairRange(sentRange,0);
 			LOG(INFO) << "Updated with new bilingual pair" << endl; 
-		}
+		} 
 	}
 
   virtual void setLogger(Logger *logger) {
