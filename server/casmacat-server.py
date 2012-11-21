@@ -15,6 +15,31 @@ from casmacat import *
 #from numpy.testing.utils import elapsed
 
 
+# decorator to measure the time to process the function 
+class timer(object):
+  def __init__(self, name):
+    """
+    If there are decorator arguments, the function
+    to be decorated is not passed to the constructor!
+    """
+    self.name = name 
+
+  def __call__(self, function):
+    """
+    If there are decorator arguments, __call__() is only called
+    once, as part of the decoration process! You can only give
+    it a single argument, which is the function object.
+    """
+    def decorator(*args, **kwargs):
+      start_time = datetime.datetime.now()
+      ret = function(*args, **kwargs)
+      elapsed_time = datetime.datetime.now() - start_time
+      print "TIME:%s %.2fms" % (self.name, elapsed_time.microseconds/1000.0)
+      return ret
+    return decorator
+
+
+
 # decorator to capture exceptions and return them as errors in json
 class thrower(object):
   def __init__(self, emission):
@@ -32,11 +57,7 @@ class thrower(object):
     """
     def decorator(*args, **kwargs):
       try:
-        start_time = datetime.datetime.now()
-        ret = function(*args, **kwargs)
-        elapsed_time = datetime.datetime.now() - start_time
-        print "TIME: calling '%s' took %.2fms" % (function.__name__, elapsed_time.microseconds/1000.0)
-        return ret
+        return function(*args, **kwargs)
       except Exception, e:
         if self.emission:
           args[0].emit(self.emission, { 'errors': [traceback.format_exc()], 'data': None })
@@ -166,6 +187,7 @@ class ExampleHandler(web.RequestHandler):
 
 class CasmacatConnection(SocketConnection):
 #class AlignerConnection(SocketConnection):
+    @timer('get_alignments')
     @event('get_alignments')
     @thrower('alignmentchange')
     def get_alignments(self, data):
@@ -189,6 +211,7 @@ class CasmacatConnection(SocketConnection):
       self.emit('alignmentchange', { 'errors': [], 'data': obj })
 
 #class ProcessorConnection(SocketConnection):
+    @timer('get_tokens')
     @event('get_tokens')
     @thrower('translationchange')
     def get_tokens(self, data):
@@ -216,6 +239,7 @@ class CasmacatConnection(SocketConnection):
 #      conf = confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
 #      self.emit('confidencechange', conf, source, source_seg, target, target_seg)
 
+    @timer('get_word_confidences')
     @event('get_word_confidences')
     @thrower('confidencechange')
     def get_word_confidences(self, data):
@@ -285,6 +309,7 @@ class CasmacatConnection(SocketConnection):
 #    }]
 #  }
 #}
+    @timer('translate')
     @event('translate')
     @thrower('contributionchange')
     def translate(self, data):
@@ -305,7 +330,8 @@ class CasmacatConnection(SocketConnection):
       prepare(contributions)
       self.emit('contributionchange', contributions)
 
-    @event
+    @timer('update')
+    @event('update')
     def update(self, data):
       source = to_utf8(data['text'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
@@ -315,7 +341,8 @@ class CasmacatConnection(SocketConnection):
         ol.update(source_tok, target_tok)
 
 #class ImtConnection(SocketConnection):
-    @event
+    @timer('start_imt_session')
+    @event('start_imt_session')
     def start_imt_session(self, data):
       print 'data:', data
       source = to_utf8(data['text'])
@@ -328,6 +355,7 @@ class CasmacatConnection(SocketConnection):
       for name, imt in models.imt_systems.iteritems():
         self.imt_session[name] = imt.newSession(source_tok)
         
+    @timer('set_prefix')
     @event('set_prefix')
     @thrower('predictionchange')
     def set_prefix(self, data):
@@ -373,14 +401,16 @@ class CasmacatConnection(SocketConnection):
       prepare(predictions)
       self.emit('predictionchange', predictions)
 
-    @event
+    @timer('end_imt_session')
+    @event('end_imt_session')
     def end_imt_session(self):
       for name, session in self.imt_session.iteritems():
           models.imt_systems[name].deleteSession(session)
       self.imt_session = {} 
       logger.log(DEBUG_LOG, "ending imt session");
 
-    @event
+    @timer('reset')
+    @event('reset')
     def reset(self):
       start_time = datetime.datetime.now()
       models.reset()
@@ -391,13 +421,15 @@ class CasmacatConnection(SocketConnection):
              }
       self.emit('serverready', { 'errors': [], 'data': obj })
 
-    @event
+    @timer('configure')
+    @event('configure')
     def configure(self, data):
       self.config = data
       print >> sys.stderr, self.config 
       self.emit('configuration', { 'errors': [], 'config': models.config })
 
-    @event
+    @timer('ping')
+    @event('ping')
     def ping(self, data):
       self.emit('pong', data)
 
