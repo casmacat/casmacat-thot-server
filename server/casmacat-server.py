@@ -5,6 +5,8 @@ import sys, traceback, os
 import datetime, time
 import random
 
+try: import simplejson as json
+except ImportError: import json
 
 from tornado import web
 from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
@@ -50,6 +52,7 @@ class MyLogger(Logger):
   participants = set()
 
   def log(self, type, msg):
+    return
     if type in self.tag:
       msg = "%s: %s" % (self.tag[type], msg)
     else: 
@@ -392,6 +395,7 @@ class CasmacatConnection(SocketConnection):
     def configure(self, data):
       self.config = data
       print >> sys.stderr, self.config 
+      self.emit('configuration', { 'errors': [], 'config': models.config })
 
     @event
     def ping(self, data):
@@ -425,21 +429,10 @@ class RouterConnection(SocketConnection):
 # Create tornadio router
 CasmacatRouter = TornadioRouter(RouterConnection)
 
-# Create socket application
-application = web.Application(
-    CasmacatRouter.apply_routes([
-                                  (r"/", IndexHandler), 
-                                  (r"/js/(.*)", JsHandler),
-                                  (r"/css/(.*)", CssHandler),
-                                  (r"/examples/(.*)", ExampleHandler)
-                                ]),
-    flash_policy_port = 843,
-    flash_policy_file = os.path.join(ROOT, 'flashpolicy.xml'),
-    socket_io_port = 3019
-)
-
 class Models:
-  def __init__(self):
+  def __init__(self, config_fn):
+    self.config = json.load(open(config_fn))
+    print >> sys.stderr, "config", json.dumps(self.config)
     self.mt_systems = {}
     self.imt_systems = {}
     self.ol_systems = {}
@@ -466,7 +459,7 @@ class Models:
 
     
 #    mt_plugin = MtPlugin("plugins/moses-mt-engine.so", "-f xerox.models/model/moses.ini")
-    self.mt_plugin = ImtPlugin("plugins/libstack_dec.so", "-c /home/dortiz/smt/software/stack_dec/aux_dirs/cfg_files/casmacat_xerox_enes_adapt_wg.cfg", "thot_imt_plugin")
+    self.mt_plugin = ImtPlugin(self.config["mt"]["module"], self.config["mt"]["parameters"], self.config["mt"]["name"])
 
     self.mt_factory = self.mt_plugin.create()
     if not self.mt_factory: raise Exception("MT plugin failed")
@@ -480,7 +473,7 @@ class Models:
     self.online_mt = self.ol_factory.createInstance()
     if not self.online_mt: raise Exception("Online MT instance failed")
 
-    self.alignment_plugin = AlignmentPlugin("plugins/HMMaligner.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
+    self.alignment_plugin = AlignmentPlugin(self.config["aligner"]["module"], self.config["aligner"]["parameters"])
     self.alignment_factory = self.alignment_plugin.create()
     if not self.alignment_factory: raise Exception("Alignment plugin failed")
     self.alignment_factory.setLogger(logger)
@@ -488,7 +481,7 @@ class Models:
     if not self.aligner: raise Exception("Aligner instance failed")
 
     
-    self.confidence_plugin = ConfidencePlugin("plugins/ibmMax-confidence-estimator.so", "/home/dortiz/smt/tasks/Xerox/en_es/v14may2003/my_simplified3/CASMACAT_INVTM/my_ef_invswm")
+    self.confidence_plugin = ConfidencePlugin(self.config["confidencer"]["module"], self.config["confidencer"]["parameters"])
     self.confidence_factory = self.confidence_plugin.create()
     if not self.confidence_factory: raise Exception("Confidence plugin failed")
     self.confidence_factory.setLogger(logger)
@@ -515,7 +508,7 @@ class Models:
     self.static_mt, self.mt_factory = None, None
 
     self.ol_factory.deleteInstance(self.online_mt);
-    self.ol_plugin.destroy(self.ol_factory)
+    self.mt_plugin.destroy(self.ol_factory)
     self.online_mt, self.ol_factory = None, None
     
     del self.mt_plugin
@@ -579,9 +572,24 @@ if __name__ == "__main__":
 
     logging.getLogger().setLevel(logging.INFO)
 
-    models = Models()
+    models = Models(sys.argv[1])
     models.create_plugins()
     atexit.register(models.delete_plugins)
+
+    # Create socket application
+    application = web.Application(
+        CasmacatRouter.apply_routes([
+                                      (r"/", IndexHandler), 
+                                      (r"/js/(.*)", JsHandler),
+                                      (r"/css/(.*)", CssHandler),
+                                      (r"/examples/(.*)", ExampleHandler)
+                                    ]),
+        flash_policy_port = 843,
+        flash_policy_file = os.path.join(ROOT, 'flashpolicy.xml'),
+        socket_io_port = models.config["server"]["port"] 
+    )
+
+
     # Create and start tornadio server
     SocketServer(application)
     
