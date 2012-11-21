@@ -291,12 +291,13 @@ class CasmacatConnection(SocketConnection):
       contributions = new_contributions(source, source_seg)
 
       for name, mt in models.mt_systems.iteritems():
-        start_time = datetime.datetime.now()
-        target_tok = mt.translate(source_tok)
-        elapsed_time = datetime.datetime.now() - start_time
-
-        target, target_seg = models.tokenizer.postprocess(target_tok)
-        add_match(contributions, new_match(name, source, source_seg, target, target_seg, elapsed_time))
+        if name == self.config['mode'] or self.config['mode'] == "PE" or self.config['suggestions']:
+          start_time = datetime.datetime.now()
+          target_tok = mt.translate(source_tok)
+          elapsed_time = datetime.datetime.now() - start_time
+  
+          target, target_seg = models.tokenizer.postprocess(target_tok)
+          add_match(contributions, new_match(name, source, source_seg, target, target_seg, elapsed_time))
 
       prepare(contributions)
       self.emit('contributionchange', contributions)
@@ -350,21 +351,22 @@ class CasmacatConnection(SocketConnection):
       predictions = new_predictions(target, caret_pos)
       
       for name, session in self.imt_session.iteritems():
-        start_time = datetime.datetime.now()
-        prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
-        elapsed_time = datetime.datetime.now() - start_time
-        print >> sys.stderr, name, "prediction_tok", prediction_tok 
-
-        #if last_token_is_partial:
-        #  target_tok = list(prefix_tok[:-1]) + [prefix_tok[-1] + prediction_tok[0]] + list(prediction_tok[1:])
-        #else:
-        #  target_tok = list(prefix_tok) + list(prediction_tok)
-        #
-        #target, target_seg = tokenizer.postprocess(target_tok)
-        #add_match(predictions, new_prediction(name, target, target_seg))
-
-        prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
-        add_match(predictions, new_prediction(name, prediction, prediction_seg, elapsed_time))
+        if name == self.config['mode'] or self.config['mode'] == "PE" or self.config['suggestions']:
+          start_time = datetime.datetime.now()
+          prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
+          elapsed_time = datetime.datetime.now() - start_time
+          print >> sys.stderr, name, "prediction_tok", prediction_tok 
+  
+          #if last_token_is_partial:
+          #  target_tok = list(prefix_tok[:-1]) + [prefix_tok[-1] + prediction_tok[0]] + list(prediction_tok[1:])
+          #else:
+          #  target_tok = list(prefix_tok) + list(prediction_tok)
+          #
+          #target, target_seg = tokenizer.postprocess(target_tok)
+          #add_match(predictions, new_prediction(name, target, target_seg))
+  
+          prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
+          add_match(predictions, new_prediction(name, prediction, prediction_seg, elapsed_time))
       prepare(predictions)
       self.emit('predictionchange', predictions)
 
@@ -397,6 +399,7 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
       self.imt_session = {} 
+      self.config = { 'suggestions': False, 'mode': u'ITP' }
 
     @event
     def on_close(self):
