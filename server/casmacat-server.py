@@ -187,8 +187,8 @@ class ExampleHandler(web.RequestHandler):
 
 class CasmacatConnection(SocketConnection):
 #class AlignerConnection(SocketConnection):
-    @timer('get_alignments')
     @event('get_alignments')
+    @timer('get_alignments')
     @thrower('alignmentchange')
     def get_alignments(self, data):
       print 'data:', data
@@ -211,8 +211,8 @@ class CasmacatConnection(SocketConnection):
       self.emit('alignmentchange', { 'errors': [], 'data': obj })
 
 #class ProcessorConnection(SocketConnection):
-    @timer('get_tokens')
     @event('get_tokens')
+    @timer('get_tokens')
     @thrower('translationchange')
     def get_tokens(self, data):
       print 'data:', data
@@ -239,8 +239,8 @@ class CasmacatConnection(SocketConnection):
 #      conf = confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
 #      self.emit('confidencechange', conf, source, source_seg, target, target_seg)
 
-    @timer('get_word_confidences')
     @event('get_word_confidences')
+    @timer('get_word_confidences')
     @thrower('confidencechange')
     def get_word_confidences(self, data):
       print 'data:', data
@@ -309,8 +309,8 @@ class CasmacatConnection(SocketConnection):
 #    }]
 #  }
 #}
-    @timer('translate')
     @event('translate')
+    @timer('translate')
     @thrower('contributionchange')
     def translate(self, data):
       print 'data:', data
@@ -330,8 +330,8 @@ class CasmacatConnection(SocketConnection):
       prepare(contributions)
       self.emit('contributionchange', contributions)
 
-    @timer('update')
     @event('update')
+    @timer('update')
     def update(self, data):
       source = to_utf8(data['text'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
@@ -341,8 +341,8 @@ class CasmacatConnection(SocketConnection):
         ol.update(source_tok, target_tok)
 
 #class ImtConnection(SocketConnection):
-    @timer('start_imt_session')
     @event('start_imt_session')
+    @timer('start_imt_session')
     def start_imt_session(self, data):
       print 'data:', data
       source = to_utf8(data['text'])
@@ -355,8 +355,8 @@ class CasmacatConnection(SocketConnection):
       for name, imt in models.imt_systems.iteritems():
         self.imt_session[name] = imt.newSession(source_tok)
         
-    @timer('set_prefix')
     @event('set_prefix')
+    @timer('set_prefix')
     @thrower('predictionchange')
     def set_prefix(self, data):
       print 'data:', data
@@ -401,16 +401,16 @@ class CasmacatConnection(SocketConnection):
       prepare(predictions)
       self.emit('predictionchange', predictions)
 
-    @timer('end_imt_session')
     @event('end_imt_session')
+    @timer('end_imt_session')
     def end_imt_session(self):
       for name, session in self.imt_session.iteritems():
           models.imt_systems[name].deleteSession(session)
       self.imt_session = {} 
       logger.log(DEBUG_LOG, "ending imt session");
 
-    @timer('reset')
     @event('reset')
+    @timer('reset')
     def reset(self):
       start_time = datetime.datetime.now()
       models.reset()
@@ -421,15 +421,15 @@ class CasmacatConnection(SocketConnection):
              }
       self.emit('serverready', { 'errors': [], 'data': obj })
 
-    @timer('configure')
     @event('configure')
+    @timer('configure')
     def configure(self, data):
       self.config = data
       print >> sys.stderr, self.config 
       self.emit('configuration', { 'errors': [], 'config': models.config })
 
-    @timer('ping')
     @event('ping')
+    @timer('ping')
     def ping(self, data):
       self.emit('pong', data)
 
