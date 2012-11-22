@@ -54,7 +54,7 @@ function trim_text($text, $words = 5)
         Mode: <strong id="set-mode">none</strong>.
         Suggestions: <strong id="set-suggestions">none</strong>.
         Confidences: <strong id="set-confidences">none</strong>.
-        Alignment Matrix: <strong id="set-alignments">none</strong>.
+        Alignments: <strong id="set-alignments">none</strong>.
       </p>
     </div>
     <div id="options">
@@ -66,7 +66,11 @@ function trim_text($text, $words = 5)
           <input type="radio" name="show" id="opt-itp" value="ITP" /> ITP (predictive)
           <input type="radio" name="show" id="opt-itp-ol" value="ITP-OL" /> ITP-OL (online learning)
         </form>
-        <div class="block mt"><input type="checkbox" id="opt-suggestions" /> <label for="opt-suggestions">Display suggestions</label></div>
+        <div class="block mt">
+          <input type="checkbox" id="opt-suggestions" /> <label for="opt-suggestions">Display suggestions</label>
+          <input type="checkbox" id="opt-confidences" checked="checked" /> <label for="opt-confidences">Display confidences</label>
+          <input type="checkbox" id="opt-alignments" /> <label for="opt-alignments">Display alignments</label>
+        </div>
         <!--div id="caret">undef</div-->
       </div>
       
@@ -131,7 +135,7 @@ function trim_text($text, $words = 5)
         //  "Para desinstalar la utilidad :",
         //  "Puede seleccionar varias fuentes .",
         foreach($selected_sentences as $sentence) {
-          echo '<option value="'.$sentence.'">'.trim_text($sentence, 10).'</option>'.PHP_EOL;
+          echo '<option value="'.$sentence.'">'.trim_text($sentence, 12).'</option>'.PHP_EOL;
         }
       ?>
     </select> 

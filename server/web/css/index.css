@@ -49,6 +49,7 @@ table {
 	margin: 1em;
 	text-align: center;
 }
+
 table div.rotated {
 	/* writing-mode:tb-rl; */
 	transform: rotate(270deg);
@@ -57,6 +58,7 @@ table div.rotated {
 	-ms-transform: rotate(270deg);
 	-o-transform: rotate(270deg);
 	white-space: nowrap;
+	padding-right: 2em;
 }
 table .vertical {
 	white-space: nowrap;

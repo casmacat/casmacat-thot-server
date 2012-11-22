@@ -72,9 +72,13 @@ $(function(){
     if (obj.config) {
       var c = obj.config;
       if (c.sentences && c.sentences.length > 0) {
-        $('select#source-list option').each(function(e,i){
-          console.log("configurationchange", e,i);
+        var $select = $('select#source-list');
+        $select.empty();
+        $('#source, #target').empty();
+        $.each(c.sentences, function(index, value) {
+          $select.append( $('<option value="'+value+'">'+trimText(value, 12)+'</option>') );
         });
+        $('#source').text( $select.first().val() );
       }
       if (c.confidencer && c.confidencer.threshold) {
         updateSlider([c.confidencer.threshold.bad, c.confidencer.threshold.doubt]);
@@ -340,9 +344,10 @@ $(function(){
             num_results: 2,
             id_translator: "me!"
           }
-          casmacat.getAlignments(query);
+          if ($('#opt-alignments').is(':checked')) casmacat.getAlignments(query);
+          
           query.action = "getWordConfidences";
-          casmacat.getWordConfidences(query);
+          if ($('#opt-confidences').is(':checked')) casmacat.getWordConfidences(query);
         }
         else if ($('#opt-suggestions').is(':checked')) {
           list.append($('<dt/>').text(match.created_by));
@@ -382,7 +387,7 @@ $(function(){
 
     // requests the server for new alignment and confidence info
     var query = {
-      action: "getWordConfidences",
+      action: "getAlignments",
       id_segment: 607906,
       text: source,
       target: target,
@@ -391,10 +396,11 @@ $(function(){
       num_results: 2,
       id_translator: "me!"
     }
-    casmacat.getWordConfidences(query);
+
+    if ($('#opt-alignments').is(':checked')) casmacat.getAlignments(query);
     
-    query.actions = "getAlignments";
-    casmacat.getAlignments(query);
+    query.action = "getWordConfidences";
+    if ($('#opt-confidences').is(':checked')) casmacat.getWordConfidences(query);
   }
 
 
@@ -621,7 +627,7 @@ $(function(){
   $ctrlLegend.wrapInner('<a href="#toggle-options"/>');
   $ctrlLegend.find('a').click(function(e){
     e.preventDefault();
-    togglePanelControl();
+    toggleControlPanel();
   });
 
 
@@ -671,7 +677,7 @@ $(function(){
   updateSlider();
   
   
-  function togglePanelControl() {
+  function toggleControlPanel() {
     var $options = $('#options'), $summary = $('#options-summary');
     $options.toggle();
     if (!$options.is(':visible')) {
@@ -685,13 +691,30 @@ $(function(){
   function makeControlPanelSummary() {
     $('#set-mode').text( $('#show-options input[@name=show]:checked').val() );
     $('#set-suggestions').text( $('#opt-suggestions').is(':checked') );
-    $('#set-confidences').text( confThreshold.bad*100 + "/"+ confThreshold.doubt*100  );
-    $('#set-alignments').text( $('#matrix').is(':visible') );
+    $('#set-confidences').text( $('#opt-confidences').is(':checked') + " ["+ confThreshold.bad*100 + "/"+ confThreshold.doubt*100 +"]" );
+    $('#set-alignments').text( $('#opt-alignments').is(':checked') + " [matrix: "+ $('#matrix').is(':visible') +"]" );
   };
   
-  togglePanelControl();
+  toggleControlPanel();
   
   casmacat.ping(new Date().getTime());
-  
   casmacat.getServerConfig();
+
+  function trimText(text, numWords, delimiter) {
+    if (!numWords)  numWords  = 5;
+    if (!delimiter) delimiter = " ";    
+    
+    var words = text.split(delimiter), trimmed = "";
+    for (var i = 0; i < words.length; ++i) {
+      if (i < numWords) {
+        trimmed += words[i] + delimiter;
+      } else break;
+    }
+    if (i >= numWords) {
+      trimmed += delimiter + "[...]"; 
+    }
+
+    return trimmed;
+  }
+  
 });
