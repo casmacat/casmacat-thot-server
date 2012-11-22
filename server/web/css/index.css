@@ -16,6 +16,7 @@ button img {
 	width: 95%;
 	height: 10%;
 	border: 1px solid lightsteelblue;
+	white-space: pre;
 }
 
 #source:hover, #target:hover {
