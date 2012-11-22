@@ -426,7 +426,11 @@ class CasmacatConnection(SocketConnection):
     def configure(self, data):
       self.config = data
       print >> sys.stderr, self.config 
-      self.emit('configuration', { 'errors': [], 'config': models.config })
+
+    @event('get_server_config')
+    @timer('get_server_config')
+    def get_server_config(self):
+      self.emit('configurationchange', { 'errors': [], 'config': models.config })
 
     @event('ping')
     @timer('ping')
