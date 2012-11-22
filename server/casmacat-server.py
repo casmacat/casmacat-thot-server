@@ -332,6 +332,7 @@ class CasmacatConnection(SocketConnection):
 
     @event('update')
     @timer('update')
+    @thrower('modelchange')
     def update(self, data):
       source = to_utf8(data['text'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
@@ -340,6 +341,7 @@ class CasmacatConnection(SocketConnection):
       for name, ol in models.ol_systems.iteritems():
         ol.update(source_tok, target_tok)
       models.updates.append((source, target))
+      self.emit('modelchange', { 'errors': [], 'data': { 'num_updates': len(models.updates) } })
 
     @event('get_updated_sentences')
     @timer('get_updated_sentences')
