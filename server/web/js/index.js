@@ -68,8 +68,18 @@ $(function(){
 
 
   // receive server configuration 
-  casmacat.on('configuration', function(config) {
-    console.log("Server config:", config);
+  casmacat.on('configurationchange', function(obj) {
+    if (obj.config) {
+      var c = obj.config;
+      if (c.sentences && c.sentences.length > 0) {
+        $('select#source-list option').each(function(e,i){
+          console.log("configurationchange", e,i);
+        });
+      }
+      if (c.confidencer && c.confidencer.threshold) {
+        updateSlider([c.confidencer.threshold.bad, c.confidencer.threshold.doubt]);
+      }
+    }
   });
 
 
@@ -683,4 +693,5 @@ $(function(){
   
   casmacat.ping(new Date().getTime());
   
+  casmacat.getServerConfig();
 });

@@ -74,6 +74,11 @@ $.extend(CasmacatClient.prototype, {
      this.server.emit('get_word_confidences', {data: obj});
    },
 
+   getServerConfig: function() {
+     this.checkConnection();
+     this.server.emit('get_server_config');
+   },
+
    // ITM methods
    startImtSession: function(obj) {
      this.checkConnection();
