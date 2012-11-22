@@ -86,7 +86,7 @@ public:
 						if( nconf2 > nconf)
 							nconf=nconf2;
 					}
-					aux=source[i];
+					aux=source[j];
 					if(isupper(aux[0]) && !isupper(aux[1])){
 						transform(aux.begin(), (aux.begin())+1, aux.begin(), ::tolower );
 						nconf2=ibm.pts(ibm.stringToSrcWordIndex(aux),trgSnt[i]);
