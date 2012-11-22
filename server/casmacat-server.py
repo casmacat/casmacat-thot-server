@@ -562,49 +562,51 @@ class Models:
     del self.tokenizer_plugin
 
   def reset(self):
-    self.updates = []
-    print >> sys.stderr, "deleteInstance confidencer"
-    self.confidence_factory.deleteInstance(self.confidencer);
-    print >> sys.stderr, "destroy confidence factory"
-    self.confidence_plugin.destroy(self.confidence_factory)
-
-    print >> sys.stderr, "create confidence factory"
-    self.confidence_factory = self.confidence_plugin.create()
-    if not self.confidence_factory: raise Exception("Confidence plugin failed")
-    self.confidence_factory.setLogger(logger)
-    print >> sys.stderr, "create confidencer instance"
-    self.confidencer = self.confidence_factory.createInstance()
-    if not self.confidencer: raise Exception("Confidencer instance failed")
-
-
-    print >> sys.stderr, "deleteInstance aligner"
-    self.alignment_factory.deleteInstance(self.aligner);
-    print >> sys.stderr, "destroy alignment factory"
-    self.alignment_plugin.destroy(self.alignment_factory)
-
-    print >> sys.stderr, "create alignment factory"
-    self.alignment_factory = self.alignment_plugin.create()
-    if not self.alignment_factory: raise Exception("Alignment plugin failed")
-    self.alignment_factory.setLogger(logger)
-    print >> sys.stderr, "create aligner instance"
-    self.aligner = self.alignment_factory.createInstance()
-    if not self.aligner: raise Exception("Aligner instance failed")
-
-    
-    print >> sys.stderr, "deleteInstance online mt"
-    self.ol_factory.deleteInstance(self.online_mt);
-    print >> sys.stderr, "destroy online mt factory"
-    self.mt_plugin.destroy(self.ol_factory)
-
-    print >> sys.stderr, "create online mt factory"
-    self.ol_factory = self.mt_plugin.create()
-    if not self.ol_factory: raise Exception("Online MT plugin failed")
-    self.ol_factory.setLogger(logger)
-    print >> sys.stderr, "create online mt instance"
-    self.online_mt = self.ol_factory.createInstance()
-    if not self.online_mt: raise Exception("Online MT instance failed")
-    
-    self.assign_models()
+    if len(self.updates) > 0:
+      
+      self.updates = []
+      print >> sys.stderr, "deleteInstance confidencer"
+      self.confidence_factory.deleteInstance(self.confidencer);
+      print >> sys.stderr, "destroy confidence factory"
+      self.confidence_plugin.destroy(self.confidence_factory)
+  
+      print >> sys.stderr, "create confidence factory"
+      self.confidence_factory = self.confidence_plugin.create()
+      if not self.confidence_factory: raise Exception("Confidence plugin failed")
+      self.confidence_factory.setLogger(logger)
+      print >> sys.stderr, "create confidencer instance"
+      self.confidencer = self.confidence_factory.createInstance()
+      if not self.confidencer: raise Exception("Confidencer instance failed")
+  
+  
+      print >> sys.stderr, "deleteInstance aligner"
+      self.alignment_factory.deleteInstance(self.aligner);
+      print >> sys.stderr, "destroy alignment factory"
+      self.alignment_plugin.destroy(self.alignment_factory)
+  
+      print >> sys.stderr, "create alignment factory"
+      self.alignment_factory = self.alignment_plugin.create()
+      if not self.alignment_factory: raise Exception("Alignment plugin failed")
+      self.alignment_factory.setLogger(logger)
+      print >> sys.stderr, "create aligner instance"
+      self.aligner = self.alignment_factory.createInstance()
+      if not self.aligner: raise Exception("Aligner instance failed")
+  
+      
+      print >> sys.stderr, "deleteInstance online mt"
+      self.ol_factory.deleteInstance(self.online_mt);
+      print >> sys.stderr, "destroy online mt factory"
+      self.mt_plugin.destroy(self.ol_factory)
+  
+      print >> sys.stderr, "create online mt factory"
+      self.ol_factory = self.mt_plugin.create()
+      if not self.ol_factory: raise Exception("Online MT plugin failed")
+      self.ol_factory.setLogger(logger)
+      print >> sys.stderr, "create online mt instance"
+      self.online_mt = self.ol_factory.createInstance()
+      if not self.online_mt: raise Exception("Online MT instance failed")
+      
+      self.assign_models()
     
     print >> sys.stderr, "Reset finished"    
     
