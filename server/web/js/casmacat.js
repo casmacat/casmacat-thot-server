@@ -79,6 +79,11 @@ $.extend(CasmacatClient.prototype, {
      this.server.emit('get_server_config');
    },
 
+   getUpdatedSentences: function() {
+     this.checkConnection();
+     this.server.emit('get_updated_sentences');
+   },
+
    // ITM methods
    startImtSession: function(obj) {
      this.checkConnection();

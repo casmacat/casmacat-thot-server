@@ -86,6 +86,11 @@ $(function(){
     }
   });
 
+  // handle updates changes (show a list of updated sentences) 
+  casmacat.on('updateschange', function(obj) {
+    console.log('updates:', obj.data.updates);
+  });
+
 
   /*******************************************************************************/
   /*           handle UI events                                                  */

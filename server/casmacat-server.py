@@ -224,7 +224,7 @@ class CasmacatConnection(SocketConnection):
       elapsed_time = datetime.datetime.now() - start_time
 
       contributions = new_contributions(source, source_seg)
-      add_match(contributions, new_match('tokenizer', source, source_seg, target, target_seg))
+      add_match(contributions, new_match('tokenizer', source, source_seg, target, target_seg, elapsed_time))
 
       prepare(contributions)
       self.emit('translationchange', contributions)
@@ -339,6 +339,13 @@ class CasmacatConnection(SocketConnection):
       target_tok, target_seg = models.tokenizer.preprocess(target)
       for name, ol in models.ol_systems.iteritems():
         ol.update(source_tok, target_tok)
+      models.updates.append((source, target))
+
+    @event('get_updated_sentences')
+    @timer('get_updated_sentences')
+    def get_updated_sentences(self):
+      self.emit('updateschange', { 'errors': [], 'data': { 'updates': models.updates } })
+
 
 #class ImtConnection(SocketConnection):
     @event('start_imt_session')
@@ -472,6 +479,7 @@ class Models:
     self.mt_systems = {}
     self.imt_systems = {}
     self.ol_systems = {}
+    self.updates = []
   
   def assign_models(self):
     self.mt_systems["ITP"] = self.static_mt
@@ -554,6 +562,7 @@ class Models:
     del self.tokenizer_plugin
 
   def reset(self):
+    self.updates = []
     print >> sys.stderr, "deleteInstance confidencer"
     self.confidence_factory.deleteInstance(self.confidencer);
     print >> sys.stderr, "destroy confidence factory"
