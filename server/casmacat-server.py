@@ -3,7 +3,7 @@
 
 import sys, traceback, os
 import datetime, time
-import random
+import random, math
 
 try: import simplejson as json
 except ImportError: import json
@@ -14,6 +14,24 @@ from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 from casmacat import *
 #from numpy.testing.utils import elapsed
 
+
+def fmt_delta(elapsed_time):
+  h, rem = divmod(elapsed_time.seconds, 3600)
+  m , rem = divmod(rem, 60)
+  s = math.floor(rem)
+  ms = elapsed_time.microseconds/1000.0
+
+  time = []
+  if elapsed_time.days > 0: 
+    time.append("%d days" % (days))
+  if h > 0:
+    time.append("%dh" % (h))
+  if m > 0:
+    time.append("%dm" % (m))
+  if s > 0:
+    time.append("%ds" % (s))
+  time.append("%.2fms" % ms)
+  return " ".join(time) 
 
 # decorator to measure the time to process the function 
 class timer(object):
@@ -34,7 +52,7 @@ class timer(object):
       start_time = datetime.datetime.now()
       ret = function(*args, **kwargs)
       elapsed_time = datetime.datetime.now() - start_time
-      print "TIME:%s %.2fms" % (self.name, elapsed_time.microseconds/1000.0)
+      print "TIME:%s:%s" % (self.name, fmt_delta(elapsed_time))
       return ret
     return decorator
 
@@ -102,7 +120,7 @@ def new_match(created_by, source, source_seg, target, target_seg, elapsed_time):
   match['reference'] = source 
   match['usage_count'] = 1
   match['subject'] = "Printer Manuals"
-  match['elapsed_time'] = elapsed_time.microseconds/1000.0
+  match['elapsed_time'] = elapsed_time.total_seconds()*1000.0
   return match
 
 def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
@@ -120,7 +138,7 @@ def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
   match['match'] = 85
   match['usage_count'] = 1
   match['subject'] = "Printer Manuals"
-  match['elapsed_time'] = elapsed_time.microseconds/1000.0
+  match['elapsed_time'] = elapsed_time.total_seconds()*1000.0
   return match
 
 def new_contributions(source, source_seg):
@@ -206,7 +224,7 @@ class CasmacatConnection(SocketConnection):
               'source_seg': source_seg, 
               'target': target, 
               'target_seg': target_seg,
-              'elapsed_time': elapsed_time.microseconds/1000.0
+              'elapsed_time': elapsed_time.total_seconds()*1000.0
             }
       self.emit('alignmentchange', { 'errors': [], 'data': obj })
 
@@ -258,7 +276,7 @@ class CasmacatConnection(SocketConnection):
         'source_seg': source_seg, 
         'target': target, 
         'target_seg': target_seg, 
-        'elapsed_time': elapsed_time.microseconds/1000.0
+        'elapsed_time': elapsed_time.total_seconds()*1000.0
       }
       print 'confidences:', obj
       self.emit('confidencechange', { 'errors': [], 'data': obj })
@@ -426,7 +444,7 @@ class CasmacatConnection(SocketConnection):
       elapsed_time = datetime.datetime.now() - start_time
       
       obj = { 'msg':  'the server is ready',
-              'elapsed_time': elapsed_time.microseconds/1000.0 
+              'elapsed_time': elapsed_time.total_seconds()*1000.0 
              }
       self.emit('serverready', { 'errors': [], 'data': obj })
 
@@ -495,48 +513,65 @@ class Models:
     self.ol_systems["CONFIDENCER"] = self.confidencer
 
     
+  @timer('create_plugins')
   def create_plugins(self):
+    start_time = datetime.datetime.now()
     self.tokenizer_plugin = TextProcessorPlugin("plugins/space-tokenizer.so")
     self.tokenizer_factory = self.tokenizer_plugin.create()
     if not self.tokenizer_factory: raise Exception("Tokenizer plugin failed")
     self.tokenizer_factory.setLogger(logger)
     self.tokenizer = self.tokenizer_factory.createInstance()
     if not self.tokenizer: raise Exception("Tokenizer instance failed")
+    elapsed_time = datetime.datetime.now() - start_time
+    print "TIME:%s loaded:%s" % ("tokenizer", fmt_delta(elapsed_time))
 
     
     self.mt_plugin = ImtPlugin(self.config["mt"]["module"], self.config["mt"]["parameters"], self.config["mt"]["name"])
 
+    start_time = datetime.datetime.now()
     self.mt_factory = self.mt_plugin.create()
     if not self.mt_factory: raise Exception("MT plugin failed")
     self.mt_factory.setLogger(logger)
     self.static_mt = self.mt_factory.createInstance()
     if not self.static_mt: raise Exception("Static MT instance failed")
+    elapsed_time = datetime.datetime.now() - start_time
+    print "TIME:%s loaded:%s" % ("static mt", fmt_delta(elapsed_time))
 
+    start_time = datetime.datetime.now()
     self.ol_factory = self.mt_plugin.create()
     if not self.ol_factory: raise Exception("Online MT plugin failed")
     self.ol_factory.setLogger(logger)
     self.online_mt = self.ol_factory.createInstance()
     if not self.online_mt: raise Exception("Online MT instance failed")
+    elapsed_time = datetime.datetime.now() - start_time
+    print "TIME:%s loaded:%s" % ("online mt", fmt_delta(elapsed_time))
 
+    start_time = datetime.datetime.now()
     self.alignment_plugin = AlignmentPlugin(self.config["aligner"]["module"], self.config["aligner"]["parameters"])
     self.alignment_factory = self.alignment_plugin.create()
     if not self.alignment_factory: raise Exception("Alignment plugin failed")
     self.alignment_factory.setLogger(logger)
     self.aligner = self.alignment_factory.createInstance()
     if not self.aligner: raise Exception("Aligner instance failed")
+    elapsed_time = datetime.datetime.now() - start_time
+    print "TIME:%s loaded:%s" % ("aligner", fmt_delta(elapsed_time))
 
     
+    start_time = datetime.datetime.now()
     self.confidence_plugin = ConfidencePlugin(self.config["confidencer"]["module"], self.config["confidencer"]["parameters"])
     self.confidence_factory = self.confidence_plugin.create()
     if not self.confidence_factory: raise Exception("Confidence plugin failed")
     self.confidence_factory.setLogger(logger)
     self.confidencer = self.confidence_factory.createInstance()
     if not self.confidencer: raise Exception("Confidencer instance failed")
+    elapsed_time = datetime.datetime.now() - start_time
+    print "TIME:%s loaded:%s" % ("confidencer", fmt_delta(elapsed_time))
 
     self.assign_models()    
     print >> sys.stderr, "Plugins loaded"
   
   
+  @timer('delete_plugins')
   def delete_plugins(self):
     self.confidence_factory.deleteInstance(self.confidencer);
     self.confidence_plugin.destroy(self.confidence_factory)
@@ -563,6 +598,7 @@ class Models:
     self.tokenizer, self.tokenizer_factory = None, None
     del self.tokenizer_plugin
 
+  @timer('reset')
   def reset(self):
     if len(self.updates) > 0:
       
@@ -624,6 +660,16 @@ if __name__ == "__main__":
     models.create_plugins()
     atexit.register(models.delete_plugins)
 
+
+    port = 3019
+    try: 
+      port = models.config["server"]["port"]
+    except:
+      try:
+        port = int(sys.argv[2])
+      except:
+        pass
+
     # Create socket application
     application = web.Application(
         CasmacatRouter.apply_routes([
@@ -634,7 +680,7 @@ if __name__ == "__main__":
                                     ]),
         flash_policy_port = 843,
         flash_policy_file = os.path.join(ROOT, 'flashpolicy.xml'),
-        socket_io_port = models.config["server"]["port"] 
+        socket_io_port = port 
     )
 
 
