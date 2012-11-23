@@ -6,11 +6,19 @@ $.extend(CasmacatClient.prototype, {
    // Common properties
    url: '',
    server: null,
-
+   debug: true,
+   
    // Common initialization method
    init: function(url) {
      this.url = url;
      this.server = new io.connect(this.url);
+     if (this.debug) {
+       var emit = this.server.emit;
+       this.server.emit = function() {
+         emit.apply(casmacat.server, arguments);
+         console.log("emit", String.apply(this, arguments));
+       }
+     }
    },
    
    // { suggestions: true, mode:"PE" }
@@ -22,6 +30,9 @@ $.extend(CasmacatClient.prototype, {
    // Common event handler
    on: function(ev, func) {
      this.server.on(ev, func);
+     if (this.debug) {
+       console.log("on", ev, "executed");
+     }
    },
 
    checkConnection: function() {

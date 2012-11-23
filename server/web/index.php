@@ -92,6 +92,7 @@ function trim_text($text, $words = 5)
           <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
         	<button title="Toggle e-pen interaction" id="btn-epen"><img src="images/epen.png"/></button> 
           <?php } ?>
+          <button title="Display updated sentences" id="btn-updatedsentences"><img src="images/list.png"/></button>
           <button title="Reset servers" id="btn-reset"><img src="images/reset.png"/></button>
         </div>
       </div>
@@ -148,7 +149,9 @@ function trim_text($text, $words = 5)
 
   <!--<label for="target">Target:</label>-->
   <div id="target" class="editable epen"></div>
-  
+
+  <div id="updatedsentences"></div>
+         
   <div id="matrix">
     <table cellpadding="10" id="demo-table">
       <thead> <tr class="bottom"><th></th></tr> </thead>
@@ -165,5 +168,6 @@ function trim_text($text, $words = 5)
 	<button id="btn-clear">Clear</button>
     <img src="images/drawhere.png" class="drawhere" alt="Draw here!" />
   </div>
+  
 </body>
 </html>

@@ -13,10 +13,12 @@ button img {
 	width: 25px;
 }
 #source, #target {
-	width: 95%;
 	height: 10%;
 	border: 1px solid lightsteelblue;
-	white-space: pre;
+  white-space: pre-wrap;       /* css-3 */
+  white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+  white-space: -pre-wrap;      /* Opera 4-6 */
+  white-space: -o-pre-wrap;    /* Opera 7 */
 }
 
 #source:hover, #target:hover {
@@ -33,7 +35,7 @@ button img {
 }
 #target {
 	background-color: #EEE;
-	margin-top: 50px;
+	margin-top: 60px;
 	margin-bottom: 30px;
 }
 .prefix {
@@ -200,6 +202,13 @@ form *, .control-panel-row *  { vertical-align:middle; }
   #conf-thresholds p { margin-bottom:0.3em; /*text-align:center;*/ }
 
 #options-summary { color:#555; }
+
+#updatedsentences { max-height:200px; overflow:auto; overflow-x:hidden; border-top:1px solid #CCC; border-bottom:1px solid #CCC; 	margin-top:100px; } 
+  #updatedsentences dt, #updatedsentences dd { padding:0.5em; }
+  #updatedsentences dt { font-weight:bold; background-color:#EEE; }
+  #updatedsentences dd { color:gray; }
+
+#source, #target, #updatedsentences { width: 95%; }
 
 .clear { clear:both; }
 .inline { display:inline; } 

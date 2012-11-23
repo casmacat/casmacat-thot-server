@@ -10,9 +10,14 @@ $(function(){
   casmacat = new CasmacatClient('http://' + window.casmacatServer + '/casmacat');
 
   // handle disconections and debug information
-  casmacat.on('disconnect', function(){ this.socket.reconnect(); });
+  casmacat.on('disconnect', function(){ 
+    blockUI("Server disconnected");
+    this.socket.reconnect(); 
+  });
   //casmacat.on('receive_log', function(msg) { console.log('server says:', msg); });
-  casmacat.on('serverready', function() { $('body').unblock(); });
+  casmacat.on('serverready', function() { 
+    unblockUI();
+  });
   
   // handle translation responses
   casmacat.on('contributionchange', function(obj) {
@@ -64,6 +69,7 @@ $(function(){
   // measures network latency
   casmacat.on('pong', function(ms) {
     console.log("Received ping:", new Date().getTime() - ms);
+    unblockUI();
   });
 
 
@@ -89,8 +95,24 @@ $(function(){
   // handle updates changes (show a list of updated sentences) 
   casmacat.on('updateschange', function(obj) {
     console.log('updates:', obj.data.updates);
+    if (obj.data.updates.length > 0) {
+      var list = '<dl>';
+      for (var i = 0; i < obj.data.updates.length; ++i) {
+        var sentence = obj.data.updates[i];
+        list += '<dt>' + sentence[0] + '</dt>';
+        list += '<dd>' + sentence[1] + '</dd>';
+      }
+      list += '</dl>';
+      $('#updatedsentences').html(list).toggle();
+    }
   });
 
+  // handle models changes (after OL) 
+  casmacat.on('modelchange', function(obj) {
+    console.log('models:', obj.data);
+    $('#btn-update').val('Update').attr('disabled', false);
+  });
+  
 
   /*******************************************************************************/
   /*           handle UI events                                                  */
@@ -134,23 +156,26 @@ $(function(){
         data = $this.data('editable'),
         source = $this.editable('getText');
 
-    if (data.str != source) { 
-      throttle(function () {
-        var query = {
-          action: "getContribution",
-          id_segment: 607906,
-          text: source,
-          id_job: 1135,
-          num_results: 2,
-          id_translator: "me!"
+    if (isPrintableChar(e)) {
+      throttle(function() {
+        if (data.str != source) {
+          var query = {
+            action: "getContribution",
+            id_segment: 607906,
+            // since we are listeing on keypress, source must include last typed char
+            text: source,
+            id_job: 1135,
+            num_results: 2,
+            id_translator: "me!"
+          }
+          casmacat.translate(query);
         }
-        casmacat.translate(query);
       }, throttle_ms);
     }
   });
 
 
-  var set = {};
+  var typedWords = {};
   // caretmove is a new event from jquery.editable that is triggered
   // whenever the caret has changed position
   $('#target').bind('caretmove', function(e, d) {
@@ -161,7 +186,7 @@ $(function(){
   .blur(function(e) {
     $('#suggestions').css({'visibility': 'hidden'});
   })
-  // on key up throttle a new translation
+  // on keyup throttle a new translation
   .keyup(function(e) {
     var $this = $(this),
         data = $this.data('editable'),
@@ -170,16 +195,22 @@ $(function(){
         pos = $('#target').editable('getCaretPos');
         
     var spanElem = $('#target').editable('getTokenAtCaretPos', pos).elem.parentNode;
-    set[ $(spanElem).attr("id") ] = true;
-
-    // if key is not backspace, supr
-    if ([8, 46].indexOf(e.which) === -1) {
-      if (data.str != target) { 
-        throttle(function () {
+    var targetId = $(spanElem).attr("id");
+    // Remember interacted words only when the user types in the right span
+    var numInStr = targetId ? targetId.match(/(\d+)$/) : null;
+    if (numInStr && parseInt(numInStr[0], 10)) {
+      typedWords[ $(spanElem).attr("id") ] = true;
+    }
+    
+    if (isPrintableChar(e)) {
+      throttle(function () {
+        if (data.str != target) {
+          console.log("throttle setPrefix", data.str, target, e.which )
           var query = {
             action: "getTokens",
             id_segment: 607906,
             text: source,
+            // since we are listening on keypress, target must include last typed char
             target: target,
             caret_pos: pos,
             id_job: 1135,
@@ -187,11 +218,13 @@ $(function(){
             id_translator: "me!"
           }
           casmacat.getTokens(query);
-          console.log("query prefix:", target);
-          query.action = "getSuggestions";
-          casmacat.setPrefix(query);
-        }, throttle_ms);
-      }
+          console.log("query prefix:", query.target);
+          if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
+            query.action = "getSuggestions";
+            casmacat.setPrefix(query);
+          }
+        }
+      }, throttle_ms);
     }
   });
 
@@ -231,13 +264,14 @@ $(function(){
   });
   $('#matrix').toggle();
 
+  $('#btn-updatedsentences').click(function(e) {
+    casmacat.getUpdatedSentences();
+  });
+  
   $('#btn-reset').click(function(e) {
     if (!window.confirm("Are you sure you want to reset the models?")) return;
     casmacat.reset();
-    $('body').block({
-      message: '<h2>Reseting server...</h2>',
-      css: { fontSize:'150%', padding:'1% 2%', borderWidth:'3px', borderRadius:'10px', '-webkit-border-radius':'10px', '-moz-border-radius':'10px' }
-    });  
+    blockUI("Reseting server...");
   });
 
 /*
@@ -508,11 +542,10 @@ $(function(){
 
     // get target span tokens 
     var spans = $('#target > .editable-token');
-
     // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
     for (var c = 0; c < confidences.length; ++c) {
       var $span = $(spans[c]), conf = Math.round(confidences[c]*100)/100, cssClass;
-      if (conf > confThreshold.doubt || set[$span.attr("id")]) {
+      if (conf > confThreshold.doubt /*|| typedWords.hasOwnProperty($span.attr("id"))*/) {
         cssClass = "wordconf-ok";
       }
       else if (conf > confThreshold.bad) {
@@ -625,6 +658,7 @@ $(function(){
   $('#source-list').change(function(e) {
     $('#source').text($('#source-list').val());
     $('#btn-translate').click();
+    $('#target').focus();
   });
 
   
@@ -665,7 +699,7 @@ $(function(){
       var conf = $span.data('confidence');
       if (conf) {
         var cssClass;
-        if (conf > confThreshold.doubt || set[$span.attr("id")]) {
+        if (conf > confThreshold.doubt /*|| typedWords.hasOwnProperty($span.attr("id"))*/) {
           cssClass = 'wordconf-ok';
         }
         else if (conf > confThreshold.bad) {
@@ -701,9 +735,12 @@ $(function(){
   };
   
   toggleControlPanel();
-  
+  $('#updatedsentences').hide();
+    
   casmacat.ping(new Date().getTime());
   casmacat.getServerConfig();
+  blockUI("Connecting...");
+  
 
   function trimText(text, numWords, delimiter) {
     if (!numWords)  numWords  = 5;
@@ -720,6 +757,26 @@ $(function(){
     }
 
     return trimmed;
+  }
+
+  // This function only works with keypress events
+  function isPrintableChar(evt) {
+    if (typeof evt.which == "undefined") {
+      return true;
+    } else if (typeof evt.which == "number" && evt.which > 0) {
+      return evt.which == 32 || evt.which == 13 || evt.which > 46;
+    }
+    return false;
+  }
+
+  function blockUI(msg) {
+    $('body').block({
+      message: '<h2>' + msg + '</h2>',
+      css: { fontSize:'150%', padding:'1% 2%', borderWidth:'3px', borderRadius:'10px', '-webkit-border-radius':'10px', '-moz-border-radius':'10px' }
+    });  
+  }
+  function unblockUI() {
+    $('body').unblock();
   }
   
 });
