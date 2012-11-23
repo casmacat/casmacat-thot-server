@@ -336,8 +336,10 @@ class CasmacatConnection(SocketConnection):
       source_tok, source_seg = models.tokenizer.preprocess(source)
       contributions = new_contributions(source, source_seg)
 
+      mode = self.config['mode']
+      if mode == "PE": mode = "ITP"
       for name, mt in models.mt_systems.iteritems():
-        if name == self.config['mode'] or self.config['mode'] == "PE" or self.config['suggestions']:
+        if name == mode or self.config['suggestions']:
           start_time = datetime.datetime.now()
           target_tok = mt.translate(source_tok)
           elapsed_time = datetime.datetime.now() - start_time
@@ -380,7 +382,8 @@ class CasmacatConnection(SocketConnection):
       source_tok, source_seg = models.tokenizer.preprocess(source)
       logger.log(DEBUG_LOG, "starting imt session with " + str(source_tok));
       for name, imt in models.imt_systems.iteritems():
-        self.imt_session[name] = imt.newSession(source_tok)
+        if name == self.config['mode'] or self.config['suggestions']:
+          self.imt_session[name] = imt.newSession(source_tok)
         
     @event('set_prefix')
     @timer('set_prefix')
@@ -409,7 +412,7 @@ class CasmacatConnection(SocketConnection):
       predictions = new_predictions(target, caret_pos)
       
       for name, session in self.imt_session.iteritems():
-        if name == self.config['mode'] or self.config['mode'] == "PE" or self.config['suggestions']:
+        if name == self.config['mode'] or self.config['suggestions']:
           start_time = datetime.datetime.now()
           prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
           elapsed_time = datetime.datetime.now() - start_time
@@ -426,6 +429,7 @@ class CasmacatConnection(SocketConnection):
           prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
           add_match(predictions, new_prediction(name, prediction, prediction_seg, elapsed_time))
       prepare(predictions)
+      print >> sys.stderr, "SUGGESTIONS:", predictions
       self.emit('predictionchange', predictions)
 
     @event('end_imt_session')
@@ -438,6 +442,7 @@ class CasmacatConnection(SocketConnection):
 
     @event('reset')
     @timer('reset')
+    @thrower('serverready')
     def reset(self):
       start_time = datetime.datetime.now()
       models.reset()
@@ -470,7 +475,7 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
       self.imt_session = {} 
-      self.config = { 'suggestions': False, 'mode': u'ITP' }
+      self.config = { 'suggestions': False, 'mode': u'PE' }
 
     @event
     def on_close(self):
