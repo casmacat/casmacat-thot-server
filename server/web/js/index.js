@@ -9,12 +9,33 @@ $(function(){
   // connect to a server. casmacat will receive async server responses
   casmacat = new CasmacatClient('http://' + window.casmacatServer + '/casmacat');
 
-  // handle disconections and debug information
   casmacat.on('disconnect', function(){ 
     blockUI("Server disconnected");
-    this.socket.reconnect(); 
+    this.socket.reconnect();
   });
+  
+  casmacat.on('reconnecting', function(){ 
+    blockUI("Reconnecting...");
+  });
+  
+  casmacat.on('reconnect_failed', function(){ 
+    blockUI("Reconnect failed");
+  });
+
+  casmacat.on('reconnect', function() { 
+    unblockUI();
+  });
+
+  casmacat.on('anything', function(data, callback) { 
+    console.info("anything:", data);
+  });
+
+  casmacat.on('message', function(message, callback) { 
+    console.info("message:", data);
+  });
+      
   //casmacat.on('receive_log', function(msg) { console.log('server says:', msg); });
+
   casmacat.on('serverready', function() { 
     unblockUI();
   });
@@ -57,7 +78,7 @@ $(function(){
     var data = obj.data;
     var start_time = new Date().getTime();
     update_word_confidences_display(data.quality, data.word_confidences, data.source, data.source_seg, data.target, data.target_seg);
-    console.log("update_word_confidences_display:", new Date().getTime() - start_time, obj.data.elapsed_time);
+    //console.log("update_word_confidences_display:", new Date().getTime() - start_time, obj.data.elapsed_time);
   });
 
   // handle confidence changes (updates highlighting) 
@@ -205,7 +226,6 @@ $(function(){
     if (isPrintableChar(e)) {
       throttle(function () {
         if (data.str != target) {
-          console.log("throttle setPrefix", data.str, target, e.which )
           var query = {
             action: "getTokens",
             id_segment: 607906,
@@ -218,7 +238,7 @@ $(function(){
             id_translator: "me!"
           }
           casmacat.getTokens(query);
-          console.log("query prefix:", query.target);
+          //console.log("query prefix:", query.target);
           if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
             query.action = "getSuggestions";
             casmacat.setPrefix(query);
@@ -236,21 +256,20 @@ $(function(){
     
     if ($this.data('mode') === 'epen') {
       $this.attr('src', 'images/epen.png');
-      $this.data('mode', 'keyboard')
-      $epen.css({ visibility: 'hidden' })
-    }
-    else {
+      $this.data('mode', 'keyboard');
+      $epen.css({ visibility: 'hidden' });
+    } else {
       $this.attr('src', 'images/keyboard.png');
-      $this.data('mode', 'epen')
+      $this.data('mode', 'epen');
       $target.blur();
 
-      var pos = $target.offset();
+      var ofs = 50, pos = $target.offset(), siz = { width: $target.width() + ofs, height: $target.height() + ofs*2 };
       $epen.css({
         visibility: 'visible',
-        top: pos.top - 50,
-        height: $target.outerHeight() + 100,
-        left: pos.left - 25,
-        width:  $target.outerWidth() + 50,
+        top: pos.top - ofs,
+        height: siz.height,
+        left: pos.left - siz.width/2,
+        width: siz.width,
       });
 
       $canvas.attr('width', $canvas.width());
@@ -259,10 +278,9 @@ $(function(){
     }
   });
 
-  $('#btn-show-alignments').click(function(e) {
+  $('#btn-alignments').click(function(e) {
     $('#matrix').toggle();
   });
-  $('#matrix').toggle();
 
   $('#btn-updatedsentences').click(function(e) {
     casmacat.getUpdatedSentences();
@@ -270,8 +288,8 @@ $(function(){
   
   $('#btn-reset').click(function(e) {
     if (!window.confirm("Are you sure you want to reset the models?")) return;
-    casmacat.reset();
     blockUI("Reseting server...");
+    casmacat.reset();
   });
 
 /*
@@ -324,9 +342,11 @@ $(function(){
       case 'PE':
       case 'ITP':
         $('#btn-update').attr("disabled", true);
+        $('#btn-updatedsentences, #updatedsentences').hide();
         break;
       case 'ITP-OL':
         $('#btn-update').attr("disabled", false);
+        $('#btn-updatedsentences').show();
         break;
       default:
         console.warning("#show-options changed, but no action was performed");
@@ -357,9 +377,9 @@ $(function(){
 
 
   function update_suggestions(data) {
-    var d = $('#target').editable('getCaretXY');
-    var current_target = $('#target').text();
-    console.log(d, data);
+    $target = $('#target');
+    var d = $target.editable('getCaretXY');
+    var targetText = $target.text();
     
     var show_type = $('input[@name=show]:checked').val();
 
@@ -367,9 +387,9 @@ $(function(){
     var list = $('<dl/>');
     for (var i = 0; i < data.matches.length; i++) {
       var match = data.matches[i];
-      if (current_target.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
+      if (targetText.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
         if (show_type === match.created_by) {
-          $('#target').editable('setText', match.translation, match.translationTokens);
+          $target.editable('setText', match.translation, match.translationTokens);
       
           // requests the server for new alignment and confidence info
           source = $('#source').editable('getText')
@@ -397,14 +417,12 @@ $(function(){
     }
 
     if (count > 0 && $('#btn-epen > img').data('mode') !== 'epen') {
-      //console.log(d.caretRect.bottom);
-      $('#suggestions').css({'top': d.caretRect.bottom, 'left': d.caretRect.left, 'visibility': 'visible'});
-      $('#suggestions').html(list);
+      var ofs = 50, pos = $target.offset(), siz = { width: $target.width() + ofs, height: $target.height() + ofs*2 };
+      $('#suggestions').css({top: d.caretRect.bottom, left: d.caretRect.left - siz.width/2, visibility: 'visible'}).html(list);
       //$('#target').editable('setText', target, target_seg);
     }
-    else { 
-      $('#suggestions').css({'visibility': 'hidden'});
-      $('#suggestions').html('');
+    else {
+      $('#suggestions').css({'visibility': 'hidden'}).html('');
     }
   }
 
@@ -527,7 +545,7 @@ $(function(){
     // add mouseenter mouseleave events to target spans
     add_alignment_events(targetspans, targetal);
 
-    if ($('#matrix').is(":visible")) {
+    if ($('#opt-alignments').is(':checked') && $('#matrix').is(":visible")) {
       update_aligment_matrix(alignments);
     }
   }
@@ -654,6 +672,22 @@ $(function(){
   };
 
 
+  $("#opt-suggestions").click(function(e){
+  });
+
+  $("#opt-confidences").click(function(e){
+    $('#conf-thresholds').toggle();
+  });
+    
+  $("#opt-alignments").click(function(e){
+    if ($(this).is(':checked')) {
+      $('#btn-alignments, #matrix').show();
+    } else {
+      $('#btn-alignments, #matrix').hide();
+    }
+  });
+
+
   $('#source').text($('#source-list').val());
   $('#source-list').change(function(e) {
     $('#source').text($('#source-list').val());
@@ -668,7 +702,6 @@ $(function(){
     e.preventDefault();
     toggleControlPanel();
   });
-
 
 	$('#slider-conf').slider({
     range: true,
@@ -712,9 +745,6 @@ $(function(){
       }
     }            
   };
-
-  updateSlider();
-  
   
   function toggleControlPanel() {
     var $options = $('#options'), $summary = $('#options-summary');
@@ -733,14 +763,6 @@ $(function(){
     $('#set-confidences').text( $('#opt-confidences').is(':checked') + " ["+ confThreshold.bad*100 + "/"+ confThreshold.doubt*100 +"]" );
     $('#set-alignments').text( $('#opt-alignments').is(':checked') + " [matrix: "+ $('#matrix').is(':visible') +"]" );
   };
-  
-  toggleControlPanel();
-  $('#updatedsentences').hide();
-    
-  casmacat.ping(new Date().getTime());
-  casmacat.getServerConfig();
-  blockUI("Connecting...");
-  
 
   function trimText(text, numWords, delimiter) {
     if (!numWords)  numWords  = 5;
@@ -748,11 +770,11 @@ $(function(){
     
     var words = text.split(delimiter), trimmed = "";
     for (var i = 0; i < words.length; ++i) {
-      if (i < numWords) {
+      if (i <= numWords) {
         trimmed += words[i] + delimiter;
       } else break;
     }
-    if (i >= numWords) {
+    if (i > numWords) {
       trimmed += delimiter + "[...]"; 
     }
 
@@ -770,13 +792,25 @@ $(function(){
   }
 
   function blockUI(msg) {
-    $('body').block({
+    $('#global').block({
       message: '<h2>' + msg + '</h2>',
       css: { fontSize:'150%', padding:'1% 2%', borderWidth:'3px', borderRadius:'10px', '-webkit-border-radius':'10px', '-moz-border-radius':'10px' }
     });  
   }
   function unblockUI() {
-    $('body').unblock();
+    $('#global').unblock();
   }
+
+
+  /*******************************************************************************/
+  /*                                 Init calls                                  */
+  /*******************************************************************************/ 
+  
+  updateSlider();    
+  toggleControlPanel();
+  $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
+  casmacat.ping(new Date().getTime());
+  casmacat.getServerConfig();
+  blockUI("Connecting...");
   
 });

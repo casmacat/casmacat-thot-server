@@ -45,6 +45,7 @@ function trim_text($text, $words = 5)
 </head>
 <body>
 
+<div id="global">
   <h1 id="title">CasMaCat API demo</h1>
 
   <fieldset id="control-panel">  
@@ -87,7 +88,7 @@ function trim_text($text, $words = 5)
       
       <div class="control-panel-row mt2">
         <div class="inline">
-        	<button title="Toggle alignment matrix visualization" id="btn-show-alignments"><img src="images/matrix.png"/></button>
+        	<button title="Toggle alignment matrix visualization" id="btn-alignments"><img src="images/matrix.png"/></button>
           <?php if (!empty($_GET['htr-server'])) { ?>
           <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
         	<button title="Toggle e-pen interaction" id="btn-epen"><img src="images/epen.png"/></button> 
@@ -168,6 +169,7 @@ function trim_text($text, $words = 5)
 	<button id="btn-clear">Clear</button>
     <img src="images/drawhere.png" class="drawhere" alt="Draw here!" />
   </div>
-  
+
+</div><!-- #global -->
 </body>
 </html>

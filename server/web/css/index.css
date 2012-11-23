@@ -1,10 +1,7 @@
 * { margin:0; padding:0; margin-before:0; margin-after:0; }
 
-body {
-	margin: auto 70px;
-	max-width: 900px;
-	padding:1em;
-}
+body {}
+#global { max-width: 900px; margin:0 auto; padding:25px; }
 
 button {
 	vertical-align: middle;
@@ -50,7 +47,9 @@ button img {
 
 table {
 	margin: 1em;
-	text-align: center;
+	text-align:center;
+	margin:100%;
+	margin:0 auto;
 }
 
 table div.rotated {
@@ -120,9 +119,9 @@ textarea {
 }
 
 #suggestions {
-	margin: 0px;
+	margin: 0;
 	margin-top: 4px;
-	margin-left: -61px;
+	margin-left: -58px;
 	padding: 0px;
 	padding-right: 4px;
 	position: absolute;
@@ -134,8 +133,6 @@ textarea {
 }
 #suggestions dl {
 	list-style: none;
-	margin: 0;
-	padding: 0;
 }
 #suggestions dt {
 	border-right: 1px solid black;
@@ -144,8 +141,9 @@ textarea {
 	float: left;
 }
 #suggestions dd {
-	margin-left: 60px;
+	margin-left: 58px;
 	height: 22px;
+	padding-right:5px;
 }
 
 #epen {
@@ -186,7 +184,7 @@ textarea {
 }
 
 select, input, button { padding:0.25em; }
-fieldset { border:1px solid #CCC; padding:1em; width:830px; }
+fieldset { border:1px solid #CCC; padding:1em; }
 #control-panel { margin-bottom:1em; }
 #options {
   clear:both;
@@ -207,8 +205,6 @@ form *, .control-panel-row *  { vertical-align:middle; }
   #updatedsentences dt, #updatedsentences dd { padding:0.5em; }
   #updatedsentences dt { font-weight:bold; background-color:#EEE; }
   #updatedsentences dd { color:gray; }
-
-#source, #target, #updatedsentences { width: 95%; }
 
 .clear { clear:both; }
 .inline { display:inline; } 
