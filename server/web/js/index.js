@@ -268,7 +268,7 @@ $(function(){
         visibility: 'visible',
         top: pos.top - ofs,
         height: siz.height,
-        left: pos.left - siz.width/2,
+        left: -1, // FIXME: Review this
         width: siz.width,
       });
 
@@ -352,9 +352,9 @@ $(function(){
         console.warning("#show-options changed, but no action was performed");
         break;
     }
-    if (!$('#target').is(':empty')) {
+    //if (!$('#target').is(':empty')) {
       casmacat.configure({suggestions:$('#opt-suggestions').is(':checked'), mode:show_type});
-    }
+    //}
   });
 
   function startImt(txt) {

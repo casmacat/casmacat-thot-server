@@ -1,7 +1,7 @@
 * { margin:0; padding:0; margin-before:0; margin-after:0; }
 
 body {}
-#global { max-width: 900px; margin:0 auto; padding:25px; }
+#global { max-width: 850px; margin:0 auto; padding:25px; }
 
 button {
 	vertical-align: middle;
@@ -188,8 +188,8 @@ fieldset { border:1px solid #CCC; padding:1em; }
 #control-panel { margin-bottom:1em; }
 #options {
   clear:both;
-  overflow:auto;
-  overflow-y:hidden;
+  /*overflow:auto;
+  overflow-y:hidden;*/
 }
 
 label { font-weight:bold; }
