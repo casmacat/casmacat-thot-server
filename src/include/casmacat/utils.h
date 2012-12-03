@@ -26,6 +26,7 @@
 #include <sstream>
 #include <limits>
 #include <vector>
+#include <iterator>
 
 namespace casmacat {
 
@@ -59,6 +60,13 @@ namespace casmacat {
           pos = str.find_first_of(delimiters, lastPos);
       }
     }
+  }
+
+  template <typename T>
+  void join(const std::vector<T>& tokens, T& str, const T& delimiter = T(" ")) {
+    std::stringstream ss;
+    std::copy(tokens.begin(), tokens.end(), std::ostream_iterator<T>(ss, delimiter.c_str()));
+    str = ss.str();
   }
 
   template <typename T>

@@ -33,18 +33,20 @@
 #include <fstream>
 #include <cassert>
 
+#include "../lib/third-party/utf8/utf8.h"
+
 using namespace casmacat;
 using namespace std;
 
 int main(int argc, char* argv[]) {
 
-    if (argc != 3) {
+    if (argc != 4) {
       cerr << "Usage: " << argv[0] << " plugin text\n";
       return EXIT_FAILURE;
     }
 
     string text_processor_plugin_fn = argv[1];
-    string args = "";
+    string args = argv[2];
 
     Plugin<ITextProcessorFactory> text_processor_plugin(text_processor_plugin_fn, args);
 
@@ -56,9 +58,10 @@ int main(int argc, char* argv[]) {
     }
     else {
       cerr << "Plugin loaded\n";
-      ifstream file(argv[2]);
+      ifstream file(argv[3]);
 
       string text;
+      string new_text;
       vector<string> tokens;
       vector< pair<size_t, size_t> > segmentation_orig;
       vector< pair<size_t, size_t> > segmentation;
@@ -67,16 +70,31 @@ int main(int argc, char* argv[]) {
         cout << "text: " << text << "\n";
 
         text_processor->preprocess(text, tokens, segmentation_orig);
-        text_processor->postprocess(tokens, text, segmentation);
+        text_processor->postprocess(tokens, new_text, segmentation);
 
-        cout << "post-processed text: " << text << "\n";
+        cout << "original text:       " << text << "\n";
+        cout << "post-processed text: " << new_text << "\n";
 
         for (size_t t = 0; t < tokens.size(); t++) {
-          cout << "tok" << t << ": " << tokens[t] << " from " << segmentation[t].first << " to " << segmentation[t].second << "\n";
+          cout << "tok" << t << ": " << tokens[t] << " from " << segmentation[t].first << " to " << segmentation[t].second << " ";
+
+          string::const_iterator begin = new_text.begin();
+          utf8::unchecked::advance(begin, segmentation[t].first);
+
+          string::const_iterator end   = new_text.begin();
+          utf8::unchecked::advance(end, segmentation[t].second);
+
+          while (begin < end) {
+            cout << *begin;
+            ++begin;
+          }
+          cout << "\n";
         }
       }
     }
 
+    text_processor_factory->deleteInstance(text_processor);
+    text_processor_plugin.destroy(text_processor_factory);
 
     return EXIT_SUCCESS;
 }

@@ -101,7 +101,7 @@ fi
 # check perl support
 # https://bitbucket.org/jjacky/rxvt-unicode-jjk/src/a815fc4b8585/configure.ac
 support_perl=yes
-HAS_PERL=
+HAVE_PERL=
 if test x$support_perl = xyes; then
   AC_PATH_PROG(PERL, perl5)
   AC_PATH_PROG(PERL, perl)
@@ -126,7 +126,7 @@ if test x$support_perl = xyes; then
      if test x$rxvt_perl_link = xyes; then
         AC_MSG_RESULT(ok)
         AC_DEFINE(ENABLE_PERL, 1, Define if you can embed a perl interpreter)
-        HAS_PERL=YES
+        HAVE_PERL=YES
         PERL_O=rxvtperl.o
         PERLFLAGS="`$PERL -MExtUtils::Embed -e ccopts`"
         PERLLIB="`$PERL -MExtUtils::Embed -e ldopts`"
@@ -142,8 +142,10 @@ AC_SUBST(PERLLIB)
 AC_SUBST(PERLFLAGS)
 AC_SUBST(PERLPRIVLIBEXP)
 AC_SUBST(PERL)
-AC_SUBST(HAS_PERL)
+AC_SUBST(HAVE_PERL)
 AC_SUBST(PERL_O)
+AM_CONDITIONAL([HAVE_PERL], [test x$rxvt_perl_link = xyes])
+
 
 
 # doxygen

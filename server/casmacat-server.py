@@ -690,5 +690,5 @@ if __name__ == "__main__":
 
 
     # Create and start tornadio server
-    SocketServer(application)
+    #SocketServer(application)
     
