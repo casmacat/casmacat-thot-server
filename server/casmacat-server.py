@@ -521,7 +521,7 @@ class Models:
   @timer('create_plugins')
   def create_plugins(self):
     start_time = datetime.datetime.now()
-    self.tokenizer_plugin = TextProcessorPlugin("plugins/space-tokenizer.so")
+    self.tokenizer_plugin = TextProcessorPlugin(self.config["text-processor"]["module"], self.config["text-processor"]["parameters"])
     self.tokenizer_factory = self.tokenizer_plugin.create()
     if not self.tokenizer_factory: raise Exception("Tokenizer plugin failed")
     self.tokenizer_factory.setLogger(logger)
@@ -690,5 +690,5 @@ if __name__ == "__main__":
 
 
     # Create and start tornadio server
-    #SocketServer(application)
+    SocketServer(application)
     
