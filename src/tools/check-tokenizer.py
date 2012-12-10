@@ -118,6 +118,8 @@ if __name__ == "__main__":
         b += 1
         print n, line
         print n, new_line
+      else:
+        print n, "OK!"
 
       s += elapsed_time.seconds*1000.0 + elapsed_time.microseconds/1000.0
 
