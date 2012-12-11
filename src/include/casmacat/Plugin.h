@@ -29,6 +29,49 @@
 
 namespace casmacat {
 
+  // Tokenize a string at spaces/quotation blocks
+  void tokenize_args(const std::string str, std::vector<std::string> &tokens) {
+    if (not str.empty()) {
+      tokens.clear();
+      char inside_quote = 0;
+      char last_char = 0;
+      std::string token;
+
+      for (std::string::const_iterator it = str.begin(); it < str.end(); last_char = *it, ++it) {
+        if (last_char != '\\' and std::string("\"'").find(*it) != std::string::npos) {
+          if (inside_quote == 0 ) {
+            inside_quote = *it;
+          }
+          else if (*it == inside_quote) {
+            inside_quote = 0;
+          }
+          continue;
+        }
+
+        // If in quote append data regardless of what it is
+        if (inside_quote) {
+          token += *it;
+        }
+        else {
+          if (*it == ' ') {
+            if (not token.empty()) {
+              tokens.push_back(token);
+              token.clear();
+            }
+          }
+          else {
+            token += *it;
+          }
+        }
+      }
+
+      if (not token.empty()) {
+        tokens.push_back(token);
+      }
+    }
+  }
+
+
   template <typename value_type>
   class Plugin {
     typedef value_type* (*create_fn)(int argc, char *argv[], Context *context);
@@ -166,10 +209,10 @@ namespace casmacat {
       int argc = args.size() + 1;
       char **argv = new char *[argc + 1];
       std::string name = plugin_fn;
-      argv[0] = new char[ strlen(name.c_str()) + 1 ];;
+      argv[0] = new char[strlen(name.c_str()) + 1];
       strcpy(argv[0], name.c_str());
       for (size_t argc = 0;argc < args.size(); argc++) {
-        argv[argc + 1] = new char[ strlen(args[argc].c_str()) + 1 ];
+        argv[argc + 1] = new char[strlen(args[argc].c_str()) + 1];
         strcpy(argv[argc + 1], args[argc].c_str());
       }
       argv[argc] = NULL;
@@ -186,7 +229,7 @@ namespace casmacat {
 
     value_type *createStringArgs(const std::string &cmd, Context *context = 0) {
       std::vector<std::string> args;
-      tokenize(cmd, args, std::string(" "));
+      tokenize_args(cmd, args);
       return createVectorStringArgs(args, context);
     }
 

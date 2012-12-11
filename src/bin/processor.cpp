@@ -51,10 +51,15 @@ int main(int argc, char* argv[]) {
     Plugin<ITextProcessorFactory> text_processor_plugin(text_processor_plugin_fn, args);
 
     ITextProcessorFactory *text_processor_factory = text_processor_plugin.create();
+    if (text_processor_factory == 0) {
+      cerr << "Problem with factory initialization\n";
+      return EXIT_FAILURE;
+    }
     ITextProcessor *text_processor = text_processor_factory->createInstance();
 
     if (text_processor == 0) {
       cerr << "Plugin could not be instantiated\n";
+      return EXIT_FAILURE;
     }
     else {
       cerr << "Plugin loaded\n";
