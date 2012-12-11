@@ -345,7 +345,9 @@ class CasmacatConnection(SocketConnection):
           elapsed_time = datetime.datetime.now() - start_time
   
           target, target_seg = models.tokenizer.postprocess(target_tok)
-          add_match(contributions, new_match(name, source, source_seg, target, target_seg, elapsed_time))
+          match = new_match(name, source, source_seg, target, target_seg, elapsed_time)
+          add_match(contributions, match)
+            
 
       prepare(contributions)
       self.emit('contributionchange', contributions)
@@ -380,6 +382,7 @@ class CasmacatConnection(SocketConnection):
       self.imt_session = {} 
 
       source_tok, source_seg = models.tokenizer.preprocess(source)
+      self.source_tok, self.source_seg = source_tok, source_seg
       logger.log(DEBUG_LOG, "starting imt session with " + str(source_tok));
       for name, imt in models.imt_systems.iteritems():
         if name == self.config['mode'] or self.config['suggestions']:
@@ -418,16 +421,18 @@ class CasmacatConnection(SocketConnection):
           elapsed_time = datetime.datetime.now() - start_time
           print >> sys.stderr, name, "prediction_tok", prediction_tok 
   
-          #if last_token_is_partial:
-          #  target_tok = list(prefix_tok[:-1]) + [prefix_tok[-1] + prediction_tok[0]] + list(prediction_tok[1:])
-          #else:
-          #  target_tok = list(prefix_tok) + list(prediction_tok)
-          #
-          #target, target_seg = tokenizer.postprocess(target_tok)
-          #add_match(predictions, new_prediction(name, target, target_seg))
-  
           prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
-          add_match(predictions, new_prediction(name, prediction, prediction_seg, elapsed_time))
+          match = new_prediction(name, prediction, prediction_seg, elapsed_time)
+
+          if models.word_prioritizer and self.source_tok:
+            n_ok = len(prefix_tok)
+            if last_token_is_partial:
+              n_ok -= 1
+            validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
+            priority = models.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+            match["word-priority"] = priority
+
+          add_match(predictions, match)
       prepare(predictions)
       print >> sys.stderr, "SUGGESTIONS:", predictions
       self.emit('predictionchange', predictions)
@@ -575,12 +580,33 @@ class Models:
     elapsed_time = datetime.datetime.now() - start_time
     print "TIME:%s loaded:%s" % ("confidencer", fmt_delta(elapsed_time))
 
+    if "word-prioritizer" in self.config:
+      start_time = datetime.datetime.now()
+      self.word_priority_plugin = WordPriorityPlugin(self.config["word-prioritizer"]["module"], self.config["word-prioritizer"]["parameters"])
+      self.word_priority_factory = self.word_priority_plugin.create()
+      if not self.word_priority_factory: raise Exception("Word prioritizer plugin failed")
+      self.word_priority_factory.setLogger(logger)
+      self.word_prioritizer = self.word_priority_factory.createInstance()
+      if not self.word_prioritizer: raise Exception("Word prioritizer instance failed")
+      elapsed_time = datetime.datetime.now() - start_time
+      print "TIME:%s loaded:%s" % ("word-prioritizer", fmt_delta(elapsed_time))
+    else:
+      self.word_priority_plugin  = None 
+      self.word_priority_factory = None 
+      self.word_prioritizer      = None
+
     self.assign_models()    
     print >> sys.stderr, "Plugins loaded"
   
   
   @timer('delete_plugins')
   def delete_plugins(self):
+    if self.word_priority_factory:
+      self.word_priority_factory.deleteInstance(self.word_prioritizer);
+      self.word_priority_plugin.destroy(self.word_priority_factory)
+      self.word_prioritizer, self.word_priority_factory = None, None
+      del self.word_priority_plugin
+
     self.confidence_factory.deleteInstance(self.confidencer);
     self.confidence_plugin.destroy(self.confidence_factory)
     self.confidencer, self.confidence_factory = None, None

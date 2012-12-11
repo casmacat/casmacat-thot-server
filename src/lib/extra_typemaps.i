@@ -8,6 +8,7 @@ typedef unsigned int uint32_t;
 %template(StringVector) std::vector<std::string>;
 %template(FloatVector)  std::vector<float>;
 %template(BoolVector)   std::vector<bool>;
+%template(IntVector)    std::vector<int>;
 %template(FloatMatrix)  std::vector< std::vector<float> >;
 %template(Segment)      std::pair<size_t, size_t>;
 %template(Segmentation) std::vector<std::pair<size_t, size_t> >;
@@ -65,6 +66,11 @@ typedef unsigned int uint32_t;
 %define %RefOutputBoolVector( name )
 	%fragment("t_output_helper");
 	%RefOutputTypemapComplex( %arg(std::vector<bool>), name );
+%enddef
+
+%define %RefOutputIntVector( name )
+	%fragment("t_output_helper");
+	%RefOutputTypemapComplex( %arg(std::vector<int>), name );
 %enddef
 
 %define %RefOutputFloatMatrix( name )

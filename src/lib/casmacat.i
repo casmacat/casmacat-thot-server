@@ -6,6 +6,7 @@
 #include <casmacat/IUpdateable.h>
 #include <casmacat/IAlignmentEngine.h>
 #include <casmacat/IConfidenceEngine.h>
+#include <casmacat/IWordPriorityEngine.h>
 #include <casmacat/IMtEngine.h>
 #include <casmacat/IImtEngine.h>
 #include <casmacat/IHtrEngine.h>
@@ -34,6 +35,7 @@ using namespace std;
 %RefOutputString( detokenized_out );
 %RefOutputSegmentation( segmentation_out );
 %RefOutputFloatVector( confidences_out );
+%RefOutputIntVector( priorities_out );
 %RefOutputFloatMatrix( alignments_out );
 %RefOutputStringVector( target_out );
 %RefOutputStringVector( corrected_suffix_out );
@@ -65,6 +67,7 @@ casmacat::Context *create_context() { return new casmacat::Context(); };
 %include <casmacat/IUpdateable.h>
 %include <casmacat/IAlignmentEngine.h>
 %include <casmacat/IConfidenceEngine.h>
+%include <casmacat/IWordPriorityEngine.h>
 %include <casmacat/IMtEngine.h>
 %include <casmacat/IImtEngine.h>
 %include <casmacat/IHtrEngine.h>
@@ -75,12 +78,14 @@ casmacat::Context *create_context() { return new casmacat::Context(); };
 namespace casmacat {
   %template(IAlignmentFactory)           IPluginFactory<IAlignmentEngine>;
   %template(IConfidenceFactory)          IPluginFactory<IConfidenceEngine>;
+  %template(IWordPriorityFactory)        IPluginFactory<IWordPriorityEngine>;
   %template(ITextProcessorFactory)       IPluginFactory<ITextProcessor>;
   %template(IMtFactory)                  IPluginFactory<IMtEngine>;
   %template(IInteractiveMtFactory)       IPluginFactory<IInteractiveMtEngine>;
   %template(IHtrFactory)                 IPluginFactory<IHtrEngine>;
   %template(AlignmentPlugin)             Plugin<IAlignmentFactory>;
   %template(ConfidencePlugin)            Plugin<IConfidenceFactory>;
+  %template(WordPriorityPlugin)          Plugin<IWordPriorityFactory>;
   %template(TextProcessorPlugin)         Plugin<ITextProcessorFactory>;
   %template(MtPlugin)                    Plugin<IMtFactory>;
   %template(ImtPlugin)                   Plugin<IInteractiveMtFactory>;

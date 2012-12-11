@@ -84,6 +84,7 @@ $(function(){
   // handle confidence changes (updates highlighting) 
   casmacat.on('predictionchange', function(obj) {
     var data = obj.data;
+    console.log('prediction changed', data);
     update_suggestions(data);
   });
 

@@ -2,7 +2,7 @@
 # The list of libraries we are building seperated by spaces.
 # The 'lib_' indicates that these build products will be installed
 # in the $(libdir) directory. For example /usr/lib
-lib_LTLIBRARIES = libcasmacat.la random-aligner.la random-confidence-estimator.la random-imt-engine.la imt-engine-max-suffix-len.la random-mt-engine.la space-tokenizer.la 
+lib_LTLIBRARIES = libcasmacat.la random-aligner.la random-confidence-estimator.la random-imt-engine.la n-word-prioritizer.la imt-engine-max-suffix-len.la random-mt-engine.la space-tokenizer.la 
 
 
 #######################################
@@ -41,6 +41,11 @@ random_mt_engine_la_CPPFLAGS = -I$(top_srcdir)/src/include
 space_tokenizer_la_SOURCES = space-tokenizer.cpp
 space_tokenizer_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic $(LDFLAGS)
 space_tokenizer_la_CPPFLAGS = -I$(top_srcdir)/src/include
+
+n_word_prioritizer_la_SOURCES = n-word-prioritizer.cpp
+n_word_prioritizer_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic $(LDFLAGS)
+n_word_prioritizer_la_CPPFLAGS = -I$(top_srcdir)/src/include
+
 
 ### Perl tokenizer
 if HAVE_PERL
