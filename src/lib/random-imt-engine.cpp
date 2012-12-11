@@ -78,6 +78,13 @@ public:
     corrected_suffix.insert(corrected_suffix.end(), corrected_translation.begin() + prefix.size(), corrected_translation.end());
   }
 
+  virtual void rejectSuffix(const vector<string> &prefix,
+                            const vector<string> &suffix,
+                            const bool last_token_is_partial,
+                                  vector<string> &corrected_suffix)
+  {
+    setPrefix(prefix, suffix, last_token_is_partial, corrected_suffix);
+  }
 private:
   const vector<string> source;
 };
