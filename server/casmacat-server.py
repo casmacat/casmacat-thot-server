@@ -531,7 +531,10 @@ class Models:
     print "TIME:%s loaded:%s" % ("tokenizer", fmt_delta(elapsed_time))
 
     
-    self.mt_plugin = ImtPlugin(self.config["mt"]["module"], self.config["mt"]["parameters"], self.config["mt"]["name"])
+    if "name" in self.config["mt"]:
+      self.mt_plugin = ImtPlugin(self.config["mt"]["module"], self.config["mt"]["parameters"], self.config["mt"]["name"])
+    else:
+      self.mt_plugin = ImtPlugin(self.config["mt"]["module"], self.config["mt"]["parameters"])
 
     start_time = datetime.datetime.now()
     self.mt_factory = self.mt_plugin.create()
