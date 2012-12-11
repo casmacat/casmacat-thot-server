@@ -74,6 +74,12 @@ namespace casmacat {
                            const bool last_token_is_partial,
                                  std::vector<std::string> &corrected_translation_out
                           ) = 0;
+
+    virtual void rejectSuffix(const std::vector<std::string> &prefix,
+                              const std::vector<std::string> &suffix,
+                              const bool last_token_is_partial,
+                                    std::vector<std::string> &corrected_translation_out
+                          ) = 0;
   };
 
   /**
