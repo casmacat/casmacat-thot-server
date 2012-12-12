@@ -65,7 +65,7 @@ HMMaligner_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(THOT_DIR)/include
 
 n_word_prioritizer_la_SOURCES = n-word-prioritizer.cpp
 n_word_prioritizer_la_LDFLAGS = -version-info 0:0:0 -module -rpath $(THOT_DIR)/lib -export-dynamic $(LDFLAGS) -L$(THOT_DIR)/lib
-n_word_prioritizer_la_CPPFLAGS = -I$(top_srcdir)/src/include
+n_word_prioritizer_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(THOT_DIR)/include
 endif
 
 
