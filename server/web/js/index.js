@@ -391,6 +391,10 @@ $(function(){
       if (targetText.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
         if (show_type === match.created_by) {
           $target.editable('setText', match.translation, match.translationTokens);
+
+          if (match.wordPriority) {
+            update_word_priority_display($target, match.wordPriority);
+          }
       
           // requests the server for new alignment and confidence info
           source = $('#source').editable('getText')
@@ -552,6 +556,25 @@ $(function(){
   }
 
 
+  function update_word_priority_display($target, priorities) {
+    // get target span tokens 
+    var spans = $('.editable-token', $target)
+      , scale = 2.0; 
+        
+    // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
+    for (var c = 0; c < priorities.length; ++c) {
+      var $span = $(spans[c])
+        , opacity = 1.0;
+
+      if (priorities[c] >= 2) {
+        opacity = Math.pow(2, (-priorities[c] + 2) * scale);
+      }
+
+      $span.data('priority', priorities[c])
+           .css({ opacity: opacity });
+    }
+  }
+ 
   var confThreshold = {};
   // updates the confidence display with new confidence info      
   function update_word_confidences_display(sent, confidences, source, source_seg, target, target_seg) {

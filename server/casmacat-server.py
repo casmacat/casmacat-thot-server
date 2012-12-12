@@ -430,7 +430,7 @@ class CasmacatConnection(SocketConnection):
               n_ok -= 1
             validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
             priority = models.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
-            match["word-priority"] = priority
+            match["wordPriority"] = priority
 
           add_match(predictions, match)
       prepare(predictions)
