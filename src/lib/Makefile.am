@@ -56,7 +56,7 @@ if HAVE_THOT
 lib_LTLIBRARIES += ibmMax-confidence-estimator.la HMMaligner.la n-word-prioritizer.la 
 
 ibmMax_confidence_estimator_la_SOURCES = ibmMax-confidence-estimator.cpp
-ibmMax_confidence_estimator_la_LDFLAGS = -version-info 0:0:0 -module -rpath $(THOT_DIR)/lib -export-dynamic $(LDFLAGS) -L$(THOT_DIR)/lib  
+ibmMax_confidence_estimator_la_LDFLAGS = -version-info 0:0:0 -module -rpath $(THOT_DIR)/lib -export-dynamic $(LDFLAGS) -lnlp_common -lsw_models -L$(THOT_DIR)/lib  
 ibmMax_confidence_estimator_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(THOT_DIR)/include
 
 HMMaligner_la_SOURCES = HMMaligner.cpp
@@ -64,7 +64,7 @@ HMMaligner_la_LDFLAGS = -version-info 0:0:0 -module -rpath $(THOT_DIR)/lib -expo
 HMMaligner_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(THOT_DIR)/include
 
 n_word_prioritizer_la_SOURCES = n-word-prioritizer.cpp
-n_word_prioritizer_la_LDFLAGS = -version-info 0:0:0 -module -rpath $(THOT_DIR)/lib -export-dynamic $(LDFLAGS) -L$(THOT_DIR)/lib
+n_word_prioritizer_la_LDFLAGS = -version-info 0:0:0 -module -rpath $(THOT_DIR)/lib -export-dynamic $(LDFLAGS) -lnlp_common -lsw_models -L$(THOT_DIR)/lib
 n_word_prioritizer_la_CPPFLAGS = -I$(top_srcdir)/src/include -I$(THOT_DIR)/include
 endif
 

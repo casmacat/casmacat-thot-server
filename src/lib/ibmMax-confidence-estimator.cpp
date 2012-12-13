@@ -1,6 +1,7 @@
 //*****************************************
 //
-// \file   ivmMax-conficence-estimator.cpp
+// \file   ibmMax-confidence-estimator.cpp
+// \author Vicent Alabau
 // \author Jesús González-Rubio
 // \brief  Confidence Measure plugin for casmacat
 //
@@ -13,11 +14,11 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+
 #include <string>
-#include <vector>
 #include "SmoothedIncrIbm1AligModel.h"
 #include <cctype>
-#include <algorithm>
+#include <algorithm>  
 
 //#include <casmacat/config.h>
 #include <casmacat/IConfidenceEngine.h>
@@ -29,7 +30,7 @@ using namespace casmacat;
 
 class IBMConfidencer: public IConfidenceEngine, Loggable {
   Logger *_logger;
-  SmoothedIncrIbm1AligModel ibm;
+  SmoothedIncrIbm1AligModel _ibm;
 public:
   IBMConfidencer(): _logger(0) { }
   
@@ -44,26 +45,17 @@ public:
   {
 		vector<WordIndex> srcSnt;
 		vector<WordIndex> trgSnt;
-		vector<bool> valSnt=validated;
     float nconf=0,nconf2=0;
 		string aux;
     
     // snt-ize source and target 
     srcSnt.clear();
     for(unsigned int i=0; i<source.size(); ++i)
-      srcSnt.push_back(ibm.stringToSrcWordIndex(source[i]));
+      srcSnt.push_back(_ibm.stringToSrcWordIndex(source[i]));
     
     trgSnt.clear();
     for(unsigned int i=0; i<target.size(); ++i)
-			trgSnt.push_back(ibm.stringToTrgWordIndex(target[i]));
-    
-		// test vector sizes, if different we assume
-		// TODO: all confidences must be computed
-		if(target.size()!=valSnt.size()){
-			valSnt.resize(trgSnt.size());
-			for(unsigned int i=0; i<valSnt.size(); ++i)
-				valSnt[i]=false;
-		}
+			trgSnt.push_back(_ibm.stringToTrgWordIndex(target[i]));
 		
 		
     // clean and prepare the confidences vector
@@ -73,30 +65,30 @@ public:
     // we implement max ibm1 
     // validated words have confidence == 1
     for(unsigned int i=0; i<trgSnt.size(); ++i){
-			if(!valSnt[i]){
-				confidences[i]=float(ibm.pts(NULL_WORD,trgSnt[i]));
+			if(!validated[i]){
+				confidences[i]=float(_ibm.pts(NULL_WORD,trgSnt[i]));
 				for(unsigned int j=0; j<srcSnt.size(); ++j){
-					nconf=float(ibm.pts(srcSnt[j],trgSnt[i]));
+					nconf=float(_ibm.pts(srcSnt[j],trgSnt[i]));
 					
 					// Eufemistic E. is heuristic
 					aux=target[i];
 					if(isupper(aux[0]) && !isupper(aux[1])){
 						transform(aux.begin(), (aux.begin())+1, aux.begin(), ::tolower );
-						nconf2=ibm.pts(srcSnt[j],ibm.stringToTrgWordIndex(aux));
+						nconf2=_ibm.pts(srcSnt[j],_ibm.stringToTrgWordIndex(aux));
 						if( nconf2 > nconf)
 							nconf=nconf2;
 					}
 					aux=source[j];
 					if(isupper(aux[0]) && !isupper(aux[1])){
 						transform(aux.begin(), (aux.begin())+1, aux.begin(), ::tolower );
-						nconf2=ibm.pts(ibm.stringToSrcWordIndex(aux),trgSnt[i]);
+						nconf2=_ibm.pts(_ibm.stringToSrcWordIndex(aux),trgSnt[i]);
 						if( nconf2 > nconf)
 							nconf=nconf2;
 					}
-					
-					
-					if ( nconf > confidences[i] )
-						confidences[i]=nconf;
+					// Confidence 1.0 for numbers
+					if(atoi(target[i].c_str())!=0 && target[i]==source[j]) nconf=1.0;
+						
+					if ( nconf > confidences[i] ) confidences[i]=nconf;
 				}
 			}else
 				confidences[i]=1.0;
@@ -129,8 +121,8 @@ public:
 		pair<unsigned int, unsigned int> sentRange;
 
 		if(!source.empty() && !target.empty()){
-			ibm.addSentPair(source, target, 1, sentRange);
-			ibm.trainSentPairRange(sentRange,0);
+			_ibm.addSentPair(source, target, 1, sentRange);
+			_ibm.trainSentPairRange(sentRange,0);
 			LOG(INFO) << "Updated with new bilingual pair" << endl; 
 		} 
 	}
@@ -145,7 +137,7 @@ public:
   {
     
     LOG(INFO) << "Initializing confidencer..." << endl;
-    ibm.load(filesPrefix.c_str());
+    _ibm.load(filesPrefix.c_str());
     
     return EXIT_SUCCESS;
   }
