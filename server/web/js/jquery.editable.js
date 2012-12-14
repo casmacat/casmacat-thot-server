@@ -197,6 +197,11 @@
       })
     },
 
+    getTokenAtCaret: function() {
+      var pos = $(this).editable('getCaretPos');
+      return $(this).editable('getTokenAtCaretPos', pos);
+    },
+
     getTokenAtCaretPos: function(pos) {
       var $this = $(this),
           node = $this.get(0),
@@ -372,6 +377,24 @@
       }
  
       return { pos: absolutePos, token: token, caretRect: caretRect }
+    },
+
+    setCaretAtToken: function(token) {
+      var $this = $(this)
+        , textTok = $(token).contents().filter(function() { return this.nodeType == 3; }).get(0)
+        , pos = 0;
+
+      var walker = document.createTreeWalker($this.get(0), NodeFilter.SHOW_TEXT, null, false)
+
+      // find HTML text element in cursor position
+      while (walker.nextNode()) {
+        elem = walker.currentNode;
+        if (elem === textTok) break; 
+        pos += elem.length;
+      }
+      
+      console.log(elem);
+      this.editable('setCaretPos', pos);
     },
 
     setCaretPos: function(pos) {
