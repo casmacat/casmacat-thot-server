@@ -215,10 +215,11 @@ $(function(){
           data = $this.data('editable'),
           target = $this.editable('getText'),
           source = $('#source').editable('getText'),
-          pos = $('#target').editable('getCaretPos'),
-          tokpos = $('#target').editable('getTokenAtCaretPos', pos),
-          token = $(tokpos.elem);
+          pos = $('#target').editable('getCaretPos');
 
+      /* If click needs to go to the begining of the word
+      var tokpos = $('#target').editable('getTokenAtCaretPos', pos),
+          token = $(tokpos.elem);
       // is real token
       if (token.parent().hasClass('editable-token') && token.text().length !== tokpos.pos) {
         //rejected element is the next token from the cursor
@@ -235,6 +236,8 @@ $(function(){
         // place at the end of the space
         pos += token.text().length - tokpos.pos;
       }
+      console.log("reject suffix:", pos, tokpos);
+      */
 
       var query = {
         action: "rejectSuffix",
@@ -248,7 +251,6 @@ $(function(){
         id_translator: "me!"
       }
 
-      console.log("reject suffix:", pos, tokpos);
       casmacat.rejectSuffix(query);
     }
   })
