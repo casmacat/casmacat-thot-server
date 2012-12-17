@@ -379,7 +379,7 @@
       return { pos: absolutePos, token: token, caretRect: caretRect }
     },
 
-    setCaretAtToken: function(token) {
+    getTokenPos: function(token) { 
       var $this = $(this)
         , textTok = $(token).contents().filter(function() { return this.nodeType == 3; }).get(0)
         , pos = 0;
@@ -392,8 +392,12 @@
         if (elem === textTok) break; 
         pos += elem.length;
       }
-      
-      console.log(elem);
+
+      return pos;
+     },
+
+    setCaretAtToken: function(token) {
+      var pos = this.editable('getTokenPos', token);
       this.editable('setCaretPos', pos);
     },
 

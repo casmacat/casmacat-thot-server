@@ -104,6 +104,10 @@ $.extend(CasmacatClient.prototype, {
      this.checkConnection();
      this.server.emit('set_prefix', {data: obj});
    },
+   rejectSuffix: function(obj) {
+     this.checkConnection();
+     this.server.emit('reject_suffix', {data: obj});
+   },
    endImtSession: function() {
      this.checkConnection();
      this.server.emit('end_imt_session');

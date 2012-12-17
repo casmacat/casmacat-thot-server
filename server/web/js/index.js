@@ -208,6 +208,50 @@ $(function(){
   .blur(function(e) {
     $('#suggestions').css({'visibility': 'hidden'});
   })
+  // on click reject suffix 
+  .click(function(e) {
+    if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
+      var $this = $(this),
+          data = $this.data('editable'),
+          target = $this.editable('getText'),
+          source = $('#source').editable('getText'),
+          pos = $('#target').editable('getCaretPos'),
+          tokpos = $('#target').editable('getTokenAtCaretPos', pos),
+          token = $(tokpos.elem);
+
+      // is real token
+      if (token.parent().hasClass('editable-token') && token.text().length !== tokpos.pos) {
+        //rejected element is the next token from the cursor
+        // token = token.parent(); 
+        //var elem = token.next('.editable-token'); 
+        //pos = $('#target').editable('getTokenPos', elem),
+
+        // rejected element is token at cursor
+        // so place at the beginning of the token 
+        pos -= tokpos.pos;
+      }
+      // is space or filler or at the end of token
+      else {
+        // place at the end of the space
+        pos += token.text().length - tokpos.pos;
+      }
+
+      var query = {
+        action: "rejectSuffix",
+        id_segment: 607906,
+        text: source,
+        // since we are listening on keypress, target must include last typed char
+        target: target,
+        caret_pos: pos,
+        id_job: 1135,
+        num_results: 2,
+        id_translator: "me!"
+      }
+
+      console.log("reject suffix:", pos, tokpos);
+      casmacat.rejectSuffix(query);
+    }
+  })
   // on keyup throttle a new translation
   .keyup(function(e) {
     var $this = $(this),
@@ -238,7 +282,7 @@ $(function(){
             num_results: 2,
             id_translator: "me!"
           }
-          casmacat.getTokens(query);
+          //casmacat.getTokens(query);
           //console.log("query prefix:", query.target);
           if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
             query.action = "getSuggestions";
@@ -388,6 +432,9 @@ $(function(){
     var list = $('<dl/>');
     for (var i = 0; i < data.matches.length; i++) {
       var match = data.matches[i];
+      // XXX: if prediction came from click in the middle of a token then the
+      // sentence is not updated since the following condition does not match
+      // the prefix in the sentence does not match the prefix in the prediction
       if (targetText.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
         if (show_type === match.created_by) {
           $target.editable('setText', match.translation, match.translationTokens);
@@ -397,7 +444,7 @@ $(function(){
           }
       
           // requests the server for new alignment and confidence info
-          source = $('#source').editable('getText')
+          source = $('#source').editable('getText');
           var query = {
             action: "getAlignments",
             id_segment: 607906,
@@ -573,6 +620,7 @@ $(function(){
       $span.data('priority', priorities[c])
            .css({ opacity: opacity });
     }
+    console.log("word priorities");
   }
  
   var confThreshold = {};

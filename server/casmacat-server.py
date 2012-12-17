@@ -267,7 +267,11 @@ class CasmacatConnection(SocketConnection):
       target_tok, target_seg = models.tokenizer.preprocess(target)
 
       start_time = datetime.datetime.now()
-      sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, data['validated_words'])
+      validated_words = [] 
+      diff = len(target_tok) - len(data['validated_words']) 
+      if diff >= 0: validated_words = data['validated_words']
+      validated_words.extend([False]*diff)
+      sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, validated_words)
       elapsed_time = datetime.datetime.now() - start_time
 
       obj = { 'quality': sent, 
@@ -418,6 +422,55 @@ class CasmacatConnection(SocketConnection):
         if name == self.config['mode'] or self.config['suggestions']:
           start_time = datetime.datetime.now()
           prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
+          elapsed_time = datetime.datetime.now() - start_time
+          print >> sys.stderr, name, "prediction_tok", prediction_tok 
+  
+          prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
+          match = new_prediction(name, prediction, prediction_seg, elapsed_time)
+
+          if models.word_prioritizer and self.source_tok:
+            n_ok = len(prefix_tok)
+            if last_token_is_partial:
+              n_ok -= 1
+            validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
+            priority = models.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+            match["wordPriority"] = priority
+
+          add_match(predictions, match)
+      prepare(predictions)
+      print >> sys.stderr, "SUGGESTIONS:", predictions
+      self.emit('predictionchange', predictions)
+
+    @event('reject_suffix')
+    @timer('reject_suffix')
+    @thrower('predictionchange')
+    def reject_prefix(self, data):
+      print 'data:', data
+      target = data['target']
+      caret_pos = data['caret_pos']
+
+      logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target))
+
+      prefix = to_utf8(target[:caret_pos]) 
+      suffix = to_utf8(target[caret_pos:]) 
+
+      print >> sys.stderr, "prefix '%s'" % prefix, type(prefix)
+      print >> sys.stderr, "suffix '%s'" % suffix, type(suffix) 
+
+      prefix_tok, prefix_seg = models.tokenizer.preprocess(prefix)
+      suffix_tok, suffix_seg = models.tokenizer.preprocess(suffix)
+
+      last_token_is_partial = True
+      if len(prefix) == 0 or prefix[-1].isspace():
+        last_token_is_partial = False
+      print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
+
+      predictions = new_predictions(target, caret_pos)
+      
+      for name, session in self.imt_session.iteritems():
+        if name == self.config['mode'] or self.config['suggestions']:
+          start_time = datetime.datetime.now()
+          prediction_tok = session.rejectSuffix(prefix_tok, suffix_tok, last_token_is_partial)
           elapsed_time = datetime.datetime.now() - start_time
           print >> sys.stderr, name, "prediction_tok", prediction_tok 
   

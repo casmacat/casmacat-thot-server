@@ -23,6 +23,7 @@ $(function(){
       interactive: true,
       events: {
         mouseDown: function(e) {
+          e.preventDefault(); // prevent displaying caret
           clearTimeout (decoderTimer);
           var strokes = cnv.sketchable('strokes');
           if (strokes.length === 0) {
