@@ -6,7 +6,7 @@ $.extend(CasmacatClient.prototype, {
    // Common properties
    url: '',
    server: null,
-   debug: false,
+   debug: true,
    
    // Common initialization method
    init: function(url) {

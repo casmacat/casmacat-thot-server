@@ -24,6 +24,11 @@ $(function(){
 
   casmacat.on('reconnect', function() { 
     unblockUI();
+    // Send initial config
+    casmacat.configure({
+      suggestions: $('#opt-suggestions').is(':checked'), 
+      mode: $('input[@name=show]:checked').val()
+    });
   });
 
   casmacat.on('anything', function(data, callback) { 
@@ -38,6 +43,12 @@ $(function(){
 
   casmacat.on('serverready', function() { 
     unblockUI();
+    var cfg = {
+      suggestions: $('#opt-suggestions').is(':checked'), 
+      mode: $('input[@name=show]:checked').val()
+    };
+    console.log("--->", cfg);
+    casmacat.configure(cfg);
   });
   
   // handle translation responses
@@ -91,7 +102,6 @@ $(function(){
   // measures network latency
   casmacat.on('pong', function(ms) {
     console.log("Received ping:", new Date().getTime() - ms);
-    unblockUI();
   });
 
 
@@ -835,7 +845,7 @@ $(function(){
     $('#set-mode').text( $('#show-options input[@name=show]:checked').val() );
     $('#set-suggestions').text( $('#opt-suggestions').is(':checked') );
     $('#set-confidences').text( $('#opt-confidences').is(':checked') + " ["+ confThreshold.bad*100 + "/"+ confThreshold.doubt*100 +"]" );
-    $('#set-alignments').text( $('#opt-alignments').is(':checked') + " [matrix: "+ $('#matrix').is(':visible') +"]" );
+    $('#set-alignments').text( $('#opt-alignments').is(':checked') + " [matrix: "+ $('#matrix').is(':hidden') +"]" );
   };
 
   function trimText(text, numWords, delimiter) {

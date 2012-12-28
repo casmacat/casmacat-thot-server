@@ -63,14 +63,14 @@ function trim_text($text, $words = 5)
       <div class="control-panel-row">
         <form id="show-options">
           <label for="opt-pe">Operation mode:</label>
-          <input type="radio" name="show" id="opt-pe" value="PE" checked="checked" /> Post-editing (no suffix update)
-          <input type="radio" name="show" id="opt-itp" value="ITP" /> ITP (predictive)
+          <input type="radio" name="show" id="opt-pe" value="PE" /> Post-editing (no suffix update)
+          <input type="radio" name="show" id="opt-itp" value="ITP" checked="checked" /> ITP (predictive)
           <input type="radio" name="show" id="opt-itp-ol" value="ITP-OL" /> ITP-OL (online learning)
         </form>
         <div class="block mt">
           <input type="checkbox" id="opt-suggestions" /> <label for="opt-suggestions">Display suggestions</label>
           <input type="checkbox" id="opt-confidences" checked="checked" /> <label for="opt-confidences">Display confidences</label>
-          <input type="checkbox" id="opt-alignments" /> <label for="opt-alignments">Display alignments</label>
+          <input type="checkbox" id="opt-alignments" checked="checked" /> <label for="opt-alignments">Display alignments</label>
         </div>
         <!--div id="caret">undef</div-->
       </div>
