@@ -3,7 +3,7 @@
 
 import sys, traceback, os
 import datetime, time
-import random, math
+import random, math, codecs
 
 try: import simplejson as json
 except ImportError: import json
@@ -50,9 +50,13 @@ class timer(object):
     """
     def decorator(*args, **kwargs):
       start_time = datetime.datetime.now()
+
+      print >> logfd, """/*\n  Server method "%s" invoked\n  %s\n*/\n\n"%s": %s\n""" % (self.name, str(datetime.datetime.now()), self.name, json.dumps(kwargs, indent=2, separators=(',', ': '), encoding="utf-8"))
+
       ret = function(*args, **kwargs)
       elapsed_time = datetime.datetime.now() - start_time
       print "TIME:%s:%s" % (self.name, fmt_delta(elapsed_time))
+      print >> logfd, """/* Time to process method "%s": %s */\n\n\n""" % (self.name, fmt_delta(elapsed_time))
       return ret
     return decorator
 
@@ -78,13 +82,13 @@ class thrower(object):
         return function(*args, **kwargs)
       except Exception, e:
         if self.emission:
-          args[0].emit(self.emission, { 'errors': [traceback.format_exc()], 'data': None })
+          args[0].respond(self.emission, { 'errors': [traceback.format_exc()], 'data': None })
         print traceback.format_exc()
         #raise
     return decorator
 
 
-
+logfd = None
 
 class MyLogger(Logger):
   tag = { ERROR_LOG: "ERROR", WARN_LOG: "WARN", INFO_LOG: "INFO", DEBUG_LOG: "DEBUG" }
@@ -97,7 +101,7 @@ class MyLogger(Logger):
     else: 
       msg = "LOG: %s" % msg
     for p in self.participants:
-      p.emit('receive_log', msg)
+      p.respond('receive_log', msg)
     
 logger = MyLogger()
 
@@ -204,6 +208,11 @@ class ExampleHandler(web.RequestHandler):
 
 
 class CasmacatConnection(SocketConnection):
+    def respond(self, *args, **kwargs):
+      print "emit", args, kwargs
+      print >> logfd, """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
+      self.emit(*args, **kwargs)
+
 #class AlignerConnection(SocketConnection):
     @event('get_alignments')
     @timer('get_alignments')
@@ -226,7 +235,7 @@ class CasmacatConnection(SocketConnection):
               'target_seg': target_seg,
               'elapsed_time': elapsed_time.total_seconds()*1000.0
             }
-      self.emit('alignmentchange', { 'errors': [], 'data': obj })
+      self.respond('alignmentchange', { 'errors': [], 'data': obj })
 
 #class ProcessorConnection(SocketConnection):
     @event('get_tokens')
@@ -245,7 +254,7 @@ class CasmacatConnection(SocketConnection):
       add_match(contributions, new_match('tokenizer', source, source_seg, target, target_seg, elapsed_time))
 
       prepare(contributions)
-      self.emit('translationchange', contributions)
+      self.respond('translationchange', contributions)
 
 
 #class WordConfidenceConnection(SocketConnection):
@@ -255,7 +264,7 @@ class CasmacatConnection(SocketConnection):
 #      source_tok, source_seg = tokenizer.preprocess(source)
 #      target_tok, target_seg = tokenizer.preprocess(target)
 #      conf = confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
-#      self.emit('confidencechange', conf, source, source_seg, target, target_seg)
+#      self.respond('confidencechange', conf, source, source_seg, target, target_seg)
 
     @event('get_word_confidences')
     @timer('get_word_confidences')
@@ -283,7 +292,7 @@ class CasmacatConnection(SocketConnection):
         'elapsed_time': elapsed_time.total_seconds()*1000.0
       }
       print 'confidences:', obj
-      self.emit('confidencechange', { 'errors': [], 'data': obj })
+      self.respond('confidencechange', { 'errors': [], 'data': obj })
 
 #class MtConnection(SocketConnection):
 # receives:
@@ -354,7 +363,7 @@ class CasmacatConnection(SocketConnection):
             
 
       prepare(contributions)
-      self.emit('contributionchange', contributions)
+      self.respond('contributionchange', contributions)
 
     @event('update')
     @timer('update')
@@ -367,12 +376,12 @@ class CasmacatConnection(SocketConnection):
       for name, ol in models.ol_systems.iteritems():
         ol.update(source_tok, target_tok)
       models.updates.append((source, target))
-      self.emit('modelchange', { 'errors': [], 'data': { 'num_updates': len(models.updates) } })
+      self.respond('modelchange', { 'errors': [], 'data': { 'num_updates': len(models.updates) } })
 
     @event('get_updated_sentences')
     @timer('get_updated_sentences')
     def get_updated_sentences(self):
-      self.emit('updateschange', { 'errors': [], 'data': { 'updates': models.updates } })
+      self.respond('updateschange', { 'errors': [], 'data': { 'updates': models.updates } })
 
 
 #class ImtConnection(SocketConnection):
@@ -439,7 +448,7 @@ class CasmacatConnection(SocketConnection):
           add_match(predictions, match)
       prepare(predictions)
       print >> sys.stderr, "SUGGESTIONS:", predictions
-      self.emit('predictionchange', predictions)
+      self.respond('predictionchange', predictions)
 
     @event('reject_suffix')
     @timer('reject_suffix')
@@ -488,7 +497,7 @@ class CasmacatConnection(SocketConnection):
           add_match(predictions, match)
       prepare(predictions)
       print >> sys.stderr, "SUGGESTIONS:", predictions
-      self.emit('predictionchange', predictions)
+      self.respond('predictionchange', predictions)
 
     @event('end_imt_session')
     @timer('end_imt_session')
@@ -509,7 +518,7 @@ class CasmacatConnection(SocketConnection):
       obj = { 'msg':  'the server is ready',
               'elapsed_time': elapsed_time.total_seconds()*1000.0 
              }
-      self.emit('serverready', { 'errors': [], 'data': obj })
+      self.respond('serverready', { 'errors': [], 'data': obj })
 
     @event('configure')
     @timer('configure')
@@ -520,12 +529,12 @@ class CasmacatConnection(SocketConnection):
     @event('get_server_config')
     @timer('get_server_config')
     def get_server_config(self):
-      self.emit('configurationchange', { 'errors': [], 'config': models.config })
+      self.respond('configurationchange', { 'errors': [], 'config': models.config })
 
     @event('ping')
     @timer('ping')
     def ping(self, data):
-      self.emit('pong', data)
+      self.respond('pong', data)
 
 #class LoggerConnection(SocketConnection, Logger):
     @event
@@ -741,12 +750,19 @@ if __name__ == "__main__":
     import logging
     import atexit
 
+    logfn = "casmacat-server.log"
+    try: 
+      logfn = models.config["server"]["logfile"]
+    except:
+      pass
+    logfd = codecs.open(logfn, "a", "utf-8")
+
+
     logging.getLogger().setLevel(logging.INFO)
 
     models = Models(sys.argv[1])
     models.create_plugins()
     atexit.register(models.delete_plugins)
-
 
     port = 3019
     try: 
@@ -771,6 +787,7 @@ if __name__ == "__main__":
     )
 
 
+    print >> logfd, """/*\n  Casmacat server started on port %d\n  %s\n*/\n\n"config": %s\n\n\n""" % (port, str(datetime.datetime.now()), json.dumps(models.config, indent=2, separators=(',', ': '), encoding="utf-8"))
+
     # Create and start tornadio server
     SocketServer(application)
-    
