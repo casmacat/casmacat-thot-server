@@ -37,6 +37,7 @@ function trim_text($text, $words = 5)
   <script type="text/javascript" src="js/jquery.mousewheel.js"></script>
   <script type="text/javascript" src="js/socket.io.js"></script>
   <script type="text/javascript" src="js/casmacat.js?<?=time()?>"></script>
+  <script type="text/javascript" src="js/casmacat.lib.mw.js"></script>
   <script type="text/javascript" src="js/jsketch.js"></script>
   <script type="text/javascript" src="js/jquery.sketchable.js"></script>
   <script type="text/javascript" src="js/jquery.blockUI.js"></script>

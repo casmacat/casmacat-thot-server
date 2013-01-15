@@ -69,7 +69,7 @@ $(function(){
       startImt(data.text);
     }
     
-    //mw.addElement(data);
+    mw.addElement(data);
   });
 
   // handle post-editing (target has changed but not source)
@@ -271,7 +271,7 @@ $(function(){
     // If cursor pos has chaged, invalidate previous states
     if (d.pos !== currentCaretPos) {
       console.log("Invalidating...");
-      //mw.invalidate();
+      mw.invalidate();
     }
     currentCaretPos = d.pos;
   })
@@ -928,5 +928,20 @@ $(function(){
   casmacat.ping(new Date().getTime());
   casmacat.getServerConfig();
   blockUI("Connecting...");
+  
+  var mw = new MW();
+  mw.init('#target', {
+    change: function(data) {
+      if (!Boolean($('#target').editable('getText'))) return false;
+      if (data) {
+        console.log("Loading previous data...");
+        //update_translation_display(data);
+        //update_suggestions(data);
+      } else {
+        console.log("Rejecting...");
+        //reject();
+      }
+    }
+  });
   
 });
