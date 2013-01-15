@@ -15,7 +15,7 @@ $.extend(CasmacatClient.prototype, {
      if (this.debug) {
        var emit = this.server.emit;
        this.server.emit = function() {
-         emit.apply(casmacat.server, arguments);
+         emit.apply(this, arguments);
          console.log("emit", String.apply(this, arguments));
        }
      }
