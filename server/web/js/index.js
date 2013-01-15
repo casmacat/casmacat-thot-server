@@ -636,20 +636,21 @@ $(function(){
 
   function update_word_priority_display($target, priorities) {
     // get target span tokens 
-    var spans = $('.editable-token', $target), scale = 2.0, userPriority = parseInt($('#slider-priority-text').text());
-        
+    var spans = $('.editable-token', $target), 
+        userPriority = parseInt($('#slider-priority-text').text()),
+        currentSpan = $('#target').editable('getTokenAtCaret').elem.parentNode;
+        currentPriority = priorities[$(currentSpan).index()];
     // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
     for (var c = 0; c < priorities.length; ++c) {
-      var $span = $(spans[c]), opacity = 1.0;
-
-      if (priorities[c] >= userPriority) {
-        opacity = Math.pow(2, (-priorities[c] + 2) * scale);
+      var $span = $(spans[c]), opacity = 1.0, scale = 2.0;
+      if (priorities[c] >= currentPriority + userPriority) {
+        opacity = 0.5; //Math.pow(2, (-priorities[c] + 2) * scale);
       }
 
       $span.data('priority', priorities[c])
            .css({ opacity: opacity });
     }
-    console.log("word priorities:", priorities);
+    //console.log("user priority:", userPriority, "word priorities:", priorities);
   }
  
   var confThreshold = {};
