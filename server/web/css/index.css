@@ -194,10 +194,10 @@ fieldset { border:1px solid #CCC; padding:1em; }
 
 label { font-weight:bold; }
 form *, .control-panel-row *  { vertical-align:middle; }
-.control-panel-row { display:block; clear:both; margin:0.3em auto; }
+.control-panel-row:not(:first-child) { display:block; clear:both; margin-top:1em; }
+.control-panel-col { min-width:150px; margin-right:2em; }
 
-#conf-thresholds { margin-right:1em; margin-top:1em; }
-  #conf-thresholds p { margin-bottom:0.3em; /*text-align:center;*/ }
+#conf-thresholds p, #conf-priority p { margin-bottom:0.3em; /*text-align:center;*/ }
 
 #options-summary { color:#555; }
 
@@ -215,3 +215,5 @@ form *, .control-panel-row *  { vertical-align:middle; }
 .mr { margin-right:1em; }
 .fl { float:left; }
 .fr { float:right; }
+
+.vtop { vertical-align:middle !important; }

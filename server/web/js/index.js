@@ -2,6 +2,8 @@ var casmacat;
 
 $(function(){
 
+  var currentCaretPos;
+  
   /*******************************************************************************/
   /*           create server connection and handle server events                 */
   /*******************************************************************************/
@@ -41,16 +43,16 @@ $(function(){
       
   //casmacat.on('receive_log', function(msg) { console.log('server says:', msg); });
 
-  casmacat.on('serverready', function() { 
+  casmacat.on('serverready', function() {
     unblockUI();
     var cfg = {
       suggestions: $('#opt-suggestions').is(':checked'), 
       mode: $('input[@name=show]:checked').val()
     };
-    console.log("--->", cfg);
     casmacat.configure(cfg);
   });
   
+
   // handle translation responses
   casmacat.on('contributionchange', function(obj) {
     var data = obj.data;
@@ -62,10 +64,12 @@ $(function(){
 
   	update_translation_display(data);
     update_suggestions(data);
-
+    
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
       startImt(data.text);
     }
+    
+    //mw.addElement(data);
   });
 
   // handle post-editing (target has changed but not source)
@@ -119,7 +123,10 @@ $(function(){
         $('#source').text( $select.first().val() );
       }
       if (c.confidencer && c.confidencer.threshold) {
-        updateSlider([c.confidencer.threshold.bad, c.confidencer.threshold.doubt]);
+        updateConfidenceSlider(c.confidencer.thresholds);
+      }
+      if (c.prioritizer && c.prioritizer.threshold) {
+        updatePrioritySlider(c.prioritizer.threshold);
       }
     }
   });
@@ -207,19 +214,8 @@ $(function(){
   });
 
 
-  var typedWords = {};
-  // caretmove is a new event from jquery.editable that is triggered
-  // whenever the caret has changed position
-  $('#target').bind('caretmove', function(e, d) {
-    //var text = $(this).text();
-    //$('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
-  })
-  // on blur hide suggestions
-  .blur(function(e) {
-    $('#suggestions').css({'visibility': 'hidden'});
-  })
-  // on click reject suffix 
-  .click(function(e) {
+
+  function reject() {
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
       var $this = $(this),
           data = $this.data('editable'),
@@ -263,6 +259,29 @@ $(function(){
 
       casmacat.rejectSuffix(query);
     }
+  };
+
+  
+  var typedWords = {};
+  // caretmove is a new event from jquery.editable that is triggered
+  // whenever the caret has changed position
+  $('#target').bind('caretmove', function(e, d) {
+    //var text = $(this).text();
+    //$('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
+    // If cursor pos has chaged, invalidate previous states
+    if (d.pos !== currentCaretPos) {
+      console.log("Invalidating...");
+      //mw.invalidate();
+    }
+    currentCaretPos = d.pos;
+  })
+  // on blur hide suggestions
+  .blur(function(e) {
+    $('#suggestions').css({'visibility': 'hidden'});
+  })
+  // on click reject suffix 
+  .click(function(e) {
+    reject();
   })
   // on keyup throttle a new translation
   .keyup(function(e) {
@@ -432,7 +451,7 @@ $(function(){
   /*******************************************************************************/
 
 
-
+  
   function update_suggestions(data) {
     $target = $('#target');
     var d = $target.editable('getCaretXY');
@@ -444,9 +463,9 @@ $(function(){
     var list = $('<dl/>');
     for (var i = 0; i < data.matches.length; i++) {
       var match = data.matches[i];
-      // XXX: if prediction came from click in the middle of a token then the
-      // sentence is not updated since the following condition does not match
-      // the prefix in the sentence does not match the prefix in the prediction
+      // XXX: If prediction came from click in the middle of a token, then the
+      // sentence is not updated; since the following condition does not match:
+      // The prefix in the sentence does not match the prefix in the prediction.
       if (targetText.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
         if (show_type === match.created_by) {
           $target.editable('setText', match.translation, match.translationTokens);
@@ -617,22 +636,20 @@ $(function(){
 
   function update_word_priority_display($target, priorities) {
     // get target span tokens 
-    var spans = $('.editable-token', $target)
-      , scale = 2.0; 
+    var spans = $('.editable-token', $target), scale = 2.0, userPriority = parseInt($('#slider-priority-text').text());
         
     // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
     for (var c = 0; c < priorities.length; ++c) {
-      var $span = $(spans[c])
-        , opacity = 1.0;
+      var $span = $(spans[c]), opacity = 1.0;
 
-      if (priorities[c] >= 2) {
+      if (priorities[c] >= userPriority) {
         opacity = Math.pow(2, (-priorities[c] + 2) * scale);
       }
 
       $span.data('priority', priorities[c])
            .css({ opacity: opacity });
     }
-    console.log("word priorities");
+    console.log("word priorities:", priorities);
   }
  
   var confThreshold = {};
@@ -793,11 +810,20 @@ $(function(){
     max: 100,
     values: [ 3, 30 ],
     slide: function(event, ui) {
-      updateSlider(ui.values);
+      updateConfidenceSlider(ui.values);
     }
   });
-  
-  function updateSlider(values) {
+
+	$('#slider-priority').slider({
+    min: 1,
+    max: 10,
+    value: 1,
+    slide: function(event, ui) {
+      updatePrioritySlider(ui.value);
+    }
+  });
+    
+  function updateConfidenceSlider(values) {
     if (!values) values = $('#slider-conf').slider("option", "values");
     confThreshold = {
       bad: values[0]/100,
@@ -829,7 +855,12 @@ $(function(){
       }
     }            
   };
-  
+
+  function updatePrioritySlider(value) {
+    if (!value) value = $('#slider-priority').slider("option", "value");
+    $('#slider-priority-text').text(value);
+  };
+    
   function toggleControlPanel() {
     var $options = $('#options'), $summary = $('#options-summary');
     $options.toggle();
@@ -890,7 +921,8 @@ $(function(){
   /*                                 Init calls                                  */
   /*******************************************************************************/ 
   
-  updateSlider();    
+  updateConfidenceSlider();
+  updatePrioritySlider();
   toggleControlPanel();
   $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
   casmacat.ping(new Date().getTime());

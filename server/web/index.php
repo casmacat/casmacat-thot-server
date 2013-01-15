@@ -34,14 +34,15 @@ function trim_text($text, $words = 5)
   <script type="text/javascript" src="js/jquery.js"></script>
   <script type="text/javascript" src="js/jquery.rotatecells.js"></script>
   <script type="text/javascript" src="js/jquery.editable.js?<?=time()?>"></script>
+  <script type="text/javascript" src="js/jquery.mousewheel.js"></script>
   <script type="text/javascript" src="js/socket.io.js"></script>
   <script type="text/javascript" src="js/casmacat.js?<?=time()?>"></script>
-  <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
   <script type="text/javascript" src="js/jsketch.js"></script>
   <script type="text/javascript" src="js/jquery.sketchable.js"></script>
   <script type="text/javascript" src="js/jquery.blockUI.js"></script>
   <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
-  <script type="text/javascript" src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>  
+  <script type="text/javascript" src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+  <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
 </head>
 <body>
 
@@ -75,18 +76,31 @@ function trim_text($text, $words = 5)
         <!--div id="caret">undef</div-->
       </div>
       
-      <div class="control-panel-row">
-      	<div class="clear" id="conf-thresholds">
-        	<p>
-        	  <label>Confidence thresholds:</label> 
-          	<span id="slider-bad"></span>/<span id="slider-doubt"></span>
-        	</p>
-          <div id="slider-conf"></div>
-        	</p>
-      	</div>
+      <div class="control-panel-row clear mt">
+        <div class="control-panel-col fl vtop">
+        	<div class="clear" id="conf-thresholds">
+          	<p>
+          	  <label>Confidence thresholds:</label> 
+            	<span id="slider-bad"></span>/<span id="slider-doubt"></span>
+          	</p>
+            <div id="slider-conf"></div>
+          	</p>
+        	</div>
+        </div>
+        <div class="control-panel-col fl vtop">
+        	<div class="clear" id="conf-priority">
+          	<p>
+          	  <label>Priority:</label>
+          	  <span id="slider-priority-text"></span></span>
+          	</p>
+            <div id="slider-priority"></div>
+          	</p>
+        	</div>
+        </div>
+        <br class="clear" />
       </div>
       
-      <div class="control-panel-row mt2">
+      <div class="control-panel-row mt">
         <div class="inline">
         	<button title="Toggle alignment matrix visualization" id="btn-alignments"><img src="images/matrix.png"/></button>
           <?php if (!empty($_GET['htr-server'])) { ?>
