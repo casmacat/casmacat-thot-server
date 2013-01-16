@@ -40,8 +40,8 @@ function trim_text($text, $words = 5)
   <script type="text/javascript" src="js/socket.io.js"></script>
   <script type="text/javascript" src="js/casmacat.js"></script>
   <?php if (!empty($_GET['htr-server'])) { ?>
-    <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
     <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
+    <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
   <?php } ?>
   <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
 </head>
@@ -105,8 +105,6 @@ function trim_text($text, $words = 5)
         <div class="inline">
         	<button title="Toggle alignment matrix visualization" id="btn-alignments"><img src="images/matrix.png"/></button>
           <?php if (!empty($_GET['htr-server'])) { ?>
-          <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
-          <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
         	<button title="Toggle e-pen interaction" id="btn-epen"><img src="images/epen.png"/></button> 
           <?php } ?>
           <button title="Display updated sentences" id="btn-updatedsentences"><img src="images/list.png"/></button>

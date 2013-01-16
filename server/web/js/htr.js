@@ -1,4 +1,5 @@
 $(function(){
+  require(["jsketch", "jquery.sketchable"], function() {
 
   /*******************************************************************************/
   /*           create server connection and handle server events                 */
@@ -31,6 +32,7 @@ $(function(){
           var strokes = cnv.sketchable('strokes');
           var stroke = strokes[strokes.length-1];
           var gesture;
+          console.log(stroke);
           if (strokes.length === 1) {
             gesture = gestureRecognizer.recognize(strokes);
             if (!gesture) {
@@ -61,6 +63,54 @@ $(function(){
               $('#btn-decode, #btn-clear').removeAttr('disabled');
             }
             else {
+              var centroid = MathLib.centroid(stroke);
+              var offset = cnv.offset();
+              centroid[0] += offset.left; centroid[1] += offset.top;  
+              var tokens = $('#target').editable('getTokensAtXY', centroid[0], centroid[1]);
+              console.log('gesture recognized', gesture, centroid, tokens[0]);
+              // gestures that are issued over a token
+              if (tokens[0].distance.d === 0) {
+                var token = tokens[0];
+                switch (gesture.name) {
+                  case 'dot': // reject 
+                    console.log('reject', token);
+                    break;
+                  case 'se': // delete
+                    console.log('delete', token);
+                    break;
+                  default:
+                    console.log("Gesture not implemented or out of context", gesture, centroid, tokens);
+                }
+              }
+              // gestures that are issued between tokens
+              else if (tokens[0].distance.dy === 0) {
+                switch (gesture.name) {
+                  case 's': // insert
+                    var leftTokens = tokens.filter(function(a){ return a.distance.dx < 0});
+                    if (leftTokens.length > 0) {
+                      var leftTok = leftTokens[0];
+                      console.log('insert after', tokens[0]);
+                    }
+                    else {
+                      console.log('insert at the beginning');
+                    }
+                    break;
+                  default:
+                    console.log("Gesture not implemented or out of context", gesture, centroid, tokens);
+                }
+              }
+              // gestures that are issued appart from text 
+              else if (tokens[0].distance.dx < 0 || tokens[0].distance.dy !== 0) {
+                switch (gesture.name) {
+                  case 'ne': // validate 
+                    console.log('validate');
+                    break;
+                  default:
+                    console.log("Gesture not implemented or out of context", gesture, centroid, tokens);
+                }
+              }
+              else  console.log("Gesture not implemented or out of context", gesture, centroid, tokens);
+                
               cnv.sketchable('clear');
             }
           }
@@ -145,4 +195,4 @@ $(function(){
   }
 
   
-});
+}) });

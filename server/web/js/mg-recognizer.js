@@ -13,8 +13,10 @@ function MinGestures(conf) {
   };
 
   // gesture straigh line thresholds
-  var backThr   = conf && conf.backThr   ? conf.backThr   : 3; 
+  var xBackThr  = conf && conf.xBackThr   ? conf.xBackThr   : 3; 
+  var yBackThr  = conf && conf.yBackThr   ? conf.yBackThr   : 10; 
   var aspectThr = conf && conf.aspectThr ? conf.aspectThr : 3; 
+  var dotThr    = conf && conf.dotThr    ? conf.dotThr : 5; 
 
   // Main/Secondary Angular Thresholds
   var mat = conf && conf.mat ? conf.mat : 10, 
@@ -51,6 +53,10 @@ function MinGestures(conf) {
   };
       
   this.recognize = function(strokes) {
+    if (strokes[0].length <= dotThr) {
+      return { name: 'dot', score: 1 };
+    }
+
     var stroke = [];
     // mirror y axis so that coordinate system us standard
     for (var i = 0; i < strokes[0].length; ++i) { stroke.push([strokes[0][i][0], -strokes[0][i][1]]); }
@@ -63,9 +69,9 @@ function MinGestures(conf) {
     var pixBwd = MathLib.computePixelsBackwards(lied.stroke);
 
     var name;
-    if (pixBwd <= backThr && aspectRatio >= aspectThr) { // This is a straight line 
+    if (pixBwd.x <= xBackThr && pixBwd.y <= yBackThr && aspectRatio >= aspectThr) { // This is a straight line 
       name = getGestureByAngle(lied.fit.angle);
-      return { name: name, score: lied.fit.angle*180/Math.PI + ' ' + pixBwd +  ' ' + aspectRatio };
+      return { name: name, score: (1 - 1/aspectRatio + Math.exp(-pixBwd.x) + Math.exp(-pixBwd.y))/3 };
     }
   };
   
@@ -298,13 +304,15 @@ var MathLib =
 
   computePixelsBackwards: function(stroke) {
     var n = stroke.length;
-    var sum = 0;
+    var xsum = 0, ysum = 0;
     
     for(var i=1; i < n; i++) {
       var dx = stroke[i][0] - stroke[i-1][0];
-      if (dx < 0) sum += dx;
+      var dy = stroke[i][1] - stroke[i-1][1];
+      if (dx < 0) xsum += dx;
+      if (dy < 0) ysum += dy;
     }
-    return -sum;
+    return {x: -xsum, y: -ysum};
   },
 
   sum: function(arr, startIndex, endIndex) {
