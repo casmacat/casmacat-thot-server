@@ -100,7 +100,6 @@ var MathLib =
   indicativeAngle: function(stroke) {
     if (stroke.length <= 0) return 0;
     var c = this.centroid(stroke);
-    console.log(stroke[0], c);
     return Math.atan2(c[1] - stroke[0][1], c[0] - stroke[0][0]);
   },
 
@@ -108,7 +107,6 @@ var MathLib =
   fastLieDown: function(stroke) {
     var newstroke = this.translateToOrigin(stroke, stroke[0]);
     var angle = this.indicativeAngle(newstroke);
-    console.log(angle*180/Math.PI);
     newstroke = this.rotate(newstroke, -angle); 
 
     var fit = { slope: Math.tan(angle), yintercept: 0, angle: angle, xintercept: 0 };

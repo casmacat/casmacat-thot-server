@@ -29,7 +29,9 @@ function trim_text($text, $words = 5)
   <script type="text/javascript" src="js/console.js"></script>
   <script type="text/javascript">
   window.casmacatServer = "<?=$_GET['server']?>";
-  window.casmacatHtrServer = "<?=$_GET['htr-server']?>";
+  <?php if (!empty($_GET['htr-server'])) { ?>
+    window.casmacatHtrServer = "<?=$_GET['htr-server']?>";
+  <?php } ?>
   </script>
   <script type="text/javascript" src="js/jquery.js"></script>
   <script type="text/javascript" src="js/jquery.rotatecells.js"></script>
@@ -43,6 +45,10 @@ function trim_text($text, $words = 5)
   <script type="text/javascript" src="js/jquery.blockUI.js"></script>
   <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
   <script type="text/javascript" src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+  <?php if (!empty($_GET['htr-server'])) { ?>
+    <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
+    <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
+  <?php } ?>
   <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
 </head>
 <body>
@@ -106,6 +112,7 @@ function trim_text($text, $words = 5)
         	<button title="Toggle alignment matrix visualization" id="btn-alignments"><img src="images/matrix.png"/></button>
           <?php if (!empty($_GET['htr-server'])) { ?>
           <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
+          <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
         	<button title="Toggle e-pen interaction" id="btn-epen"><img src="images/epen.png"/></button> 
           <?php } ?>
           <button title="Display updated sentences" id="btn-updatedsentences"><img src="images/list.png"/></button>
