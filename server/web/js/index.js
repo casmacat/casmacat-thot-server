@@ -2,7 +2,7 @@ var casmacat;
 
 $(function(){
 
-  var currentCaretPos;
+  var currentData;
   
   /*******************************************************************************/
   /*           create server connection and handle server events                 */
@@ -68,6 +68,8 @@ $(function(){
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
       startImt(data.text);
     }
+    currentData = data;
+    mw.addElement(data);
   });
 
   // handle post-editing (target has changed but not source)
@@ -78,6 +80,8 @@ $(function(){
     if (data.translatedText !== $('#target').editable('getText')) return;
 
   	update_translation_display(data);
+  	currentData = data;
+  	mw.addElement(data);
   });
 
   // handle alignment changes (updates highlighting and alignment matrix) 
@@ -99,6 +103,8 @@ $(function(){
     var data = obj.data;
     console.log('prediction changed', data);
     update_suggestions(data);
+    currentData = data;
+    mw.addElement(data);
   });
 
   // measures network latency
@@ -126,6 +132,7 @@ $(function(){
       if (c.prioritizer && c.prioritizer.threshold) {
         updatePrioritySlider(c.prioritizer.threshold);
       }
+      reposHtrCanvas();
     }
   });
 
@@ -214,6 +221,7 @@ $(function(){
 
 
   function reject() {
+    //mw.addElement(currentData);
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
       var target = $('#target').editable('getText'),
           source = $('#source').editable('getText'),
@@ -265,7 +273,7 @@ $(function(){
     //var text = $(this).text();
     //$('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
     // If cursor pos has chaged, invalidate previous states
-    if (d.pos !== currentCaretPos) {
+    if (typeof currentCaretPos != 'undefined' && d.pos !== currentCaretPos) {
       mw.invalidate();
     }
     currentCaretPos = d.pos;
@@ -497,8 +505,6 @@ $(function(){
 
   // updates the translation display and queries for new alignments and word confidences
   function update_translation_display(data) {
-    mw.addElement(data);
-    
     var source = data.text
       , source_seg = data.textTokens
       , target = data.translatedText
@@ -927,7 +933,7 @@ $(function(){
   /*                                 Init calls                                  */
   /*******************************************************************************/ 
 
-  require(["jquery.rotatecells", "jquery.editable", "jsketch", "jquery.sketchable"]);
+  require(["jquery.rotatecells", "jquery.editable"]);
   
   require(["jquery.blockUI"], function(){
     blockUI("Connecting...");
@@ -936,15 +942,17 @@ $(function(){
     toggleControlPanel();
     $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
     casmacat.ping(new Date().getTime());
-    casmacat.getServerConfig();    
+    casmacat.getServerConfig();
   });
   
   var mw;
-  require(["jquery.mousewheel", "module.mousewheel"], function() {
+  require(["jquery.mousewheel", "module.mousewheel"], function(){
     mw = new MW();
     mw.init('#target', {
       change: function(data) {
-        if (!Boolean($('#target').editable('getText'))) return false;
+        if (!Boolean($('#target').editable('getText'))) {
+          return false;
+        }
         if (data) {
           console.log("Loading previous data...");
           update_translation_display(data);
@@ -959,8 +967,7 @@ $(function(){
 
   
   if (typeof casmacatHtrServer !== 'undefined') {
-    $('#btn-epen').click(); 
-    setTimeout(reposHtrCanvas, 100);
+    $('#btn-epen').click();
   }
   
 });

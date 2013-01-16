@@ -12,36 +12,31 @@
       //pos = stack.length - 1;
     };
     
-    function updatePos() {
-      if (pos > stack.length) {
-        pos = stack.length;
-      }
-      if (pos < 0) {
-        pos = 0;
-      }
-    };
-    
     function resetState() {
       stack = [];
       pos   = 0;
     };
-    
+        
     function onMoveUp(e) {
       pos++;
-      updatePos();
+      if (pos > stack.length) {
+        pos = stack.length;
+      }
       dump("up");
-      //if (pos > 0 /*&& pos < stack.length*/) {
+      if (pos >= 0 && stack.length > 0) {
         self.change(stack[pos]);
-      //}
+      }
     };
     
     function onMoveDown(e) {
       pos--;
-      updatePos();
+      if (pos < 0) {
+        pos = 0;
+      }
       dump("down");
-      //if (pos > 0 /*&& pos < stack.length*/) {
+      if (pos >= 0 && stack.length > 0) {
         self.change(stack[pos]);
-      //}
+      }
     };
 
     function dump(fn) {
