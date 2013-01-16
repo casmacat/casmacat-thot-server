@@ -1,8 +1,6 @@
 var casmacat;
 
 $(function(){
-
-  var currentData;
   
   /*******************************************************************************/
   /*           create server connection and handle server events                 */
@@ -68,7 +66,7 @@ $(function(){
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
       startImt(data.text);
     }
-    currentData = data;
+    
     mw.addElement(data);
   });
 
@@ -80,8 +78,8 @@ $(function(){
     if (data.translatedText !== $('#target').editable('getText')) return;
 
   	update_translation_display(data);
-  	currentData = data;
-  	mw.addElement(data);
+  	
+  	//mw.addElement(data);
   });
 
   // handle alignment changes (updates highlighting and alignment matrix) 
@@ -103,7 +101,7 @@ $(function(){
     var data = obj.data;
     console.log('prediction changed', data);
     update_suggestions(data);
-    currentData = data;
+    
     mw.addElement(data);
   });
 
@@ -221,7 +219,6 @@ $(function(){
 
 
   function reject() {
-    //mw.addElement(currentData);
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
       var target = $('#target').editable('getText'),
           source = $('#source').editable('getText'),
@@ -955,7 +952,6 @@ $(function(){
         }
         if (data) {
           console.log("Loading previous data...");
-          update_translation_display(data);
           update_suggestions(data);
         } else {
           console.log("Rejecting...");
