@@ -1,5 +1,6 @@
 <?php 
 if (empty($_GET['server'])) die('No server set: <a href="?server='.$_SERVER['SERVER_NAME'].':3019&htr-server='.$_SERVER['SERVER_NAME'].':3003">try this example</a>');
+
 // Helper function(s) FIXME: include from external file
 function trim_text($text, $words = 5) 
 {
@@ -19,12 +20,12 @@ function trim_text($text, $words = 5)
 }
 ?>
 <!DOCTYPE html>
-<html debug="true">
+<html debug="true"><!-- debug for Firebug -->
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
   <title>CASMACAT demo</title>
-  <link rel="stylesheet" type="text/css" media="screen,projection" href="css/nouislider.css">
-  <link rel="stylesheet" type="text/css" media="screen,projection" href="css/index.css?<?=time()?>">
+  <link rel="stylesheet" type="text/css" media="screen,projection" href="css/index.css">
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
   <!--<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>-->
   <script type="text/javascript" src="js/console.js"></script>
   <script type="text/javascript">
@@ -33,18 +34,11 @@ function trim_text($text, $words = 5)
     window.casmacatHtrServer = "<?=$_GET['htr-server']?>";
   <?php } ?>
   </script>
-  <script type="text/javascript" src="js/jquery.js"></script>
-  <script type="text/javascript" src="js/jquery.rotatecells.js"></script>
-  <script type="text/javascript" src="js/jquery.editable.js?<?=time()?>"></script>
-  <script type="text/javascript" src="js/jquery.mousewheel.js"></script>
+  <script type="text/javascript" data-main="js/" src="js/require.min.js"></script>
+  <script type="text/javascript" src="js/jquery.min.js"></script>
+  <script type="text/javascript" src="js/jquery-ui.min.js"></script>  
   <script type="text/javascript" src="js/socket.io.js"></script>
-  <script type="text/javascript" src="js/casmacat.js?<?=time()?>"></script>
-  <script type="text/javascript" src="js/casmacat.lib.mw.js"></script>
-  <script type="text/javascript" src="js/jsketch.js"></script>
-  <script type="text/javascript" src="js/jquery.sketchable.js"></script>
-  <script type="text/javascript" src="js/jquery.blockUI.js"></script>
-  <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
-  <script type="text/javascript" src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+  <script type="text/javascript" src="js/casmacat.js"></script>
   <?php if (!empty($_GET['htr-server'])) { ?>
     <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
     <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
@@ -192,6 +186,9 @@ function trim_text($text, $words = 5)
     <img src="images/drawhere.png" class="drawhere" alt="Draw here!" />
   </div>
 
+  <br/><br/><!-- HTR Canvas is absolute positioned -->
+  
 </div><!-- #global -->
+
 </body>
 </html>

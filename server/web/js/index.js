@@ -68,8 +68,6 @@ $(function(){
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
       startImt(data.text);
     }
-    
-    mw.addElement(data);
   });
 
   // handle post-editing (target has changed but not source)
@@ -217,9 +215,7 @@ $(function(){
 
   function reject() {
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
-      var $this = $(this),
-          data = $this.data('editable'),
-          target = $this.editable('getText'),
+      var target = $('#target').editable('getText'),
           source = $('#source').editable('getText'),
           pos = $('#target').editable('getCaretPos');
 
@@ -270,7 +266,6 @@ $(function(){
     //$('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
     // If cursor pos has chaged, invalidate previous states
     if (d.pos !== currentCaretPos) {
-      console.log("Invalidating...");
       mw.invalidate();
     }
     currentCaretPos = d.pos;
@@ -325,33 +320,22 @@ $(function(){
   });
 
   $('#btn-epen').click(function(e) {
-    var $this = $('img', this);
-    var $epen = $('#epen');
-    var $canvas = $('#drawing-canvas');
-    var $target = $('#target');
+    var $this = $('img', this), $epen = $('#epen'), $canvas = $('#drawing-canvas'), $target = $('#target');
     
     if ($this.data('mode') === 'epen') {
       $this.attr('src', 'images/epen.png');
       $this.data('mode', 'keyboard');
       $epen.css({ visibility: 'hidden' });
+      $target.css({ borderColor:'steelBlue', backgroundColor:'whiteSmoke' });
     } else {
       $this.attr('src', 'images/keyboard.png');
       $this.data('mode', 'epen');
-      $target.blur();
-
-      var ofs = 50, pos = $target.offset(), siz = { width: $target.width() + ofs, height: $target.height() + ofs*2 };
-      $epen.css({
-        visibility: 'visible',
-        top: pos.top - ofs,
-        height: siz.height,
-        left: -1, // FIXME: Review this
-        width: siz.width,
-      });
-
-      $canvas.attr('width', $canvas.width());
-      $canvas.attr('height', $canvas.height());
-      $canvas.sketchable('clear');
+      $target.css({ borderColor:'white' }); // add backgroundColor:'white' ?
+      $epen.css({ visibility: 'visible' });
+      reposHtrCanvas();
     }
+    
+    $target.blur();
   });
 
   $('#btn-alignments').click(function(e) {
@@ -396,6 +380,7 @@ $(function(){
     }
     casmacat.translate(query);
     $(this).val("Loading...").attr("disabled", true);
+    mw.invalidate();
   });
 
   $('#btn-update').click(function(e) {
@@ -512,6 +497,8 @@ $(function(){
 
   // updates the translation display and queries for new alignments and word confidences
   function update_translation_display(data) {
+    mw.addElement(data);
+    
     var source = data.text
       , source_seg = data.textTokens
       , target = data.translatedText
@@ -871,6 +858,7 @@ $(function(){
     } else {
       $summary.hide();
     }
+    reposHtrCanvas();
   };
   
   function makeControlPanelSummary() {
@@ -879,6 +867,22 @@ $(function(){
     $('#set-confidences').text( $('#opt-confidences').is(':checked') + " ["+ confThreshold.bad*100 + "/"+ confThreshold.doubt*100 +"]" );
     $('#set-alignments').text( $('#opt-alignments').is(':checked') + " [matrix: "+ $('#matrix').is(':hidden') +"]" );
   };
+
+  function reposHtrCanvas() {
+    var $canvas = $('#drawing-canvas'), $target = $('#target'), $epen = $('#epen');
+    
+    var ofs = 50, pos = $target.offset(), siz = { width: $target.width() + ofs, height: $target.height() + ofs*2 };
+    $epen.css({
+      top: pos.top - ofs,
+      height: siz.height,
+      left: -1, // FIXME: Review this
+      width: siz.width,
+    });
+
+    $canvas.attr('width', $canvas.width());
+    $canvas.attr('height', $canvas.height());
+    //$canvas.sketchable('clear');
+  }
 
   function trimText(text, numWords, delimiter) {
     if (!numWords)  numWords  = 5;
@@ -910,7 +914,8 @@ $(function(){
   function blockUI(msg) {
     $('#global').block({
       message: '<h2>' + msg + '</h2>',
-      css: { fontSize:'150%', padding:'1% 2%', borderWidth:'3px', borderRadius:'10px', '-webkit-border-radius':'10px', '-moz-border-radius':'10px' }
+      centerY: false, // Fix weird position issue in some modern browsers
+      css: { fontSize:'150%', padding:'1% 2%', top:'45%', borderWidth:'3px', borderRadius:'10px', '-webkit-border-radius':'10px', '-moz-border-radius':'10px' }
     });  
   }
   function unblockUI() {
@@ -921,28 +926,41 @@ $(function(){
   /*******************************************************************************/
   /*                                 Init calls                                  */
   /*******************************************************************************/ 
+
+  require(["jquery.rotatecells", "jquery.editable", "jsketch", "jquery.sketchable"]);
   
-  updateConfidenceSlider();
-  updatePrioritySlider();
-  toggleControlPanel();
-  $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
-  casmacat.ping(new Date().getTime());
-  casmacat.getServerConfig();
-  blockUI("Connecting...");
-  
-  var mw = new MW();
-  mw.init('#target', {
-    change: function(data) {
-      if (!Boolean($('#target').editable('getText'))) return false;
-      if (data) {
-        console.log("Loading previous data...");
-        //update_translation_display(data);
-        //update_suggestions(data);
-      } else {
-        console.log("Rejecting...");
-        //reject();
-      }
-    }
+  require(["jquery.blockUI"], function(){
+    blockUI("Connecting...");
+    updateConfidenceSlider();
+    updatePrioritySlider();
+    toggleControlPanel();
+    $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
+    casmacat.ping(new Date().getTime());
+    casmacat.getServerConfig();    
   });
+  
+  var mw;
+  require(["jquery.mousewheel", "module.mousewheel"], function() {
+    mw = new MW();
+    mw.init('#target', {
+      change: function(data) {
+        if (!Boolean($('#target').editable('getText'))) return false;
+        if (data) {
+          console.log("Loading previous data...");
+          update_translation_display(data);
+          update_suggestions(data);
+        } else {
+          console.log("Rejecting...");
+          reject();
+        }
+      }
+    });    
+  });
+
+  
+  if (casmacatHtrServer) {
+    $('#btn-epen').click(); 
+    setTimeout(reposHtrCanvas, 100);
+  }
   
 });

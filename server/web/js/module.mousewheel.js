@@ -1,8 +1,8 @@
 // Dependencies: jquery.mousewheel plugin
 
-(function(window){
+(function(exports, global){
 
-  function mwObject(elem, options) {
+  function module(elem, options) {
     
     // Private -----------------------------------------------------------------
     var stack = [], pos = 0;
@@ -29,41 +29,50 @@
     function onMoveUp(e) {
       pos++;
       updatePos();
-      console.log( "onMoveUp", pos, stack.length );
-      //if (pos < stack.length)
-        self.change(stack[pos - 1]);
+      dump("up");
+      //if (pos > 0 /*&& pos < stack.length*/) {
+        self.change(stack[pos]);
+      //}
     };
     
     function onMoveDown(e) {
       pos--;
       updatePos();
-      console.log( "onMoveUp", pos, stack.length );
-      //if (pos < stack.length)
-        self.change(stack[pos - 1]);
+      dump("down");
+      //if (pos > 0 /*&& pos < stack.length*/) {
+        self.change(stack[pos]);
+      //}
     };
-    
+
+    function dump(fn) {
+      console.log( "["+self.id+"]", fn, "| size:", stack.length, "pos:", pos );
+    }
 
     var self = this;
-
-    // Listeners ---------------------------------------------------------------
-    self.change = function(data) {
-    };
+    
     
     // Public API --------------------------------------------------------------
+    self.id = "MW";
+    self.version = "0.1";
+    
     self.addElement = function(elem) {
       saveState(elem);
-      console.log("addElement", stack.length, pos);
+      dump("add");
     };
     
     self.invalidate = function() {
       resetState();
+      dump("invalidate");
     };
     
     // Mandatory intialization method ------------------------------------------
     self.init = function(elem, options) {
       $(elem).mousewheel(function(e,delta){
-        if (delta > 0) onMoveUp(e);
-        else if (delta < 0) onMoveDown(e);
+        if (delta > 0) {
+          onMoveUp(e);
+        } else if (delta < 0) { 
+          onMoveDown(e);
+        }
         // block scroll over element
         return false;
       });
@@ -73,11 +82,17 @@
           self[opt] = options[opt];
         }
       }
-    }
-        
+      console.log("Loaded", self);
+    };
+    
+    // Listeners ---------------------------------------------------------------
+    self.change = function(data) {
+      return data;
+    };
+    
   };
   
   // Expose module
-  window.MW = mwObject;
+  exports.MW = global.MW = module;
   
-})(this);
+})('object' === typeof module ? module.exports : {}, this);
