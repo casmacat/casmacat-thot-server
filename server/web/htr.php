@@ -15,6 +15,7 @@
   <script type="text/javascript" src="js/jquery.editable.js?<?=time()?>"></script>
   <script type="text/javascript" src="js/socket.io.js"></script>
   <script type="text/javascript" src="js/casmacat.js?<?=time()?>"></script>
+  <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
   <script type="text/javascript" src="js/htr-index.js?<?=time()?>"></script>
 </head>
 <body>

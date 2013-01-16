@@ -16,27 +16,43 @@ $(function(){
   var timerMs = 400;
   var decoderTimer = 0;
 
+  // gesture recognizer
+  var gestureRecognizer = new MinGestures();
+  
   // instantiate a drawable canvas 
   var cnv = $('#drawing-canvas').sketchable({
       interactive: true,
       events: {
         mouseDown: function(e) {
           clearTimeout (decoderTimer);
-          var strokes = cnv.sketchable('strokes');
-          if (strokes.length === 0) {
-            var source = '';
-            var target = ''; 
-            var caret_pos = 0;
-            casmacatHtr.startHtrSession(source, target, caret_pos);
-            
-            var data = { x: e.clientX, y: e.clientY, target: null};
-            cnv.data('htr', data);
-          }
         },
         mouseUp: function(e) {
           var strokes = cnv.sketchable('strokes');
           var stroke = strokes[strokes.length-1];
-          casmacatHtr.addStroke(stroke, true);      
+          var gesture;
+          if (strokes.length === 1) {
+            gesture = gestureRecognizer.recognize(strokes);
+            if (!gesture) {
+              var data = {
+                source: '',
+                target: '',
+                caret_pos: 0,
+              }
+              casmacatHtr.startHtrSession(data);
+              
+              var data = { x: e.clientX, y: e.clientY, target: null};
+              cnv.data('htr', data);
+              $('#htr-suggestions').text('Performing HTR recognition...').css('color', 'green');
+            }
+            else {
+              cnv.sketchable('clear');
+              $('#htr-suggestions').text('gesture: ' + gesture.name).css('color', 'green');
+            }
+          }
+
+          if (!gesture) {
+            casmacatHtr.addStroke({points: stroke, is_pen_down: true});
+          }
         },
         clear: function(elem, data) {
           cnv.removeData('htr');
@@ -49,15 +65,19 @@ $(function(){
   
   
   // handle HTR responses
-  casmacatHtr.on('htrupdate', function(result, result_seg) {
-    console.log('updated', result);
-    update_htr_suggestions(result, result_seg, 'red');
+  casmacatHtr.on('htrupdate', function(obj) {
+    console.log('updated', obj);
+    if (obj.data) {
+      update_htr_suggestions(obj.data, 'red');
+    }
   });
 
   // handle post-editing (target has changed but not source)
-  casmacatHtr.on('htrchange', function(result, result_seg) {
-    console.log('changed', result);
-    update_htr_suggestions(result, result_seg);
+  casmacatHtr.on('htrchange', function(obj) {
+    console.log('changed', obj);
+    if (obj.data) {
+      update_htr_suggestions(obj.data);
+    }
   });
 
   // on click send strokes to the htr server
@@ -77,16 +97,16 @@ $(function(){
   /*******************************************************************************/
 
 
-  function update_htr_suggestions(result, result_seg, color) {
-    if (result === "") return;
+  function update_htr_suggestions(data, color) {
+    if (!data.text || data.text === "") return;
     var is_final = false;
     if (!color) {
       color = "black";
       is_final = true;
     }
-    console.log(result, result_seg);
+    console.log(data.text, data.text_seg);
 
-    $('#htr-suggestions').text(result).css('color', color);
+    $('#htr-suggestions').text(data.text).css('color', color);
   }
 
   

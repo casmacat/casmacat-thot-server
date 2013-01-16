@@ -1,33 +1,21 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, os
+import sys, traceback, os
 import datetime, time
-import random
+import random, math, codecs
 
+try: import simplejson as json
+except ImportError: import json
 
 from tornado import web
 from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 
 from casmacat import *
+#from numpy.testing.utils import elapsed
 
 
 do_partial_recognition = True
-
-class MyLogger(Logger):
-  tag = { ERROR_LOG: "ERROR", WARN_LOG: "WARN", INFO_LOG: "INFO", DEBUG_LOG: "DEBUG" }
-  participants = set()
-
-  def log(self, type, msg):
-    if type in self.tag:
-      msg = "%s: %s" % (self.tag[type], msg)
-    else: 
-      msg = "LOG: %s" % msg
-    for p in self.participants:
-      p.emit('receive_log', msg)
-    
-logger = MyLogger()
-
 
 def dump_strokes(strokes):
   fn = "strokes/" + str(time.time()) + ".moto";
@@ -45,22 +33,189 @@ def dump_strokes(strokes):
   out.close()
 
 
+def fmt_delta(elapsed_time):
+  h, rem = divmod(elapsed_time.seconds, 3600)
+  m , rem = divmod(rem, 60)
+  s = math.floor(rem)
+  ms = elapsed_time.microseconds/1000.0
+
+  time = []
+  if elapsed_time.days > 0: 
+    time.append("%d days" % (days))
+  if h > 0:
+    time.append("%dh" % (h))
+  if m > 0:
+    time.append("%dm" % (m))
+  if s > 0:
+    time.append("%ds" % (s))
+  time.append("%.2fms" % ms)
+  return " ".join(time) 
+
+# decorator to measure the time to process the function 
+class timer(object):
+  def __init__(self, name):
+    """
+    If there are decorator arguments, the function
+    to be decorated is not passed to the constructor!
+    """
+    self.name = name 
+
+  def __call__(self, function):
+    """
+    If there are decorator arguments, __call__() is only called
+    once, as part of the decoration process! You can only give
+    it a single argument, which is the function object.
+    """
+    def decorator(*args, **kwargs):
+      start_time = datetime.datetime.now()
+
+      print >> logfd, """/*\n  Server method "%s" invoked\n  %s\n*/\n\n"%s": %s\n""" % (self.name, str(datetime.datetime.now()), self.name, json.dumps(kwargs, indent=2, separators=(',', ': '), encoding="utf-8"))
+
+      ret = function(*args, **kwargs)
+      elapsed_time = datetime.datetime.now() - start_time
+      print "TIME:%s:%s" % (self.name, fmt_delta(elapsed_time))
+      print >> logfd, """/* Time to process method "%s": %s */\n\n\n""" % (self.name, fmt_delta(elapsed_time))
+      return ret
+    return decorator
+
+
+
+# decorator to capture exceptions and return them as errors in json
+class thrower(object):
+  def __init__(self, emission):
+    """
+    If there are decorator arguments, the function
+    to be decorated is not passed to the constructor!
+    """
+    self.emission = emission
+
+  def __call__(self, function):
+    """
+    If there are decorator arguments, __call__() is only called
+    once, as part of the decoration process! You can only give
+    it a single argument, which is the function object.
+    """
+    def decorator(*args, **kwargs):
+      try:
+        return function(*args, **kwargs)
+      except Exception, e:
+        if self.emission:
+          args[0].respond(self.emission, { 'errors': [traceback.format_exc()], 'data': None })
+        print traceback.format_exc()
+        #raise
+    return decorator
+
+
+logfd = None
+
+class MyLogger(Logger):
+  tag = { ERROR_LOG: "ERROR", WARN_LOG: "WARN", INFO_LOG: "INFO", DEBUG_LOG: "DEBUG" }
+  participants = set()
+
+  def log(self, type, msg):
+    return
+    if type in self.tag:
+      msg = "%s: %s" % (self.tag[type], msg)
+    else: 
+      msg = "LOG: %s" % msg
+    for p in self.participants:
+      p.respond('receive_log', msg)
+    
+logger = MyLogger()
+
+def new_match(created_by, source, source_seg, target, target_seg, elapsed_time):
+  match = {}
+  match['id'] = random.randint(0,100000)
+  match['segment'] = source 
+  match['segmentTokens'] = source_seg
+  match['translation'] = target
+  match['translationTokens'] = target_seg
+  match['raw_translation'] = target
+  match['quality'] = 75
+  if created_by == 'OL':
+    match['quality'] = 70
+  match['created_by'] = created_by
+  match['create_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
+  match['last_update_by'] = "me!" 
+  match['last_update_date'] = match['create_date'] 
+  match['match'] = 85
+  match['reference'] = source 
+  match['usage_count'] = 1
+  match['subject'] = "Printer Manuals"
+  match['elapsed_time'] = elapsed_time.total_seconds()*1000.0
+  return match
+
+def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
+  match = {}
+  match['id'] = random.randint(0,100000)
+  match['translation'] = prediction
+  match['translationTokens'] = prediction_seg
+  match['quality'] = 75
+  if created_by == 'OL':
+    match['quality'] = 70
+  match['created_by'] = created_by
+  match['create_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
+  match['last_update_by'] = "me!" 
+  match['last_update_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S') 
+  match['match'] = 85
+  match['usage_count'] = 1
+  match['subject'] = "Printer Manuals"
+  match['elapsed_time'] = elapsed_time.total_seconds()*1000.0
+  return match
+
+def new_contributions(source, source_seg):
+  data = {}
+  data['text'] = source
+  data['textTokens'] = source_seg
+  data['matches'] = []
+  return { 'errors': [], 'data': data }
+
+def new_predictions(target, caret_pos):
+  data = {}
+  data['previousText'] = target 
+  data['caretPos'] = caret_pos 
+  data['matches'] = []
+  return { 'errors': [], 'data': data }
+
+def add_match(obj, match):
+  obj['data']['matches'].append(match)
+
+def prepare(obj):
+  if len(obj['data']['matches']) > 0:
+    obj['data']['matches'].sort(key=lambda match: match['quality'], reverse=True)
+    print obj['data']['matches']
+    obj['data']['translatedText'] = obj['data']['matches'][0]['translation']
+    obj['data']['translatedTextTokens'] = obj['data']['matches'][0]['translationTokens']
+
+
 ROOT = os.path.normpath(os.path.dirname(__file__))
 
 def filter_utf8(string):
   return string.encode('utf-8')
 
 def to_utf8(obj):
-  if isinstance(obj, basestring):
+  if obj == None:
+    return obj
+  elif isinstance(obj, basestring):
     return filter_utf8(obj)
   elif isinstance(obj, list): 
     return [to_utf8(w) for w in obj]
+  print "Unknown type", type(obj), "for object", obj
   raise "Unknown type"
 
 
 class HtrConnection(SocketConnection):
-    @event
-    def start_htr_session(self, source, target, caret_pos):
+    def respond(self, *args, **kwargs):
+      print "emit", args, kwargs
+      print >> logfd, """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
+      self.emit(*args, **kwargs)
+
+    @event('start_htr_session')
+    @timer('start_htr_session')
+    @thrower('start_htr_session_error')
+    def start_htr_session(self, data):
+      source, target = to_utf8(data['source']), to_utf8(data['target'])
+      caret_pos = data['caret_pos']
       if self.htr_session: 
         htr.deleteSession(self.htr_session)
         self.htr_session = None
@@ -89,8 +244,11 @@ class HtrConnection(SocketConnection):
       self.htr_session = htr.createSessionFromPrefix([], [], [], False)
       self.strokes = []
 
-    @event
-    def add_stroke(self, points, is_pen_down):
+    @event('add_stroke')
+    @timer('add_stroke')
+    @thrower('htrupdate')
+    def add_stroke(self, data):
+      points, is_pen_down = data['points'], data['is_pen_down']
       if self.htr_session:
         self.strokes.append((points, is_pen_down)) 
         for x, y, _ in points:
@@ -98,19 +256,40 @@ class HtrConnection(SocketConnection):
         self.htr_session.addPoint(0, 0, False)
         
         if do_partial_recognition:
+            start_time = datetime.datetime.now()
             has_partial, partial_result_tok = self.htr_session.decodePartially()
+            elapsed_time = datetime.datetime.now() - start_time
             if has_partial:
               partial_result, partial_result_seg = tokenizer.postprocess(partial_result_tok)
               print >> sys.stderr, "update", partial_result_tok
-              self.emit('htrupdate', partial_result, partial_result_seg)
 
-    @event
+              obj = { 'text': partial_result, 
+                      'text_seg': partial_result_seg, 
+                      'is_partial': True,
+                      'elapsed_time': elapsed_time.total_seconds()*1000.0
+                    }
+              self.respond('htrupdate', { 'errors': [], 'data': obj })
+
+
+    @event('end_htr_session')
+    @timer('end_htr_session')
+    @thrower('end_htr_session_error')
     def end_htr_session(self):
       if self.htr_session: 
+          start_time = datetime.datetime.now()
           result_tok = self.htr_session.decode()
+          elapsed_time = datetime.datetime.now() - start_time
           print >> sys.stderr, "change", result_tok
           result, result_seg = tokenizer.postprocess(result_tok)
-          self.emit('htrchange', result, result_seg)
+
+          obj = { 'text': result, 
+                  'text_seg': result_seg, 
+                  'is_partial': False,
+                  'elapsed_time': elapsed_time.total_seconds()*1000.0
+                }
+          self.respond('htrchange', { 'errors': [], 'data': obj })
+
+
           htr.deleteSession(self.htr_session)
           self.htr_session = None
           dump_strokes(self.strokes)
@@ -122,6 +301,7 @@ class HtrConnection(SocketConnection):
       print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
       self.htr_session = None
+      self.config = { 'suggestions': False, 'mode': u'PE' }
 
     @event
     def on_close(self):
@@ -142,17 +322,19 @@ class RouterConnection(SocketConnection):
 # Create tornadio router
 CasmacatRouter = TornadioRouter(RouterConnection)
 
-# Create socket application
-application = web.Application(
-    CasmacatRouter.apply_routes([]),
-    flash_policy_port = 843,
-    flash_policy_file = os.path.join(ROOT, 'flashpolicy.xml'),
-    socket_io_port = 3003
-)
-
 if __name__ == "__main__":
     from sys import argv
     import logging
+    import atexit
+
+    logfn = "casmacat-server.log"
+    try: 
+      logfn = models.config["server"]["logfile"]
+    except:
+      pass
+    logfd = codecs.open(logfn, "a", "utf-8")
+
+
     logging.getLogger().setLevel(logging.INFO)
 
 
@@ -170,6 +352,14 @@ if __name__ == "__main__":
     htr_factory.setLogger(logger)
     htr = htr_factory.createInstance()
     if not htr: raise Exception("HTR instance failed")
+
+    # Create socket application
+    application = web.Application(
+        CasmacatRouter.apply_routes([]),
+        flash_policy_port = 843,
+        flash_policy_file = os.path.join(ROOT, 'flashpolicy.xml'),
+        socket_io_port = 3003
+    )
 
     # Create and start tornadio server
     SocketServer(application)
