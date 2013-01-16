@@ -958,7 +958,7 @@ $(function(){
   });
 
   
-  if (casmacatHtrServer) {
+  if (typeof casmacatHtrServer !== 'undefined') {
     $('#btn-epen').click(); 
     setTimeout(reposHtrCanvas, 100);
   }
