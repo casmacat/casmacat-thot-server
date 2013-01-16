@@ -100,7 +100,7 @@ class thrower(object):
         return function(*args, **kwargs)
       except Exception, e:
         if self.emission:
-          args[0].respond(self.emission, { 'errors': [traceback.format_exc()], 'data': None })
+          args[0].respond(self.emission, { 'function': self.name, 'errors': [traceback.format_exc()], 'data': None })
         print traceback.format_exc()
         #raise
     return decorator
@@ -212,7 +212,7 @@ class HtrConnection(SocketConnection):
 
     @event('start_htr_session')
     @timer('start_htr_session')
-    @thrower('start_htr_session_error')
+    @thrower('htrerror')
     def start_htr_session(self, data):
       source, target = to_utf8(data['source']), to_utf8(data['target'])
       caret_pos = data['caret_pos']
@@ -221,17 +221,16 @@ class HtrConnection(SocketConnection):
         self.htr_session = None
         self.strokes = None
 
-      logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target));
+      logger.log(DEBUG_LOG, str(caret_pos) + " @ " + target);
 
-      source = to_utf8(source) 
       source_tok, source_seg = tokenizer.preprocess(source)
       print >> sys.stderr, "source", source
 
-      prefix = to_utf8(target[:caret_pos]) 
+      prefix = target[:caret_pos] 
       prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
       print >> sys.stderr, "prefix", prefix
 
-      suffix = to_utf8(target[caret_pos:]) 
+      suffix = target[caret_pos:] 
       suffix_tok, suffix_seg = tokenizer.preprocess(suffix)
       print >> sys.stderr, "suffix", suffix 
 
