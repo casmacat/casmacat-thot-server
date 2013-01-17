@@ -253,9 +253,15 @@
       
   function getMousePos(e) {
     var elem = $(e.target), pos = elem.offset();
+    var leftPadding, topPadding, leftBorder, topBorder;
+    leftPadding = parseInt(elem.css('paddingLeft')) || 0;
+    topPadding  = parseInt(elem.css('paddingTop')) || 0;
+    leftBorder  = parseInt(elem.css('borderLeftWidth')) || 0;
+    topBorder   = parseInt(elem.css('borderTopWidth')) || 0;
+
     return {
-      x: e.pageX - pos.left,
-      y: e.pageY - pos.top
+      x: e.pageX - pos.left - leftBorder - leftPadding,
+      y: e.pageY - pos.top - topBorder - topPadding,
     }
   };
       
