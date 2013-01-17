@@ -59,7 +59,9 @@ function MinGestures(conf) {
 
     var stroke = [];
     // mirror y axis so that coordinate system us standard
-    for (var i = 0; i < strokes[0].length; ++i) { stroke.push([strokes[0][i][0], -strokes[0][i][1]]); }
+    for (var i = 0; i < strokes[0].length; ++i) { 
+      stroke.push([strokes[0][i][0], -strokes[0][i][1]]); 
+    }
 
     var lied = MathLib.fastLieDown(stroke);
 

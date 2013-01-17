@@ -362,7 +362,7 @@ $(function(){
     var $epen = $(this);
     var $target = $('#target');
     
-    var tokens = $target.editable('getTokensAtXY', e.clientX, e.clientY);
+    var tokens = $target.editable('getTokensAtXY', [e.clientX, e.clientY]);
     if (tokens.length > 0 && tokens[0].distance.d === 0) {
       var $token = $(tokens[0].token);
       var newtok = $token.clone();

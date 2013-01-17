@@ -143,7 +143,22 @@
     return dist;
   }
 
+
+  function getRect($node) {
+    var rect    = $node.offset();
+    rect.width  = $node.outerWidth();
+    rect.height = $node.outerHeight();
+    rect.right  = rect.left + rect.width;
+    rect.bottom = rect.top  + rect.height;
+    return rect;
+  }
+
   function nodeDistance(node, x, y, delta) {
+    var rect = getRect($(node));
+    return rectDistance(rect, x, y, delta);
+  }
+
+  function _nodeDistance(node, x, y, delta) {
     var rects = node.getClientRects();
     var min = Number.MAX_VALUE;
     var minDist;
@@ -158,7 +173,8 @@
   }
 
   function nodeCenter(node) {
-    var r = node.getClientRects()[0];
+    //var r = node.getClientRects()[0];
+    var r = getRect($(node));
     return { x: r.x + r.width/2, y: r.y + r.height/2 } 
   }
 
@@ -219,14 +235,14 @@
       return {elem: elem, pos: pos};
     },
 
-    getTokensAtXY: function(x, y, delta) {
+    getTokensAtXY: function(point, delta) {
       if (!delta) delta = 0; 
       var $this = $(this);
       var spans = $.makeArray($('span', $this));
 
       var tokens = []
       for (var i = 0; i < spans.length; i++) {
-        var distance = nodeDistance(spans[i], x, y, delta);
+        var distance = nodeDistance(spans[i], point[0], point[1], delta);
         tokens.push({ token: spans[i], distance: distance });
       }
       tokens.sort(function(a,b){ return a.distance.d - b.distance.d});
@@ -509,43 +525,55 @@
       }
     },
 
-    appendWord: function(str, trailingSpaces) {
+    appendWordAfter: function(str, $node, spaces) {
       var $this = $(this),
           data = $this.data('editable');
 
-      var tok_id = 0;
-      var lastSpan = $('span:last-child', $this);
-      if (lastSpan) {
-        tok_id = lastSpan.data('tok') + 1;
-      }
-
-
-      // add trailing spaces
-      var spaces;
-      if (trailingSpaces) {
-        spaces = document.createTextNode(trailingSpaces);
+      // create space node
+      var $spaces;
+      if (spaces) {
+        $spaces = $(document.createTextNode(spaces));
       }
 
       // create a new node 
-      var span = $('<span/>', {
-          class: 'editable-token', 
-          text: str, 
-          id: $this.attr('id') + '_' + (data.ntok++)
+      var $span = $('<span/>', {
+        class: 'editable-token', 
+        text: str, 
+        id: $this.attr('id') + '_' + (data.ntok++)
       });
 
-      span.data('tok', tok_id); 
+      // get token id
+      var tok_id = 0;
+      if ($node) {
+        tok_id = $node.data('tok') + 1;
+      }
 
+      $span.data('tok', tok_id); 
+
+
+      // save caret pos
       var pos;
       if ($this.is(':focus')) {
         pos = $this.editable('getCaretPos');
       }
-      if (spaces) $this.append(spaces);
-      $this.append(span);
+
+      // insert at the beginning
+      if (!$node) {
+        if ($spaces) $this.prepend($spaces);
+        $this.prepend($span);
+      }
+      // insert after node 
+      else if ($node) {
+        $span.insertAfter($node);
+        if ($spaces) $spaces.insertAfter($node);
+      }
+
+      // restore caret pos
       if ($this.is(':focus')) {
         $this.editable('setCaretPos', pos);
       }
 
-      return span.get(0);
+      return { $token: $span, $spaces: $spaces };
     },
 
     replaceText: function(str, segs, elemsToReplace, is_final) {
