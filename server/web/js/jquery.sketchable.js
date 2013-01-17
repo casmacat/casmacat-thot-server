@@ -49,8 +49,9 @@
           })//.background(options.graphics.background); // let user decide...
           
           elem.data(_ns, {
-            strokes: [], // mouse strokes
-            coords: [],  // a single stroke
+            strokes: [],   // mouse strokes
+            coords: [],    // a single stroke
+            timestamp: 0,  // date of first coord
             canvas: sketch
           });
           
@@ -88,7 +89,6 @@
         });
       } else { // getter
         var data = $(this).data(_ns);
-        
         return data.strokes;
       }    
     },
@@ -248,30 +248,38 @@
   };
 
 
+  function getCanvasGap(e) {
+    var elem = $(e.target);
+    var leftPadding, topPadding, leftBorder, topBorder;
+    leftPadding = parseInt(elem.css('paddingLeft'))     || 0;
+    topPadding  = parseInt(elem.css('paddingTop'))      || 0;
+    leftBorder  = parseInt(elem.css('borderLeftWidth')) || 0;
+    topBorder   = parseInt(elem.css('borderTopWidth'))  || 0;
+    return { 
+      top: topPadding + topBorder, 
+      left: leftPadding + leftBorder 
+    }
+  };
 
   // main drawing callbacks if interactive is set to true ----------------------
       
   function getMousePos(e) {
     var elem = $(e.target), pos = elem.offset();
-    var leftPadding, topPadding, leftBorder, topBorder;
-    leftPadding = parseInt(elem.css('paddingLeft')) || 0;
-    topPadding  = parseInt(elem.css('paddingTop')) || 0;
-    leftBorder  = parseInt(elem.css('borderLeftWidth')) || 0;
-    topBorder   = parseInt(elem.css('borderTopWidth')) || 0;
-
     return {
-      x: e.pageX - pos.left - leftBorder - leftPadding,
-      y: e.pageY - pos.top - topBorder - topPadding,
+      x: e.pageX - pos.left,
+      y: e.pageY - pos.top,
     }
   };
       
   function mousemoveHandler(e) {
     var elem = $(e.target), data = elem.data(_ns);
     if (!data.canvas.isDrawing) return;
-    var p = getMousePos(e);
-    data.canvas.lineTo(p.x, p.y);
+    var p = getMousePos(e), g = getCanvasGap(e);
+    data.canvas.lineTo(p.x - g.left, p.y - g.top);
     //data.coords.push({ x:p.x, y:p.y, type:0 });
-    data.coords.push([ p.x, p.y, 0 ]);
+    //data.coords.push([ p.x, p.y, 0 ]);
+    var timeDelta = new Date().getTime() - data.timestamp;
+    data.coords.push([ p.x, p.y, timeDelta ]);
     if (typeof options.events.mouseMove === 'function') {
       options.events.mouseMove(e);
     }     
@@ -280,12 +288,20 @@
   function mousedownHandler(e) {
     var elem = $(e.target), data = elem.data(_ns);  
     data.canvas.isDrawing = true;
-    var p = getMousePos(e);
+    var p = getMousePos(e), g = getCanvasGap(e);
     data.canvas.beginPath();
     // mark visually 1st point of stroke
-    data.canvas.fillCircle(p.x,p.y,options.graphics.lineWidth);
+    data.canvas.fillCircle(p.x - g.left, p.y - g.top, options.graphics.lineWidth);
     //data.coords.push({ x:p.x, y:p.y, type:1 });
-    data.coords.push([ p.x, p.y, 1 ]);
+    //data.coords.push([ p.x, p.y, 1 ]);
+    var timeDelta;
+    if (!data.strokes.length) {
+      data.timestamp = new Date().getTime();
+      timeDelta = 0;
+    } else {
+      timeDelta = new Date().getTime() - data.timestamp;
+    }
+    data.coords.push([ p.x, p.y, timeDelta ]);
     if (typeof options.events.mouseDown === 'function') {
       options.events.mouseDown(e);
     }
@@ -297,6 +313,7 @@
     data.canvas.closePath();
     data.strokes.push(data.coords);
     data.coords = [];
+    data.timestamp = 0;
     if (typeof options.events.mouseUp === 'function') {
       options.events.mouseUp(e);
     }
