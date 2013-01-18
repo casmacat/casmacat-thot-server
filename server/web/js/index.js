@@ -1,47 +1,46 @@
-var casmacat;
-
 $(function(){
-  
-  /*******************************************************************************/
-  /*           create server connection and handle server events                 */
-  /*******************************************************************************/
+ 
+  // Connect to a server; casmacat will receive async server responses
+  var casmacat = new PredictiveCatClient(true);
+  casmacat.connect('http://' + window.casmacatServer + '/casmacat');
 
-  // connect to a server. casmacat will receive async server responses
-  casmacat = new CasmacatClient('http://' + window.casmacatServer + '/casmacat');
-
-  casmacat.on('disconnect', function(){ 
+  // Socket.IO callbacks -------------------------------------------------------
+  // See https://github.com/LearnBoost/socket.io/wiki/Exposed-events
+  casmacat.on('disconnect', function() {
     blockUI("Server disconnected");
     this.socket.reconnect();
   });
   
-  casmacat.on('reconnecting', function(){ 
+  casmacat.on('reconnecting', function() { 
     blockUI("Reconnecting...");
   });
   
-  casmacat.on('reconnect_failed', function(){ 
+  casmacat.on('reconnect_failed', function() { 
     blockUI("Reconnect failed");
   });
 
   casmacat.on('reconnect', function() { 
     unblockUI();
-    // Send initial config
     casmacat.configure({
       suggestions: $('#opt-suggestions').is(':checked'), 
       mode: $('input[@name=show]:checked').val()
     });
   });
 
-  casmacat.on('anything', function(data, callback) { 
-    console.info("anything:", data);
+  casmacat.on('anything', function(data) {
+    console.info("anything:", obj);
   });
 
-  casmacat.on('message', function(message, callback) { 
-    console.info("message:", data);
+  casmacat.on('message', function(msg, callback) {
+    console.info("message:", msg);
   });
-      
-  //casmacat.on('receive_log', function(msg) { console.log('server says:', msg); });
+  
+  
+  // CatClient callbacks -------------------------------------------------------
+  
+  //casmacat.on('receiveLog', function(msg) { console.log('server says:', msg); });
 
-  casmacat.on('serverready', function() {
+  casmacat.on('resetResult', function(data, err) {
     unblockUI();
     var cfg = {
       suggestions: $('#opt-suggestions').is(':checked'), 
@@ -50,71 +49,66 @@ $(function(){
     casmacat.configure(cfg);
   });
   
-
-  // handle translation responses
-  casmacat.on('contributionchange', function(obj) {
-    var data = obj.data;
+  // Handle translation responses
+  casmacat.on('decodeResult', function(data, err) {
+    var bestResult = data.nbest[0];
     // make sure new data still applies to current source
-    if (data.text !== $('#source').editable('getText')) return;
+    if (data.source !== $('#source').editable('getText')) return;
 
-    console.log('contribution changed', data);
+    //console.log('contribution changed', data);
     $('#btn-translate').val("Translate").attr("disabled", false);
 
   	update_translation_display(data);
     update_suggestions(data);
     
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
-      startImt(data.text);
+      startImt(bestResult.target);
     }
     
     mw.addElement(data);
   });
 
-  // handle post-editing (target has changed but not source)
-  casmacat.on('translationchange', function(obj) {
-    var data = obj.data;
+  // Handle post-editing (target has changed but not source)
+  casmacat.on('getTokensResult', function(data, err) {
     // make sure new data still applies to current source and target texts
-    if (data.text !== $('#source').editable('getText')) return;
-    if (data.translatedText !== $('#target').editable('getText')) return;
+    if (data.source !== $('#source').editable('getText')) return;
+    if (data.target !== $('#target').editable('getText')) return;
 
   	update_translation_display(data);
   	
   	//mw.addElement(data);
   });
 
-  // handle alignment changes (updates highlighting and alignment matrix) 
-  casmacat.on('alignmentchange', function(obj) {
-    var data = obj.data;
-    update_alignment_display(data.matrix, data.source, data.source_seg, data.target, data.target_seg);
+  // Handle alignment changes (updates highlighting and alignment matrix) 
+  casmacat.on('getAlignmentsResult', function(data, err) {
+    update_alignment_display(data.alignments, data.source, data.sourceSegmentation, data.target, data.targetSegmentation);
   });
 
-  // handle confidence changes (updates highlighting) 
-  casmacat.on('confidencechange', function(obj) {
-    var data = obj.data;
-    var start_time = new Date().getTime();
-    update_word_confidences_display(data.quality, data.word_confidences, data.source, data.source_seg, data.target, data.target_seg);
+  // Handle confidence changes (updates highlighting) 
+  casmacat.on('getConfidencesResult', function(data, err) {
+    //var start_time = new Date().getTime();
+    update_word_confidences_display(data.quality, data.confidences, data.source, data.sourceSegmentation, data.target, data.targetSegmentation);
     //console.log("update_word_confidences_display:", new Date().getTime() - start_time, obj.data.elapsed_time);
   });
 
-  // handle confidence changes (updates highlighting) 
-  casmacat.on('predictionchange', function(obj) {
-    var data = obj.data;
+  // Handle confidence changes (updates highlighting) 
+  casmacat.on(['setPrefixResult', 'rejectSuffixResult'], function(data, err) {
     console.log('prediction changed', data);
     update_suggestions(data);
     
     mw.addElement(data);
   });
 
-  // measures network latency
-  casmacat.on('pong', function(ms) {
-    console.log("Received ping:", new Date().getTime() - ms);
+  // Measure network latency
+  casmacat.on('pingResult', function(data, err) {
+    console.log("Received ping:", new Date().getTime() - data.ms);
   });
 
 
-  // receive server configuration 
-  casmacat.on('configurationchange', function(obj) {
-    if (obj.config) {
-      var c = obj.config;
+  // Receive server configuration 
+  casmacat.on('getServerConfigResult', function(data, err) {
+    var c = data.config;
+    if (c) {
       if (c.sentences && c.sentences.length > 0) {
         var $select = $('select#source-list');
         $select.empty();
@@ -134,13 +128,14 @@ $(function(){
     }
   });
 
-  // handle updates changes (show a list of updated sentences) 
-  casmacat.on('updateschange', function(obj) {
-    console.log('updates:', obj.data.updates);
-    if (obj.data.updates.length > 0) {
+  // Handle updates changes (show a list of updated sentences) 
+  casmacat.on('getValidatedContributionsResult', function(data, err) {
+    var contribs = data.contributions;
+    console.log('Validated contributions:', contribs);
+    if (contribs.length > 0) {
       var list = '<dl>';
-      for (var i = 0; i < obj.data.updates.length; ++i) {
-        var sentence = obj.data.updates[i];
+      for (var i = 0; i < contribs.length; ++i) {
+        var sentence = [i];
         list += '<dt>' + sentence[0] + '</dt>';
         list += '<dd>' + sentence[1] + '</dd>';
       }
@@ -149,18 +144,16 @@ $(function(){
     }
   });
 
-  // handle models changes (after OL) 
-  casmacat.on('modelchange', function(obj) {
-    console.log('models:', obj.data);
+  // Handle models changes (after OL) 
+  casmacat.on('validateResult', function(data, err) {
+    //console.log('models:', data);
     $('#btn-update').val('Update').attr('disabled', false);
   });
   
 
-  /*******************************************************************************/
-  /*           handle UI events                                                  */
-  /*******************************************************************************/
+  // UI events -----------------------------------------------------------------
 
-  // helper function to limit the number of server requests
+  // Helper function to limit the number of server requests;
   // at least throttle_ms have to pass for events to trigger 
   var throttle_ms = 50;
   var throttle = (function(){
@@ -170,8 +163,7 @@ $(function(){
       timer = setTimeout(callback, ms);
     };
   })();
-
-
+  
   // #source and #target events
   // caretenter is a new event from jquery.editable that is triggered
   // whenever the caret enters in a new token span
@@ -202,15 +194,10 @@ $(function(){
       throttle(function() {
         if (data.str != source) {
           var query = {
-            action: "getContribution",
-            id_segment: 607906,
-            // since we are listeing on keypress, source must include last typed char
-            text: source,
-            id_job: 1135,
-            num_results: 2,
-            id_translator: "me!"
+            source: source,
+            //num_results: 2,
           }
-          casmacat.translate(query);
+          casmacat.decode(query);
         }
       }, throttle_ms);
     }
@@ -246,19 +233,11 @@ $(function(){
       console.log("reject suffix:", pos, tokpos);
       */
 
-      var query = {
-        action: "rejectSuffix",
-        id_segment: 607906,
-        text: source,
-        // since we are listening on keypress, target must include last typed char
+      casmacat.rejectSuffix({
         target: target,
-        caret_pos: pos,
-        id_job: 1135,
-        num_results: 2,
-        id_translator: "me!"
-      }
-
-      casmacat.rejectSuffix(query);
+        caretPos: pos,
+        numResults: 1,
+      });
     }
   };
 
@@ -303,20 +282,13 @@ $(function(){
       throttle(function () {
         if (data.str != target) {
           var query = {
-            action: "getTokens",
-            id_segment: 607906,
-            text: source,
-            // since we are listening on keypress, target must include last typed char
             target: target,
-            caret_pos: pos,
-            id_job: 1135,
-            num_results: 2,
-            id_translator: "me!"
+            caretPos: pos,
+            numResults: 1
           }
           //casmacat.getTokens(query);
           //console.log("query prefix:", query.target);
           if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
-            query.action = "getSuggestions";
             casmacat.setPrefix(query);
           }
         }
@@ -348,7 +320,7 @@ $(function(){
   });
 
   $('#btn-updatedsentences').click(function(e) {
-    casmacat.getUpdatedSentences();
+    casmacat.getValidatedContributions();
   });
   
   $('#btn-reset').click(function(e) {
@@ -376,30 +348,22 @@ $(function(){
   $('#btn-translate').click(function(e) {
     $('#target').editable('setText', "");
     var query = {
-      action: "getContribution",
-      id_segment: 607906,
-      text: $('#source').text(),
-      id_job: 1135,
-      num_results: 2,
-      id_translator: "me!"
+      source: $('#source').text(),
+      //num_results: 2,
     }
-    casmacat.translate(query);
+    casmacat.decode(query);
     $(this).val("Loading...").attr("disabled", true);
+    
     mw.invalidate();
   });
 
   $('#btn-update').click(function(e) {
     $(this).val('Updating...').attr('disabled', true);
     var query = {
-      action: "update",
-      id_segment: 607906,
-      text: $('#source').text(),
+      source: $('#source').text(),
       target: $('#target').text(),
-      id_job: 1135,
-      num_results: 2,
-      id_translator: "me!"
     }
-    casmacat.update(query);
+    casmacat.validate(query);
   });
 
   $('#show-options input').change(function() {
@@ -425,14 +389,9 @@ $(function(){
 
   function startImt(txt) {
     var query = {
-      action: "startImtSession",
-      id_segment: 607906,
-      text: txt,
-      id_job: 1135,
-      num_results: 2,
-      id_translator: "me!"
+      source: txt
     }
-    casmacat.startImtSession(query);
+    casmacat.startSession(query);
   };
 
 
@@ -443,47 +402,40 @@ $(function(){
 
   
   function update_suggestions(data) {
-    $target = $('#target');
-    var d = $target.editable('getCaretXY');
-    var targetText = $target.text();
-    
-    var show_type = $('input[@name=show]:checked').val();
-
-    var count = 0;
-    var list = $('<dl/>');
-    for (var i = 0; i < data.matches.length; i++) {
-      var match = data.matches[i];
+    var $target = $('#target'), 
+        targetText = $target.text(),
+        d = $target.editable('getCaretXY'),
+        show_type = $('input[@name=show]:checked').val(),
+        count = 0,
+        list = $('<dl/>');
+        
+    for (var i = 0; i < data.nbest.length; i++) {
+      var match = data.nbest[i];
       // XXX: If prediction came from click in the middle of a token, then the
       // sentence is not updated; since the following condition does not match:
       // The prefix in the sentence does not match the prefix in the prediction.
-      if (targetText.substr(0, d.pos) === match.translation.substr(0, d.pos)) {
-        if (show_type === match.created_by) {
-          $target.editable('setText', match.translation, match.translationTokens);
+      if (targetText.substr(0, d.pos) === match.target.substr(0, d.pos)) {
+        if (show_type === match.author) {
+          $target.editable('setText', match.target, match.targetSegmentation);
 
-          if (match.wordPriority) {
-            update_word_priority_display($target, match.wordPriority);
+          if (match.priorities) {
+            update_word_priority_display($target, match.priorities);
           }
       
           // requests the server for new alignment and confidence info
-          source = $('#source').editable('getText');
           var query = {
-            action: "getAlignments",
-            id_segment: 607906,
-            text: source,
-            target: match.translation,
-            validated_words: [],
-            id_job: 1135,
-            num_results: 2,
-            id_translator: "me!"
+            source: $('#source').editable('getText'),
+            target: match.target,
           }
-          if ($('#opt-alignments').is(':checked')) casmacat.getAlignments(query);
-          
-          query.action = "getWordConfidences";
-          if ($('#opt-confidences').is(':checked')) casmacat.getWordConfidences(query);
-        }
-        else if ($('#opt-suggestions').is(':checked')) {
-          list.append($('<dt/>').text(match.created_by));
-          list.append($('<dd/>').text(match.translation.substr(d.pos)));
+          if ($('#opt-alignments').is(':checked')) {
+            casmacat.getAlignments(query);
+          }
+          if ($('#opt-confidences').is(':checked')) {
+            casmacat.getConfidences(query);
+          }
+        } else if ($('#opt-suggestions').is(':checked')) {
+          list.append($('<dt/>').text(match.author));
+          list.append($('<dd/>').text(match.target.substr(d.pos)));
           count++;
         }
       }
@@ -492,59 +444,56 @@ $(function(){
     if (count > 0 && $('#btn-epen > img').data('mode') !== 'epen') {
       var ofs = 50, pos = $target.offset(), siz = { width: $target.width() + ofs, height: $target.height() + ofs*2 };
       $('#suggestions').css({top: d.caretRect.bottom, left: d.caretRect.left - siz.width/2, visibility: 'visible'}).html(list);
-      //$('#target').editable('setText', target, target_seg);
+      //$('#target').editable('setText', target, targetSegmentation);
     }
     else {
       $('#suggestions').css({'visibility': 'hidden'}).html('');
     }
-  }
+  };
 
 
   // updates the translation display and queries for new alignments and word confidences
   function update_translation_display(data) {
-    var source = data.text
-      , source_seg = data.textTokens
-      , target = data.translatedText
-      , target_seg = data.translatedTextTokens;
-
+    var bestResult = data.nbest[0];
+    var source     = data.source,
+        sourceSeg  = data.sourceSegmentation,
+        target     = bestResult.target,
+        targetSeg  = bestResult.targetSegmentation;
+    
     // sets the text in the editable div. It tokenizes the sentence and wraps tokens in spans
-    $('#source').editable('setText', source, source_seg);
-    $('#target').editable('setText', target, target_seg);
+    $('#source').editable('setText', source, sourceSeg);
+    $('#target').editable('setText', target, targetSeg);
 
     // resizes the alignment matrix in a smoothed manner but it does not fill missing alignments 
     // (makes a diff between previous and current tokens and inserts/replaces/deletes columns and rows)
-    updateTable($('#demo-table'), tokenize_by_segments(source, source_seg), tokenize_by_segments(target, target_seg));
+    updateTable($('#demo-table'), tokenize_by_segments(source, sourceSeg), tokenize_by_segments(target, targetSeg));
 
     // requests the server for new alignment and confidence info
     var query = {
-      action: "getAlignments",
-      id_segment: 607906,
-      text: source,
+      source: source,
       target: target,
-      validated_words: [],
-      id_job: 1135,
-      num_results: 2,
-      id_translator: "me!"
+      //validated_words: []
     }
-
-    if ($('#opt-alignments').is(':checked')) casmacat.getAlignments(query);
-    
-    query.action = "getWordConfidences";
-    if ($('#opt-confidences').is(':checked')) casmacat.getWordConfidences(query);
-  }
+    if ($('#opt-alignments').is(':checked')) {
+      casmacat.getAlignments(query);
+    }
+    if ($('#opt-confidences').is(':checked')) {
+      casmacat.getConfidences(query);
+    }
+  };
 
 
   // get the aligned html ids for source and target tokens
   function get_alignment_ids(alignments, sourcespans, targetspans) {
     // sourceal stores ids of target spans aligned to it
-    var sourceal = new Array();
+    var sourceal = [];
     sourceal.length = alignments.length;
-    for (var c = 0; c < alignments.length; ++c) sourceal[c] = new Array();
+    for (var c = 0; c < alignments.length; ++c) sourceal[c] = [];
 
     // targetal stores ids of source spans aligned to it
-    var targetal = new Array();
+    var targetal = [];
     targetal.length = alignments[0].length;
-    for (var v = 0; v < alignments[0].length; ++v) targetal[v] = new Array();
+    for (var v = 0; v < alignments[0].length; ++v) targetal[v] = [];
     
     for (var c = 0; c < alignments.length; ++c) {
       var alignment = alignments[c];          
@@ -557,7 +506,7 @@ $(function(){
     }
     
     return {sourceal: sourceal, targetal: targetal};	  	
-  }
+  };
 
   // add alignment events so that aligned words are highlighted
   function add_alignment_events(spans, aligids) {
@@ -581,7 +530,7 @@ $(function(){
         }
       });
     } 
-  }
+  };
 
   // update the alignments in the alignment matrix
   function update_aligment_matrix(alignments) {
@@ -593,11 +542,12 @@ $(function(){
           .css('background-color', grayColor(alignment[v]));
       }        
     }
-  }
+  };
 
   // updates the alignment display with new alignment info      
-  function update_alignment_display(alignments, source, source_seg, target, target_seg) {
+  function update_alignment_display(alignments, source, sourceSegmentation, target, targetSegmentation) {
     // make sure new data still applies to current text
+    console.log(arguments)
     if (!(alignments.length > 0 && alignments[0].length > 0)) return;
     if (source !== $('#source').editable('getText')) return;
     if (target !== $('#target').editable('getText')) return;
@@ -621,7 +571,7 @@ $(function(){
     if ($('#opt-alignments').is(':checked') && $('#matrix').is(":visible")) {
       update_aligment_matrix(alignments);
     }
-  }
+  };
 
 
   function update_word_priority_display($target, priorities) {
@@ -645,7 +595,7 @@ $(function(){
  
   var confThreshold = {};
   // updates the confidence display with new confidence info      
-  function update_word_confidences_display(sent, confidences, source, source_seg, target, target_seg) {
+  function update_word_confidences_display(sent, confidences, source, sourceSegmentation, target, targetSegmentation) {
     // make sure new data still applies to current text
     if (source !== $('#source').editable('getText')) return;
     if (target !== $('#target').editable('getText')) return;
@@ -673,7 +623,7 @@ $(function(){
       // also update bottom of alignment matrix with values
       $("#demo-table tfoot tr td:eq("+(c+1)+")").text(conf);
     }
-  }
+  };
       
   function grayColor(num) {
     var color = 255 - Math.floor(num * 255);
@@ -719,7 +669,7 @@ $(function(){
 
         nins++;
       }
-    }
+    };
 
     var ndel = 0, nins = 0;
     for (var ml = 0; ml < tgt_merge.length; ml++) {
@@ -885,7 +835,7 @@ $(function(){
     $canvas.attr('width', $canvas.width());
     $canvas.attr('height', $canvas.height());
     //$canvas.sketchable('clear');
-  }
+  };
 
   function trimText(text, numWords, delimiter) {
     if (!numWords)  numWords  = 5;
@@ -902,7 +852,7 @@ $(function(){
     }
 
     return trimmed;
-  }
+  };
 
   // This function only works with keypress events
   function isPrintableChar(evt) {
@@ -912,7 +862,7 @@ $(function(){
       return evt.which == 32 || evt.which == 13 || evt.which > 46;
     }
     return false;
-  }
+  };
 
   function blockUI(msg) {
     $('#global').block({
@@ -920,10 +870,11 @@ $(function(){
       centerY: false, // Fix weird position issue in some modern browsers
       css: { fontSize:'150%', padding:'1% 2%', top:'45%', borderWidth:'3px', borderRadius:'10px', '-webkit-border-radius':'10px', '-moz-border-radius':'10px' }
     });  
-  }
+  };
+  
   function unblockUI() {
     $('#global').unblock();
-  }
+  };
 
 
   /*******************************************************************************/
@@ -938,7 +889,9 @@ $(function(){
     updatePrioritySlider();
     toggleControlPanel();
     $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
-    casmacat.ping(new Date().getTime());
+    casmacat.ping({
+      ms: new Date().getTime()
+    });
     casmacat.getServerConfig();
   });
   

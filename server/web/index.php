@@ -36,13 +36,14 @@ function trim_text($text, $words = 5)
   </script>
   <script type="text/javascript" data-main="js/" src="js/require.min.js"></script>
   <script type="text/javascript" src="js/jquery.min.js"></script>
-  <script type="text/javascript" src="js/jquery-ui.min.js"></script>  
-  <script type="text/javascript" src="js/socket.io.js"></script>
-  <script type="text/javascript" src="js/casmacat.js"></script>
+  <script type="text/javascript" src="js/jquery-ui.min.js"></script>
   <?php if (!empty($_GET['htr-server'])) { ?>
     <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
     <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
   <?php } ?>
+  <script type="text/javascript" src="js/socket.io.js"></script>
+  <script type="text/javascript" src="js/catclient.js"></script>
+  <script type="text/javascript" src="js/predictivecatclient.js"></script>
   <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
 </head>
 <body>

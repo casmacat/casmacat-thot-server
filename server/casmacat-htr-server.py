@@ -210,12 +210,12 @@ class HtrConnection(SocketConnection):
       print >> logfd, """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
       self.emit(*args, **kwargs)
 
-    @event('start_htr_session')
-    @timer('start_htr_session')
-    @thrower('htrerror')
+    @event('startSession')
+    @timer('startSession')
+    @thrower('startSessionResult')
     def start_htr_session(self, data):
       source, target = to_utf8(data['source']), to_utf8(data['target'])
-      caret_pos = data['caret_pos']
+      caret_pos = data['caretPos']
       if self.htr_session: 
         htr.deleteSession(self.htr_session)
         self.htr_session = None
@@ -239,21 +239,27 @@ class HtrConnection(SocketConnection):
         last_token_is_partial = True
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
 
+      start_time = datetime.datetime.now()
       #self.htr_session = htr.createSessionFromPrefix(source_tok, prefix_tok, suffix_tok, last_token_is_partial)
       self.htr_session = htr.createSessionFromPrefix([], [], [], False)
       self.strokes = []
+      elapsed_time = datetime.datetime.now() - start_time
+      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      self.respond('startSessionResult', { 'errors': [], 'data': obj })
 
-    @event('add_stroke')
-    @timer('add_stroke')
-    @thrower('htrupdate')
+
+    @event('addStroke')
+    @timer('addStroke')
+    @thrower('addStrokeResult')
     def add_stroke(self, data):
-      points, is_pen_down = data['points'], data['is_pen_down']
+      points, is_pen_down = data['points'], True
       if self.htr_session:
         self.strokes.append((points, is_pen_down)) 
         for x, y, _ in points:
             self.htr_session.addPoint(x, y, True)
         self.htr_session.addPoint(0, 0, False)
         
+        obj = { 'elapsedTime': 0 }
         if do_partial_recognition:
             start_time = datetime.datetime.now()
             has_partial, partial_result_tok = self.htr_session.decodePartially()
@@ -263,17 +269,20 @@ class HtrConnection(SocketConnection):
               print >> sys.stderr, "update", partial_result_tok
 
               obj = { 'text': partial_result, 
-                      'text_seg': partial_result_seg, 
-                      'is_partial': True,
-                      'elapsed_time': elapsed_time.total_seconds()*1000.0
+                      'textSegmentation': partial_result_seg, 
+                      'elapsedTime': elapsed_time.total_seconds()*1000.0
                     }
-              self.respond('htrupdate', { 'errors': [], 'data': obj })
+
+        self.respond('addStrokeResult', { 'errors': [], 'data': obj })
+      else: 
+        self.respond('addStrokeResult', { 'errors': [ 'HTR session not started' ], 'data': None })
 
 
-    @event('end_htr_session')
-    @timer('end_htr_session')
-    @thrower('end_htr_session_error')
-    def end_htr_session(self):
+
+    @event('endSession')
+    @timer('endSession')
+    @thrower('endSessionResult')
+    def endSession(self):
       if self.htr_session: 
           start_time = datetime.datetime.now()
           result_tok = self.htr_session.decode()
@@ -282,11 +291,10 @@ class HtrConnection(SocketConnection):
           result, result_seg = tokenizer.postprocess(result_tok)
 
           obj = { 'text': result, 
-                  'text_seg': result_seg, 
-                  'is_partial': False,
-                  'elapsed_time': elapsed_time.total_seconds()*1000.0
+                  'textSegmentation': result_seg, 
+                  'elapsedTime': elapsed_time.total_seconds()*1000.0
                 }
-          self.respond('htrchange', { 'errors': [], 'data': obj })
+          self.respond('endSessionResult', { 'errors': [], 'data': obj })
 
 
           htr.deleteSession(self.htr_session)

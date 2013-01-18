@@ -105,69 +105,53 @@ class MyLogger(Logger):
     
 logger = MyLogger()
 
-def new_match(created_by, source, source_seg, target, target_seg, elapsed_time):
+def new_match(created_by, target, target_seg, elapsed_time):
   match = {}
-  match['id'] = random.randint(0,100000)
-  match['segment'] = source 
-  match['segmentTokens'] = source_seg
-  match['translation'] = target
-  match['translationTokens'] = target_seg
-  match['raw_translation'] = target
+  match['target'] = target
+  match['targetSegmentation'] = target_seg
   match['quality'] = 75
   if created_by == 'OL':
     match['quality'] = 70
-  match['created_by'] = created_by
-  match['create_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
-  match['last_update_by'] = "me!" 
-  match['last_update_date'] = match['create_date'] 
-  match['match'] = 85
-  match['reference'] = source 
-  match['usage_count'] = 1
-  match['subject'] = "Printer Manuals"
-  match['elapsed_time'] = elapsed_time.total_seconds()*1000.0
+  match['author'] = created_by
+  match['elapsedTime'] = elapsed_time.total_seconds()*1000.0
   return match
 
 def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
   match = {}
-  match['id'] = random.randint(0,100000)
-  match['translation'] = prediction
-  match['translationTokens'] = prediction_seg
+  match['target'] = prediction
+  match['targetSegmentation'] = prediction_seg
   match['quality'] = 75
   if created_by == 'OL':
     match['quality'] = 70
-  match['created_by'] = created_by
-  match['create_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
-  match['last_update_by'] = "me!" 
-  match['last_update_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S') 
-  match['match'] = 85
-  match['usage_count'] = 1
-  match['subject'] = "Printer Manuals"
-  match['elapsed_time'] = elapsed_time.total_seconds()*1000.0
+  match['author'] = created_by
+  match['elapsedTime'] = elapsed_time.total_seconds()*1000.0
   return match
 
 def new_contributions(source, source_seg):
   data = {}
-  data['text'] = source
-  data['textTokens'] = source_seg
-  data['matches'] = []
+  data['source'] = source
+  data['sourceSegmentation'] = source_seg
+  data['nbest'] = []
   return { 'errors': [], 'data': data }
 
-def new_predictions(target, caret_pos):
+def new_predictions(source, source_seg, caret_pos):
   data = {}
-  data['previousText'] = target 
+  data['source'] = source
+  data['sourceSegmentation'] = source_seg
   data['caretPos'] = caret_pos 
-  data['matches'] = []
+  data['nbest'] = []
   return { 'errors': [], 'data': data }
 
 def add_match(obj, match):
-  obj['data']['matches'].append(match)
+  obj['data']['nbest'].append(match)
 
 def prepare(obj):
-  if len(obj['data']['matches']) > 0:
-    obj['data']['matches'].sort(key=lambda match: match['quality'], reverse=True)
-    print obj['data']['matches']
-    obj['data']['translatedText'] = obj['data']['matches'][0]['translation']
-    obj['data']['translatedTextTokens'] = obj['data']['matches'][0]['translationTokens']
+  obj['data']['elapsedTime'] = sum([m['elapsedTime'] for m in obj['data']['nbest']])
+  if len(obj['data']['nbest']) > 0:
+    obj['data']['nbest'].sort(key=lambda match: match['quality'], reverse=True)
+    #print obj['data']['nbest']
+    #obj['data']['translatedText'] = obj['data']['nbest'][0]['translation']
+    #obj['data']['translatedTextTokens'] = obj['data']['nbest'][0]['translationTokens']
 
 
 ROOT = os.path.normpath(os.path.dirname(__file__))
@@ -213,13 +197,12 @@ class CasmacatConnection(SocketConnection):
       print >> logfd, """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
       self.emit(*args, **kwargs)
 
-#class AlignerConnection(SocketConnection):
-    @event('get_alignments')
-    @timer('get_alignments')
-    @thrower('alignmentchange')
-    def get_alignments(self, data):
+    @event('getAlignments')
+    @timer('getAlignments')
+    @thrower('getAlignmentsResult')
+    def getAlignments(self, data):
       print 'data:', data
-      source, target = to_utf8(data['text']), to_utf8(data['target'])
+      source, target = to_utf8(data['source']), to_utf8(data['target'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
       target_tok, target_seg = models.tokenizer.preprocess(target)
 
@@ -228,71 +211,66 @@ class CasmacatConnection(SocketConnection):
       elapsed_time = datetime.datetime.now() - start_time
       
       logger.log(DEBUG_LOG, matrix);
-      obj = { 'matrix': matrix, 
+      obj = { 'alignments': matrix, 
               'source': source, 
-              'source_seg': source_seg, 
+              'sourceSegmentation': source_seg, 
               'target': target, 
-              'target_seg': target_seg,
-              'elapsed_time': elapsed_time.total_seconds()*1000.0
+              'targetSegmentation': target_seg,
+              'elapsedTime': elapsed_time.total_seconds()*1000.0
             }
-      self.respond('alignmentchange', { 'errors': [], 'data': obj })
+      self.respond('getAlignmentsResult', { 'errors': [], 'data': obj })
 
-#class ProcessorConnection(SocketConnection):
-    @event('get_tokens')
-    @timer('get_tokens')
-    @thrower('translationchange')
-    def get_tokens(self, data):
+    @event('getTokens')
+    @timer('getTokens')
+    @thrower('getTokensResult')
+    def getTokens(self, data):
       print 'data:', data
-      source, target = to_utf8(data['text']), to_utf8(data['target'])
+      source, target = to_utf8(data['source']), to_utf8(data['target'])
 
       start_time = datetime.datetime.now()
       source_tok, source_seg = models.tokenizer.preprocess(source)
       target_tok, target_seg = models.tokenizer.preprocess(target)
       elapsed_time = datetime.datetime.now() - start_time
 
-      contributions = new_contributions(source, source_seg)
-      add_match(contributions, new_match('tokenizer', source, source_seg, target, target_seg, elapsed_time))
+      obj = { 
+              'source': source, 
+              'sourceSegmentation': source_seg, 
+              'target': target, 
+              'targetSegmentation': target_seg,
+              'elapsedTime': elapsed_time.total_seconds()*1000.0
+            }
+      self.respond('getTokensResult', { 'errors': [], 'data': obj })
 
-      prepare(contributions)
-      self.respond('translationchange', contributions)
 
-
-#class WordConfidenceConnection(SocketConnection):
-#    @event
-#    def get_translation_confidence(self, source, target, validated_words):
-#      source, target = to_utf8(source), to_utf8(target)
-#      source_tok, source_seg = tokenizer.preprocess(source)
-#      target_tok, target_seg = tokenizer.preprocess(target)
-#      conf = confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
-#      self.respond('confidencechange', conf, source, source_seg, target, target_seg)
-
-    @event('get_word_confidences')
-    @timer('get_word_confidences')
-    @thrower('confidencechange')
-    def get_word_confidences(self, data):
+    @event('getConfidences')
+    @timer('getConfidences')
+    @thrower('getConfidencesResult')
+    def getConfidencesResult(self, data):
       print 'data:', data
-      source, target = to_utf8(data['text']), to_utf8(data['target'])
+      source, target = to_utf8(data['source']), to_utf8(data['target'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
       target_tok, target_seg = models.tokenizer.preprocess(target)
+      if 'validatedTokens' not in data: data['validatedTokens'] = []
 
       start_time = datetime.datetime.now()
       validated_words = [] 
-      diff = len(target_tok) - len(data['validated_words']) 
-      if diff >= 0: validated_words = data['validated_words']
+      diff = len(target_tok) - len(data['validatedTokens']) 
+      if diff >= 0: validated_words = data['validatedTokens']
       validated_words.extend([False]*diff)
       sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, validated_words)
       elapsed_time = datetime.datetime.now() - start_time
 
-      obj = { 'quality': sent, 
-        'word_confidences': conf, 
+      obj = { 
+        'quality': sent, 
+        'confidences': conf, 
         'source': source, 
-        'source_seg': source_seg, 
+        'sourceSegmentation': source_seg, 
         'target': target, 
-        'target_seg': target_seg, 
-        'elapsed_time': elapsed_time.total_seconds()*1000.0
+        'targetSegmentation': target_seg, 
+        'elapsedTime': elapsed_time.total_seconds()*1000.0
       }
       print 'confidences:', obj
-      self.respond('confidencechange', { 'errors': [], 'data': obj })
+      self.respond('getConfidencesResult', { 'errors': [], 'data': obj })
 
 #class MtConnection(SocketConnection):
 # receives:
@@ -309,7 +287,7 @@ class CasmacatConnection(SocketConnection):
 #{
 #  "errors": [],
 #  "data": {
-#    "matches": [{
+#    "nbest": [{
 #      "id": "22300943",
 #      "segment": "Path:",
 #      "translation": "Chemin :",
@@ -340,12 +318,12 @@ class CasmacatConnection(SocketConnection):
 #    }]
 #  }
 #}
-    @event('translate')
-    @timer('translate')
-    @thrower('contributionchange')
-    def translate(self, data):
+    @event('decode')
+    @timer('decode')
+    @thrower('decodeResult')
+    def decode(self, data):
       print 'data:', data
-      source = to_utf8(data['text'])
+      source = to_utf8(data['source'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
       contributions = new_contributions(source, source_seg)
 
@@ -358,56 +336,69 @@ class CasmacatConnection(SocketConnection):
           elapsed_time = datetime.datetime.now() - start_time
   
           target, target_seg = models.tokenizer.postprocess(target_tok)
-          match = new_match(name, source, source_seg, target, target_seg, elapsed_time)
+          match = new_match(name, target, target_seg, elapsed_time)
           add_match(contributions, match)
             
 
       prepare(contributions)
-      self.respond('contributionchange', contributions)
+      self.respond('decodeResult', contributions)
 
-    @event('update')
-    @timer('update')
-    @thrower('modelchange')
-    def update(self, data):
-      source = to_utf8(data['text'])
+    @event('validate')
+    @timer('validate')
+    @thrower('validateResults')
+    def validate(self, data):
+      source = to_utf8(data['source'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
       target = to_utf8(data['target'])
       target_tok, target_seg = models.tokenizer.preprocess(target)
+      start_time = datetime.datetime.now()
       for name, ol in models.ol_systems.iteritems():
         ol.update(source_tok, target_tok)
-      models.updates.append((source, target))
-      self.respond('modelchange', { 'errors': [], 'data': { 'num_updates': len(models.updates) } })
+      elapsed_time = datetime.datetime.now() - start_time
+      models.updates.append({'source': source, 'target': target})
+      obj = { 'elapsedTime': elapsed_time }
+      self.respond('validateResults', { 'errors': [], 'data': obj })
 
-    @event('get_updated_sentences')
-    @timer('get_updated_sentences')
-    def get_updated_sentences(self):
-      self.respond('updateschange', { 'errors': [], 'data': { 'updates': models.updates } })
+    @event('getValidatedContributions')
+    @timer('getValidatedContributions')
+    @thrower('getValidatedContributionsResult')
+    def getValidatedContributions(self):
+      obj = { 'contributions': models.updates, 'elapsedTime': 0 }
+      self.respond('getValidatedContributionsResult', { 'errors': [], 'data': obj })
 
 
 #class ImtConnection(SocketConnection):
-    @event('start_imt_session')
-    @timer('start_imt_session')
-    def start_imt_session(self, data):
+    @event('startSession')
+    @timer('startSession')
+    @thrower('startSessionResult')
+    def startSession(self, data):
       print 'data:', data
-      source = to_utf8(data['text'])
+      self.source = to_utf8(data['source'])
       for name, session in self.imt_session.iteritems():
           models.imt_systems[name].deleteSession(session)
       self.imt_session = {} 
 
-      source_tok, source_seg = models.tokenizer.preprocess(source)
+      source_tok, source_seg = models.tokenizer.preprocess(self.source)
       self.source_tok, self.source_seg = source_tok, source_seg
       logger.log(DEBUG_LOG, "starting imt session with " + str(source_tok));
+
+      start_time = datetime.datetime.now()
       for name, imt in models.imt_systems.iteritems():
         if name == self.config['mode'] or self.config['suggestions']:
           self.imt_session[name] = imt.newSession(source_tok)
+      elapsed_time = datetime.datetime.now() - start_time
+
+      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      self.respond('startSessionResult', { 'errors': [], 'data': obj })
         
-    @event('set_prefix')
-    @timer('set_prefix')
-    @thrower('predictionchange')
-    def set_prefix(self, data):
+    @event('setPrefix')
+    @timer('setPrefix')
+    @thrower('setPrefixResult')
+    def setPrefix(self, data):
       print 'data:', data
       target = data['target']
-      caret_pos = data['caret_pos']
+      caret_pos = data['caretPos']
+      num_results = data['numResults'] if 'numResults' in data else 0
 
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target))
 
@@ -425,7 +416,7 @@ class CasmacatConnection(SocketConnection):
         last_token_is_partial = False
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
 
-      predictions = new_predictions(target, caret_pos)
+      predictions = new_predictions(self.source, self.source_seg, caret_pos)
       
       for name, session in self.imt_session.iteritems():
         if name == self.config['mode'] or self.config['suggestions']:
@@ -443,20 +434,21 @@ class CasmacatConnection(SocketConnection):
               n_ok -= 1
             validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
             priority = models.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
-            match["wordPriority"] = priority
+            match["priorities"] = priority
 
           add_match(predictions, match)
       prepare(predictions)
       print >> sys.stderr, "SUGGESTIONS:", predictions
-      self.respond('predictionchange', predictions)
+      self.respond('setPrefixResult', predictions)
 
-    @event('reject_suffix')
-    @timer('reject_suffix')
-    @thrower('predictionchange')
-    def reject_prefix(self, data):
+    @event('rejectSuffix')
+    @timer('rejectSuffix')
+    @thrower('rejectSuffixResult')
+    def rejectSuffix(self, data):
       print 'data:', data
       target = data['target']
-      caret_pos = data['caret_pos']
+      caret_pos = data['caretPos']
+      num_results = data['numResults'] if 'numResults' in data else 0
 
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target))
 
@@ -474,7 +466,7 @@ class CasmacatConnection(SocketConnection):
         last_token_is_partial = False
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
 
-      predictions = new_predictions(target, caret_pos)
+      predictions = new_predictions(self.source, self.source_seg, caret_pos)
       
       for name, session in self.imt_session.iteritems():
         if name == self.config['mode'] or self.config['suggestions']:
@@ -497,44 +489,52 @@ class CasmacatConnection(SocketConnection):
           add_match(predictions, match)
       prepare(predictions)
       print >> sys.stderr, "SUGGESTIONS:", predictions
-      self.respond('predictionchange', predictions)
+      self.respond('rejectSuffixResult', predictions)
 
-    @event('end_imt_session')
-    @timer('end_imt_session')
-    def end_imt_session(self):
+    @event('endSession')
+    @timer('endSession')
+    @thrower('endSessionResult')
+    def endSessionResult(self):
       for name, session in self.imt_session.iteritems():
           models.imt_systems[name].deleteSession(session)
       self.imt_session = {} 
       logger.log(DEBUG_LOG, "ending imt session");
 
+      elapsed_time = datetime.datetime.now() - start_time
+      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      self.respond('endSessionResult', { 'errors': [], 'data': obj })
+
     @event('reset')
     @timer('reset')
-    @thrower('serverready')
+    @thrower('resetResult')
     def reset(self):
       start_time = datetime.datetime.now()
       models.reset()
       elapsed_time = datetime.datetime.now() - start_time
-      
-      obj = { 'msg':  'the server is ready',
-              'elapsed_time': elapsed_time.total_seconds()*1000.0 
-             }
-      self.respond('serverready', { 'errors': [], 'data': obj })
+      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      self.respond('resetResult', { 'errors': [], 'data': obj })
 
     @event('configure')
     @timer('configure')
+    @thrower('configureResult')
     def configure(self, data):
       self.config = data
       print >> sys.stderr, self.config 
+      self.respond('configureResult', { 'errors': [], 'data': data })
 
-    @event('get_server_config')
-    @timer('get_server_config')
-    def get_server_config(self):
-      self.respond('configurationchange', { 'errors': [], 'config': models.config })
+    @event('getServerConfig')
+    @timer('getServerConfig')
+    @thrower('getServerConfigResult')
+    def getServerConfig(self):
+      obj = {'config': models.config, 'elapsedTime': 0 }
+      self.respond('getServerConfigResult', { 'errors': [], 'data': obj })
 
     @event('ping')
     @timer('ping')
+    @thrower('pingResult')
     def ping(self, data):
-      self.respond('pong', data)
+      data['elapsedTime'] = 0
+      self.respond('pingResult', { 'errors': [], 'data': data })
 
 #class LoggerConnection(SocketConnection, Logger):
     @event
