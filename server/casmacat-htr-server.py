@@ -100,7 +100,7 @@ class thrower(object):
         return function(*args, **kwargs)
       except Exception, e:
         if self.emission:
-          args[0].respond(self.emission, { 'function': self.name, 'errors': [traceback.format_exc()], 'data': None })
+          args[0].respond(self.emission, { 'function': self.emission, 'errors': [traceback.format_exc()], 'data': None })
         print traceback.format_exc()
         #raise
     return decorator
@@ -122,71 +122,6 @@ class MyLogger(Logger):
       p.respond('receive_log', msg)
     
 logger = MyLogger()
-
-def new_match(created_by, source, source_seg, target, target_seg, elapsed_time):
-  match = {}
-  match['id'] = random.randint(0,100000)
-  match['segment'] = source 
-  match['segmentTokens'] = source_seg
-  match['translation'] = target
-  match['translationTokens'] = target_seg
-  match['raw_translation'] = target
-  match['quality'] = 75
-  if created_by == 'OL':
-    match['quality'] = 70
-  match['created_by'] = created_by
-  match['create_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
-  match['last_update_by'] = "me!" 
-  match['last_update_date'] = match['create_date'] 
-  match['match'] = 85
-  match['reference'] = source 
-  match['usage_count'] = 1
-  match['subject'] = "Printer Manuals"
-  match['elapsed_time'] = elapsed_time.total_seconds()*1000.0
-  return match
-
-def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
-  match = {}
-  match['id'] = random.randint(0,100000)
-  match['translation'] = prediction
-  match['translationTokens'] = prediction_seg
-  match['quality'] = 75
-  if created_by == 'OL':
-    match['quality'] = 70
-  match['created_by'] = created_by
-  match['create_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
-  match['last_update_by'] = "me!" 
-  match['last_update_date'] = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S') 
-  match['match'] = 85
-  match['usage_count'] = 1
-  match['subject'] = "Printer Manuals"
-  match['elapsed_time'] = elapsed_time.total_seconds()*1000.0
-  return match
-
-def new_contributions(source, source_seg):
-  data = {}
-  data['text'] = source
-  data['textTokens'] = source_seg
-  data['matches'] = []
-  return { 'errors': [], 'data': data }
-
-def new_predictions(target, caret_pos):
-  data = {}
-  data['previousText'] = target 
-  data['caretPos'] = caret_pos 
-  data['matches'] = []
-  return { 'errors': [], 'data': data }
-
-def add_match(obj, match):
-  obj['data']['matches'].append(match)
-
-def prepare(obj):
-  if len(obj['data']['matches']) > 0:
-    obj['data']['matches'].sort(key=lambda match: match['quality'], reverse=True)
-    print obj['data']['matches']
-    obj['data']['translatedText'] = obj['data']['matches'][0]['translation']
-    obj['data']['translatedTextTokens'] = obj['data']['matches'][0]['translationTokens']
-
 
 ROOT = os.path.normpath(os.path.dirname(__file__))
 
@@ -213,7 +148,7 @@ class HtrConnection(SocketConnection):
     @event('startSession')
     @timer('startSession')
     @thrower('startSessionResult')
-    def start_htr_session(self, data):
+    def startHtrSession(self, data):
       source, target = to_utf8(data['source']), to_utf8(data['target'])
       caret_pos = data['caretPos']
       if self.htr_session: 
@@ -251,7 +186,7 @@ class HtrConnection(SocketConnection):
     @event('addStroke')
     @timer('addStroke')
     @thrower('addStrokeResult')
-    def add_stroke(self, data):
+    def addStroke(self, data):
       points, is_pen_down = data['points'], True
       if self.htr_session:
         self.strokes.append((points, is_pen_down)) 
