@@ -1,5 +1,5 @@
 <?php 
-if (empty($_GET['server'])) die('No server set: <a href="?server='.$_SERVER['SERVER_NAME'].':3019&htr-server='.$_SERVER['SERVER_NAME'].':3003">try this example</a>');
+if (empty($_GET['itp-server'])) die('No server set: <a href="?itp-server='.$_SERVER['SERVER_NAME'].':3019&htr-server='.$_SERVER['SERVER_NAME'].':3003">try this example</a>');
 
 // Helper function(s) FIXME: include from external file
 function trim_text($text, $words = 5) 
@@ -29,21 +29,22 @@ function trim_text($text, $words = 5)
   <!--<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>-->
   <script type="text/javascript" src="js/console.js"></script>
   <script type="text/javascript">
-  window.casmacatServer = "<?=$_GET['server']?>";
-  <?php if (!empty($_GET['htr-server'])) { ?>
-    window.casmacatHtrServer = "<?=$_GET['htr-server']?>";
-  <?php } ?>
+  var casmacat = {
+    itpServer: "<?=$_GET['itp-server']?>",
+    htrServer: "<?=$_GET['htr-server']?>",
+  }
   </script>
   <script type="text/javascript" data-main="js/" src="js/require.min.js"></script>
   <script type="text/javascript" src="js/jquery.min.js"></script>
   <script type="text/javascript" src="js/jquery-ui.min.js"></script>
-  <?php if (!empty($_GET['htr-server'])) { ?>
-    <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
-    <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
-  <?php } ?>
   <script type="text/javascript" src="js/socket.io.js"></script>
   <script type="text/javascript" src="js/catclient.js"></script>
   <script type="text/javascript" src="js/predictivecatclient.js"></script>
+  <?php if (!empty($_GET['htr-server'])) { ?>
+    <script type="text/javascript" src="js/htrclient.js"></script>
+    <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
+    <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
+  <?php } ?>  
   <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
 </head>
 <body>

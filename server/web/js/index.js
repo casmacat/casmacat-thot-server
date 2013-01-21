@@ -1,56 +1,60 @@
+if (typeof casmacat === 'undefined') throw "casmacat object not defined";
+
+var casmacatItp; // To be reused by other scripts
+
 $(function(){
  
   // Connect to a server; casmacat will receive async server responses
-  var casmacat = new PredictiveCatClient(true);
-  casmacat.connect('http://' + window.casmacatServer + '/casmacat');
+  casmacatItp = new PredictiveCatClient(true);
+  casmacatItp.connect('http://' + casmacat.itpServer + '/casmacat');
 
   // Socket.IO callbacks -------------------------------------------------------
   // See https://github.com/LearnBoost/socket.io/wiki/Exposed-events
-  casmacat.on('disconnect', function() {
+  casmacatItp.on('disconnect', function() {
     blockUI("Server disconnected");
-    this.socket.reconnect();
+    this.server.socket.reconnect();
   });
   
-  casmacat.on('reconnecting', function() { 
+  casmacatItp.on('reconnecting', function() { 
     blockUI("Reconnecting...");
   });
   
-  casmacat.on('reconnect_failed', function() { 
+  casmacatItp.on('reconnect_failed', function() { 
     blockUI("Reconnect failed");
   });
 
-  casmacat.on('reconnect', function() { 
+  casmacatItp.on('reconnect', function() { 
     unblockUI();
-    casmacat.configure({
+    casmacatItp.configure({
       suggestions: $('#opt-suggestions').is(':checked'), 
       mode: $('input[@name=show]:checked').val()
     });
   });
 
-  casmacat.on('anything', function(data) {
+  casmacatItp.on('anything', function(data) {
     console.info("anything:", obj);
   });
 
-  casmacat.on('message', function(msg, callback) {
+  casmacatItp.on('message', function(msg, callback) {
     console.info("message:", msg);
   });
   
   
   // CatClient callbacks -------------------------------------------------------
   
-  //casmacat.on('receiveLog', function(msg) { console.log('server says:', msg); });
+  //casmacatItp.on('receiveLog', function(msg) { console.log('server says:', msg); });
 
-  casmacat.on('resetResult', function(data, err) {
+  casmacatItp.on('resetResult', function(data, err) {
     unblockUI();
     var cfg = {
       suggestions: $('#opt-suggestions').is(':checked'), 
       mode: $('input[@name=show]:checked').val()
     };
-    casmacat.configure(cfg);
+    casmacatItp.configure(cfg);
   });
   
   // Handle translation responses
-  casmacat.on('decodeResult', function(data, err) {
+  casmacatItp.on('decodeResult', function(data, err) {
     var bestResult = data.nbest[0];
     // make sure new data still applies to current source
     if (data.source !== $('#source').editable('getText')) return;
@@ -69,7 +73,7 @@ $(function(){
   });
 
   // Handle post-editing (target has changed but not source)
-  casmacat.on('getTokensResult', function(data, err) {
+  casmacatItp.on('getTokensResult', function(data, err) {
     // make sure new data still applies to current source and target texts
     if (data.source !== $('#source').editable('getText')) return;
     if (data.target !== $('#target').editable('getText')) return;
@@ -80,19 +84,19 @@ $(function(){
   });
 
   // Handle alignment changes (updates highlighting and alignment matrix) 
-  casmacat.on('getAlignmentsResult', function(data, err) {
+  casmacatItp.on('getAlignmentsResult', function(data, err) {
     update_alignment_display(data.alignments, data.source, data.sourceSegmentation, data.target, data.targetSegmentation);
   });
 
   // Handle confidence changes (updates highlighting) 
-  casmacat.on('getConfidencesResult', function(data, err) {
+  casmacatItp.on('getConfidencesResult', function(data, err) {
     //var start_time = new Date().getTime();
     update_word_confidences_display(data.quality, data.confidences, data.source, data.sourceSegmentation, data.target, data.targetSegmentation);
     //console.log("update_word_confidences_display:", new Date().getTime() - start_time, obj.data.elapsed_time);
   });
 
   // Handle confidence changes (updates highlighting) 
-  casmacat.on(['setPrefixResult', 'rejectSuffixResult'], function(data, err) {
+  casmacatItp.on(['setPrefixResult', 'rejectSuffixResult'], function(data, err) {
     console.log('prediction changed', data);
     update_suggestions(data);
     
@@ -100,13 +104,13 @@ $(function(){
   });
 
   // Measure network latency
-  casmacat.on('pingResult', function(data, err) {
+  casmacatItp.on('pingResult', function(data, err) {
     console.log("Received ping:", new Date().getTime() - data.ms);
   });
 
 
   // Receive server configuration 
-  casmacat.on('getServerConfigResult', function(data, err) {
+  casmacatItp.on('getServerConfigResult', function(data, err) {
     var c = data.config;
     if (c) {
       if (c.sentences && c.sentences.length > 0) {
@@ -129,7 +133,7 @@ $(function(){
   });
 
   // Handle updates changes (show a list of updated sentences) 
-  casmacat.on('getValidatedContributionsResult', function(data, err) {
+  casmacatItp.on('getValidatedContributionsResult', function(data, err) {
     var contribs = data.contributions;
     console.log('Validated contributions:', contribs);
     if (contribs.length > 0) {
@@ -145,7 +149,7 @@ $(function(){
   });
 
   // Handle models changes (after OL) 
-  casmacat.on('validateResult', function(data, err) {
+  casmacatItp.on('validateResult', function(data, err) {
     //console.log('models:', data);
     $('#btn-update').val('Update').attr('disabled', false);
   });
@@ -197,7 +201,7 @@ $(function(){
             source: source,
             //num_results: 2,
           }
-          casmacat.decode(query);
+          casmacatItp.decode(query);
         }
       }, throttle_ms);
     }
@@ -233,7 +237,7 @@ $(function(){
       console.log("reject suffix:", pos, tokpos);
       */
 
-      casmacat.rejectSuffix({
+      casmacatItp.rejectSuffix({
         target: target,
         caretPos: pos,
         numResults: 1,
@@ -286,10 +290,10 @@ $(function(){
             caretPos: pos,
             numResults: 1
           }
-          //casmacat.getTokens(query);
+          //casmacatItp.getTokens(query);
           //console.log("query prefix:", query.target);
           if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
-            casmacat.setPrefix(query);
+            casmacatItp.setPrefix(query);
           }
         }
       }, throttle_ms);
@@ -320,13 +324,13 @@ $(function(){
   });
 
   $('#btn-updatedsentences').click(function(e) {
-    casmacat.getValidatedContributions();
+    casmacatItp.getValidatedContributions();
   });
   
   $('#btn-reset').click(function(e) {
     if (!window.confirm("Are you sure you want to reset the models?")) return;
     blockUI("Reseting server...");
-    casmacat.reset();
+    casmacatItp.reset();
   });
 
 /*
@@ -351,7 +355,7 @@ $(function(){
       source: $('#source').text(),
       //num_results: 2,
     }
-    casmacat.decode(query);
+    casmacatItp.decode(query);
     $(this).val("Loading...").attr("disabled", true);
     
     mw.invalidate();
@@ -363,7 +367,7 @@ $(function(){
       source: $('#source').text(),
       target: $('#target').text(),
     }
-    casmacat.validate(query);
+    casmacatItp.validate(query);
   });
 
   $('#show-options input').change(function() {
@@ -383,7 +387,7 @@ $(function(){
         break;
     }
     //if (!$('#target').is(':empty')) {
-      casmacat.configure({suggestions:$('#opt-suggestions').is(':checked'), mode:show_type});
+      casmacatItp.configure({suggestions:$('#opt-suggestions').is(':checked'), mode:show_type});
     //}
   });
 
@@ -391,14 +395,13 @@ $(function(){
     var query = {
       source: txt
     }
-    casmacat.startSession(query);
+    casmacatItp.startSession(query);
   };
 
 
   /*******************************************************************************/
   /*           update the HTML display and attach events                         */
   /*******************************************************************************/
-
 
   
   function update_suggestions(data) {
@@ -428,10 +431,10 @@ $(function(){
             target: match.target,
           }
           if ($('#opt-alignments').is(':checked')) {
-            casmacat.getAlignments(query);
+            casmacatItp.getAlignments(query);
           }
           if ($('#opt-confidences').is(':checked')) {
-            casmacat.getConfidences(query);
+            casmacatItp.getConfidences(query);
           }
         } else if ($('#opt-suggestions').is(':checked')) {
           list.append($('<dt/>').text(match.author));
@@ -454,7 +457,8 @@ $(function(){
 
   // updates the translation display and queries for new alignments and word confidences
   function update_translation_display(data) {
-    var bestResult = data.nbest[0];
+    // getTokens doesn't have nbest, so this check is required
+    var bestResult = data.nbest ? data.nbest[0] : data;
     var source     = data.source,
         sourceSeg  = data.sourceSegmentation,
         target     = bestResult.target,
@@ -475,10 +479,10 @@ $(function(){
       //validated_words: []
     }
     if ($('#opt-alignments').is(':checked')) {
-      casmacat.getAlignments(query);
+      casmacatItp.getAlignments(query);
     }
     if ($('#opt-confidences').is(':checked')) {
-      casmacat.getConfidences(query);
+      casmacatItp.getConfidences(query);
     }
   };
 
@@ -828,7 +832,7 @@ $(function(){
     $epen.css({
       top: pos.top - ofs,
       height: siz.height,
-      left: -1, // FIXME: Review this
+      left: 2, // FIXME: this Review
       width: siz.width,
     });
 
@@ -885,15 +889,22 @@ $(function(){
   
   require(["jquery.blockUI"], function(){
     blockUI("Connecting...");
-    updateConfidenceSlider();
-    updatePrioritySlider();
-    toggleControlPanel();
-    $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
-    casmacat.ping({
-      ms: new Date().getTime()
-    });
-    casmacat.getServerConfig();
+    //setTimeout(function(){
+      updateConfidenceSlider();
+      updatePrioritySlider();
+      toggleControlPanel();
+      $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
+      casmacatItp.ping({
+        ms: new Date().getTime()
+      });
+      casmacatItp.getServerConfig();
+      if (casmacat.htrServer) {
+        $('#btn-epen').click();
+      }
+    //}, 100);
   });
+  
+  // TODO: Load modules from here onwards --------------------------------------
   
   var mw;
   require(["jquery.mousewheel", "module.mousewheel"], function(){
@@ -913,10 +924,5 @@ $(function(){
       }
     });    
   });
-
-  
-  if (typeof casmacatHtrServer !== 'undefined') {
-    $('#btn-epen').click();
-  }
   
 });

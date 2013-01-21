@@ -2,15 +2,17 @@ if (typeof CatClient === 'undefined') throw "CatClient not found";
 
 (function(exports, global){
 
-  var HtrClient = PredictiveCatClient;
+  var HtrClient = CatClient;
 
-$.extend(HtrClient.prototype, {
+  $.extend(HtrClient.prototype, {
 
     /** 
-    * Retrieve decoding results for the current segment.
+    * Start HTR session.
     * @param {Object}
     * @setup obj
     *   source {String}
+    *   target {String}
+    *   caretPos {Number}
     * @trigger startSessionResult
     * @return {Object} 
     *   errors {Array} List of error messages
@@ -22,24 +24,45 @@ $.extend(HtrClient.prototype, {
       this.checkConnection();
       this.server.emit('startSession', {data: obj});
     },
-   
+
+    /** 
+    * Send data points sequence.
+    * @param {Object}
+    * @setup obj
+    *   points {Array} 3D tuple: (x, y, timestamp)
+    * @trigger addStrokeResult
+    * @return {Object} 
+    *   errors {Array} List of error messages
+    *   data {Object}
+    *   @setup data
+    *     [text] {Array} Partially recognized text
+    *     [textSegmentation] {Array} Segmentation of partially recognized text
+    *     elapsedTime {Number} ms
+    */   
     addStroke: function(obj) {
       this.checkConnection();
-      this.server.emit('add_stroke', {data: obj});
+      this.server.emit('addStroke', {data: obj});
     },
     
     /** 
-    * Close predictive session for the current segment.
+    * Close HTR session, i.e., retrieves recognized text.
     * @trigger endSessionResult
     * @return {Object} 
     *   errors {Array} List of error messages
     *   data {Object}
     *   @setup data
+    *     text {Array} Recognized text
+    *     textSegmentation {Array} 
     *     elapsedTime {Number} ms
     */
     endSession: function() {
       this.checkConnection();
       this.server.emit('endSession');
     },    
-   
-});
+     
+  });
+
+  // Expose
+  exports.HtrClient = global.HtrClient = HtrClient;
+
+})('object' === typeof module ? module.exports : {}, this);

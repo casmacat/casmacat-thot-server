@@ -1,28 +1,29 @@
 $(function(){
-  require(["jsketch", "jquery.sketchable"], function() {
+
+require(["jsketch", "jquery.sketchable"], function() {
 
   /*******************************************************************************/
   /*           create server connection and handle server events                 */
   /*******************************************************************************/
 
   // connect to a server. casmacatHtr will receive async server responses
-  var casmacatHtr = new CasmacatClient('http://' + window.casmacatHtrServer + '/casmacat');
-  var gestureRecognizer = new MinGestures();
+  var casmacatHtr = new HtrClient();
+  casmacatHtr.connect('http://' + window.casmacat.htrServer + '/casmacat');
 
-  // handle disconections and debug information
-  casmacatHtr.on('disconnect', function(){ this.socket.reconnect(); });
-  casmacatHtr.on('receive_log', function(msg) { console.log('server says:', msg); });
-  
+  // Socket.IO callbacks -------------------------------------------------------
+  // See https://github.com/LearnBoost/socket.io/wiki/Exposed-events
+  casmacatHtr.on('disconnect', function(){ this.server.socket.reconnect(); });
+  //casmacatHtr.on('receiveLog', function(msg) { console.log('server says:', msg); });
+
+
+  var gestureRecognizer = new MinGestures();
+    
   $('#btn-decode, #btn-clear').attr('disabled', 'true');
 
   // helper function to limit the number of server requests
   // at least throttle_ms have to pass for events to trigger 
-  var timerMs = 400;
-  var decoderTimer = 0;
-  var insert_after_token = undefined;
-  var insertion_token = undefined;
-  var insertion_token_space = undefined;
-
+  var decoderTimer = 0, timerMs = 400;
+  var insert_after_token, insertion_token, insertion_token_space;
 
   function getTokenDistanceAtPointer(e) {
     var $target = $('#target');
@@ -68,32 +69,18 @@ $(function(){
   function doRejectGesture($token) {
     var $source = $('#source');
     var $target = $('#target');
-    var query = {
-      action: 'rejectSuffix',
-      id_segment: 607906,
-      text: $source.text(),
+    casmacatItp.rejectSuffix({
+      source: $source.text(),
       target: $target.text(),
-      caret_pos: $target.editable('getTokenPos', $token[0]),
-      id_job: 1135,
-      num_results: 2,
-      id_translator: "me!"
-    }
-    casmacat.rejectSuffix(query);
+      caretPos: $target.editable('getTokenPos', $token[0]),
+      numResults: 1,
+    });
     console.log('reject', $token);
   }
 
   function doDeleteGesture($token) {
     var $source = $('#source');
     var $target = $('#target');
-    var query = {
-      action: 'getSuggestions',
-      id_segment: 607906,
-      text: $source.text(),
-      id_job: 1135,
-      num_results: 2,
-      id_translator: "me!"
-    }
-
     var t = $token, n;
     do {
       n = $(t[0].nextSibling);
@@ -101,9 +88,11 @@ $(function(){
       t = n;
     } while (!t.is('.editable-token'));
     
-    query.target = $target.text(),
-    query.caret_pos = $target.editable('getTokenPos', t.next());
-    casmacat.setPrefix(query);
+    casmacatItp.setPrefix({
+      target:   $target.text(),
+      caretPos: $target.editable('getTokenPos', t.next()),
+      numResults: 1,    
+    });
     console.log('delete', $token);
   }
 
@@ -111,13 +100,9 @@ $(function(){
     //var $source = $('#source');
     //var $target = $('#target');
     //var query = {
-    //  action: 'getSuggestions',
-    //  id_segment: 607906,
-    //  text: $source.text(),
-    //  caret_pos: 0,
-    //  id_job: 1135,
-    //  num_results: 2,
-    //  id_translator: "me!"
+    //  source: $source.text(),
+    //  caretPos: 0,
+    //  numResults: 2,
     //}
 
     insert_after_token = $token; 
@@ -131,13 +116,9 @@ $(function(){
     //var $source = $('#source');
     //var $target = $('#target');
     //var query = {
-    //  action: 'update',
-    //  id_segment: 607906,
-    //  text: $source.text(),
-    //  caret_pos: 0,
-    //  id_job: 1135,
-    //  num_results: 2,
-    //  id_translator: "me!"
+    //  source: $source.text(),
+    //  caretPos: 0,
+    //  num_results: 1,
     //}
 
     console.log('validate');
@@ -223,10 +204,10 @@ $(function(){
             // first HTR stroke
             if (!gesture || insert_after_token) {
               var tokenDistance = getTokenDistanceAtPointer(e);
-              casmacatHtr.startHtrSession({
+              casmacatHtr.startSession({
                   source: $('#source').editable('getText'),
                   target: $('#target').editable('getText'),
-                  caret_pos: 0,
+                  caretPos: 0,
               });
               
               cnv.data('htr', { 
@@ -263,17 +244,17 @@ $(function(){
   
   
   // handle HTR responses
-  casmacatHtr.on('htrupdate', function(obj) {
-    console.log('updated', obj);
-    if (obj.data) {
-      update_htr_suggestions(obj.data, 'red');
+  casmacatHtr.on('addStrokeResult', function(data, errors) {
+    console.log('updated', data);
+    if (data) {
+      update_htr_suggestions(data, 'red');
     }
   });
 
   // handle post-editing (target has changed but not source)
-  casmacatHtr.on('htrchange', function(obj) {
-    console.log('changed', obj);
-    update_htr_suggestions(obj.data);
+  casmacatHtr.on('endSessionResult', function(data, errors) {
+    console.log('recognized', data);
+    update_htr_suggestions(data);
     $('#btn-clear').trigger('click');
 
     if (insertion_token && insertion_token.text().length === 0) {
@@ -284,23 +265,15 @@ $(function(){
     insertion_token = undefined;
     insertion_token_space = undefined;
 
-
-    var query = {
-      action: "getTokens",
-      id_segment: 607906,
-      text: $('#source').editable('getText'),
-      // since we are listening on keypress, target must include last typed char
+    casmacatItp.getTokens({
+      source: $('#source').editable('getText'),
       target: $('#target').editable('getText'),
-      id_job: 1135,
-      num_results: 2,
-      id_translator: "me!"
-    }
-    casmacat.getTokens(query);
+    });
   });
 
   // on click send strokes to the htr server
   $('#btn-decode').click(function(e) {
-    casmacatHtr.endHtrSession();
+    casmacatHtr.endSession();
     $(this).attr('disabled', 'true');
   });
 
@@ -323,15 +296,17 @@ $(function(){
       color = "black";
       is_final = true;
     }
-    console.log(data.text, data.text_seg);
+    console.log(data.text, data.textSegmentation);
 
     $('#htr-suggestions').text(data.text).css('color', color);
     var htrData = cnv.data('htr');
     
     if (htrData.target) {
-      $('#target').editable('replaceText', data.text, data.text_seg, htrData.target.token, is_final);
+      $('#target').editable('replaceText', data.text, data.textSegmentation, htrData.target.token, is_final);
     }
   }
 
+
+}); // end require
   
-}) });
+});
