@@ -30,14 +30,17 @@ if (typeof CatClient === 'undefined') throw "CatClient not found";
     * @param {Object}
     * @setup obj
     *   points {Array} 3D tuple: (x, y, timestamp)
-    * @trigger addStrokeResult
+    * @trigger [addStrokeResult]
     * @return {Object} 
     *   errors {Array} List of error messages
     *   data {Object}
     *   @setup data
-    *     [text] {Array} Partially recognized text
-    *     [textSegmentation] {Array} Segmentation of partially recognized text
     *     elapsedTime {Number} ms
+    *     nbest {Array} List of objects
+    *     @setup nbest
+    *       text {Array} Partially recognized text
+    *       textSegmentation {Array} Segmentation of partially recognized text
+    *       [elapsedTime] {Number} ms
     */   
     addStroke: function(obj) {
       this.checkConnection();
@@ -51,9 +54,12 @@ if (typeof CatClient === 'undefined') throw "CatClient not found";
     *   errors {Array} List of error messages
     *   data {Object}
     *   @setup data
-    *     text {Array} Recognized text
-    *     textSegmentation {Array} 
     *     elapsedTime {Number} ms
+    *     nbest {Array} List of objects
+    *     @setup nbest
+    *       text {Array} Recognized text
+    *       textSegmentation {Array} Segmentation of recognized text
+    *       [elapsedTime] {Number} ms
     */
     endSession: function() {
       this.checkConnection();

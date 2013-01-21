@@ -4,6 +4,8 @@
 import sys, traceback, os
 import datetime, time
 import random, math, codecs
+import urllib2
+import copy, collections
 
 try: import simplejson as json
 except ImportError: import json
@@ -32,6 +34,12 @@ def dump_strokes(strokes):
       print >> out, int(round(x)), int(round(y))
   out.close()
 
+def extend(d1, d2):
+  for k, v in d2.iteritems():
+    if k not in d1 or not isinstance(d1[k], dict):
+      d1[k] = v
+    else:
+      extend(d1[k], v)
 
 def fmt_delta(elapsed_time):
   h, rem = divmod(elapsed_time.seconds, 3600)
@@ -128,15 +136,29 @@ ROOT = os.path.normpath(os.path.dirname(__file__))
 def filter_utf8(string):
   return string.encode('utf-8')
 
+def convert(data):
+    if isinstance(data, unicode):
+        return filter_utf8(data)
+    elif isinstance(data, basestring):
+        return data
+    elif isinstance(data, collections.Mapping):
+        return dict(map(convert, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(convert, data))
+    else:
+        return data
+
 def to_utf8(obj):
-  if obj == None:
-    return obj
-  elif isinstance(obj, basestring):
-    return filter_utf8(obj)
-  elif isinstance(obj, list): 
-    return [to_utf8(w) for w in obj]
-  print "Unknown type", type(obj), "for object", obj
-  raise "Unknown type"
+  return convert(obj)
+#def to_utf8(obj):
+#  if obj == None:
+#    return obj
+#  elif isinstance(obj, basestring):
+#    return filter_utf8(obj)
+#  elif isinstance(obj, list): 
+#    return [to_utf8(w) for w in obj]
+#  print "Unknown type", type(obj), "for object", obj
+#  raise "Unknown type"
 
 
 class HtrConnection(SocketConnection):
@@ -151,22 +173,18 @@ class HtrConnection(SocketConnection):
     def startHtrSession(self, data):
       source, target = to_utf8(data['source']), to_utf8(data['target'])
       caret_pos = data['caretPos']
-      if self.htr_session: 
-        htr.deleteSession(self.htr_session)
-        self.htr_session = None
-        self.strokes = None
 
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + target);
 
-      source_tok, source_seg = tokenizer.preprocess(source)
+      source_tok, source_seg = models.tokenizer.preprocess(source)
       print >> sys.stderr, "source", source
 
       prefix = target[:caret_pos] 
-      prefix_tok, prefix_seg = tokenizer.preprocess(prefix)
+      prefix_tok, prefix_seg = models.tokenizer.preprocess(prefix)
       print >> sys.stderr, "prefix", prefix
 
       suffix = target[caret_pos:] 
-      suffix_tok, suffix_seg = tokenizer.preprocess(suffix)
+      suffix_tok, suffix_seg = models.tokenizer.preprocess(suffix)
       print >> sys.stderr, "suffix", suffix 
 
       last_token_is_partial = False
@@ -174,13 +192,66 @@ class HtrConnection(SocketConnection):
         last_token_is_partial = True
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
 
+      self.pre_context = prefix
+      self.partial_result = ""
+      self.last_result = None
+      self.last_submit = None
+
       start_time = datetime.datetime.now()
-      #self.htr_session = htr.createSessionFromPrefix(source_tok, prefix_tok, suffix_tok, last_token_is_partial)
-      self.htr_session = htr.createSessionFromPrefix([], [], [], False)
       self.strokes = []
+      self.ink = []
       elapsed_time = datetime.datetime.now() - start_time
       obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
       self.respond('startSessionResult', { 'errors': [], 'data': obj })
+
+
+    def decode(self):
+      data = {
+               'device':   self.config['device'],
+               'options':  self.config['options'],
+               'requests': [{
+                 'writing_guide': {
+                   'writing_area_width':  self.config['canvasSize']['width'],
+                   'writing_area_height': self.config['canvasSize']['height']
+                 },
+                 'pre_context': self.pre_context,
+                 'ink': self.ink,
+                 'language': self.config['language']
+               }]
+             }
+      
+      print 'DATA', json.dumps(data)
+
+      start_time = datetime.datetime.now()
+      # POST json data to Google
+      req = urllib2.Request(self.config['url'], json.dumps(data), {'Content-Type': 'application/json'})
+      f = urllib2.urlopen(req)
+      response = json.loads(f.read())
+      f.close()
+      elapsed_time = datetime.datetime.now() - start_time
+
+      print 'RESPONSE', response
+      if response[0] == "SUCCESS":
+        #self.pre_context    += response[1][0][1][0] 
+        obj = { 
+                'nbest': [],
+                'elapsedTime': elapsed_time.total_seconds()*1000.0
+              }
+
+        self.partial_result = response[1][0][1][0] 
+        for res in response[1][0][1]:
+          partial_result_tok, partial_result_seg = models.tokenizer.preprocess(res)
+          print >> sys.stderr, "partial response", partial_result_tok
+          obj['nbest'].append({
+                'text': res, 
+                'textSegmentation': partial_result_seg
+          })
+
+        self.last_result = { 'errors': [], 'data': obj } 
+        return self.last_result 
+
+      else:
+        return { 'errors': [response[0]], 'data': {'elapsedTime': elapsed_time.total_seconds()*1000.0} }
 
 
     @event('addStroke')
@@ -188,85 +259,92 @@ class HtrConnection(SocketConnection):
     @thrower('addStrokeResult')
     def addStroke(self, data):
       points, is_pen_down = data['points'], True
-      if self.htr_session:
-        self.strokes.append((points, is_pen_down)) 
-        for x, y, _ in points:
-            self.htr_session.addPoint(x, y, True)
-        self.htr_session.addPoint(0, 0, False)
-        
-        obj = { 'elapsedTime': 0 }
-        if do_partial_recognition:
-            start_time = datetime.datetime.now()
-            has_partial, partial_result_tok = self.htr_session.decodePartially()
-            elapsed_time = datetime.datetime.now() - start_time
-            if has_partial:
-              partial_result, partial_result_seg = tokenizer.postprocess(partial_result_tok)
-              print >> sys.stderr, "update", partial_result_tok
+      self.strokes.append((points, is_pen_down)) 
 
-              obj = { 'nbest': { 
-                        'text': partial_result, 
-                        'textSegmentation': partial_result_seg,
-                        'elapsedTime': elapsed_time.total_seconds()*1000.0
-                      }, 
-                      'elapsedTime': elapsed_time.total_seconds()*1000.0
-                    }
+      self.ink.append([[], [], []])
+      for p in points: 
+        self.ink[-1][0].append(p[0]);
+        self.ink[-1][1].append(p[1]);
+        self.ink[-1][2].append(p[2] - points[-1][2]);
 
-        self.respond('addStrokeResult', { 'errors': [], 'data': obj })
-      else: 
-        self.respond('addStrokeResult', { 'errors': [ 'HTR session not started' ], 'data': None })
+      time_lapse = 200000
+      if self.last_submit > 0:
+        time1 = self.strokes[self.last_submit - 1][0][-1][2]
+        time2 = self.strokes[-1][0][0][2]
+        print >> sys.stderr, "LAPSE", time1, time2, time1 + time_lapse
+      if not self.last_submit or time2 > time1 + time_lapse:
+        response = self.decode()
+        self.last_submit = len(self.strokes)
 
+        self.respond('addStrokeResult', response)
 
     @event('endSession')
     @timer('endSession')
     @thrower('endSessionResult')
     def endSession(self):
-      if self.htr_session: 
-          start_time = datetime.datetime.now()
-          result_tok = self.htr_session.decode()
-          elapsed_time = datetime.datetime.now() - start_time
-          print >> sys.stderr, "change", result_tok
-          result, result_seg = tokenizer.postprocess(result_tok)
+      if self.last_submit < len(self.ink): 
+        response = self.decode()
+      else:
+        response = self.last_result
+        response['data']['elapsedTime'] = 0
 
-          obj = { 'nbest': { 
-                    'text': result, 
-                    'textSegmentation': result_seg,
-                    'elapsedTime': elapsed_time.total_seconds()*1000.0
-                  }, 
-                  'elapsedTime': elapsed_time.total_seconds()*1000.0
-                }
+      self.respond('endSessionResult', response)
 
-          self.respond('endSessionResult', { 'errors': [], 'data': obj })
-
-
-          htr.deleteSession(self.htr_session)
-          self.htr_session = None
-          dump_strokes(self.strokes)
-          self.strokes = None
+      dump_strokes(self.strokes)
+      self.strokes = None
+      self.ink = None
+      self.prefix = None
+      self.last_result = None
+      self.last_submit = None
 
 
     @event('configure')
     @timer('configure')
     @thrower('configureResult')
     def configure(self, data):
-      self.config = data
-      print >> sys.stderr, self.config 
-      self.respond('configureResult', { 'errors': [], 'data': data })
+      extend(self.config, to_utf8(data))
+      print >> sys.stderr, 'configure', self.config 
+      self.respond('configureResult', { 'errors': [], 'data': self.config })
 
 
 #class LoggerConnection(SocketConnection, Logger):
     @event
     def on_open(self, info):
-      print >> sys.stderr, "Connection Info", repr(info.__dict__)
-      MyLogger.participants.add(self)
-      self.htr_session = None
-      self.config = { 'suggestions': False, 'mode': u'PE' }
+      print >> sys.stderr, "Connection Info", repr(self), repr(info.__dict__)
+      if 'config' not in self.__dict__:
+        MyLogger.participants.add(self)
+        self.config = copy.deepcopy(models.config['htr'])
 
     @event
     def on_close(self):
-      if self.htr_session: 
-        htr.deleteSession(self.htr_session)
       MyLogger.participants.remove(self)
+      print >> sys.stderr, "Disconnection Info", repr(self)
 
+
+class Models:
+  def __init__(self, config_fn):
+    self.config = to_utf8(json.load(open(config_fn)))
+    print >> sys.stderr, "config", json.dumps(self.config)
+ 
+  @timer('create_plugins')
+  def create_plugins(self):
+    start_time = datetime.datetime.now()
+    self.tokenizer_plugin = TextProcessorPlugin(self.config["text-processor"]["module"], self.config["text-processor"]["parameters"])
+    self.tokenizer_factory = self.tokenizer_plugin.create()
+    if not self.tokenizer_factory: raise Exception("Tokenizer plugin failed")
+    self.tokenizer_factory.setLogger(logger)
+    self.tokenizer = self.tokenizer_factory.createInstance()
+    if not self.tokenizer: raise Exception("Tokenizer instance failed")
+    elapsed_time = datetime.datetime.now() - start_time
+    print "TIME:%s loaded:%s" % ("tokenizer", fmt_delta(elapsed_time))
+
+  @timer('delete_plugins')
+  def delete_plugins(self):
+    self.tokenizer_factory.deleteInstance(self.tokenizer);
+    self.tokenizer_plugin.destroy(self.tokenizer_factory)
+    self.tokenizer, self.tokenizer_factory = None, None
+    del self.tokenizer_plugin
+  
 
 class RouterConnection(SocketConnection):
     __endpoints__ = {
@@ -285,7 +363,11 @@ if __name__ == "__main__":
     import logging
     import atexit
 
-    logfn = "casmacat-htr-server.log"
+    models = Models(sys.argv[1])
+    models.create_plugins()
+    atexit.register(models.delete_plugins)
+
+    logfn = "google-htr-server.log"
     try: 
       logfn = models.config["server"]["logfile"]
     except:
@@ -296,31 +378,24 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
 
 
-    
-    tokenizer_plugin = TextProcessorPlugin("plugins/space-tokenizer.so")
-    tokenizer_factory = tokenizer_plugin.create()
-    if not tokenizer_factory: raise Exception("Tokenizer plugin failed")
-    tokenizer_factory.setLogger(logger)
-    tokenizer = tokenizer_factory.createInstance()
-    if not tokenizer: raise Exception("Tokenizer instance failed")
-    
-    htr_plugin = HtrPlugin("plugins/iatros-plugin.so", "-c plugins/xerox.plugin.conf")
-    htr_factory = htr_plugin.create()
-    if not htr_factory: raise Exception("HTR plugin failed")
-    htr_factory.setLogger(logger)
-    htr = htr_factory.createInstance()
-    if not htr: raise Exception("HTR instance failed")
+    port = 3003
+    try: 
+      port = models.config["server"]["port"]
+    except:
+      try:
+        port = int(sys.argv[2])
+      except:
+        pass
 
     # Create socket application
     application = web.Application(
         CasmacatRouter.apply_routes([]),
         flash_policy_port = 843,
         flash_policy_file = os.path.join(ROOT, 'flashpolicy.xml'),
-        socket_io_port = 3003
+        socket_io_port = port
     )
+
+    print >> logfd, """/*\n  Casmacat server started on port %d\n  %s\n*/\n\n"config": %s\n\n\n""" % (port, str(datetime.datetime.now()), json.dumps(models.config, indent=2, separators=(',', ': '), encoding="utf-8"))
 
     # Create and start tornadio server
     SocketServer(application)
-
-    del tokenizer, tokenizer_factory, tokenizer_plugin 
-    del htr, htr_factory, htr_plugin

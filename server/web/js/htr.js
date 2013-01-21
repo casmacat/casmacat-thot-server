@@ -9,6 +9,12 @@ require(["jsketch", "jquery.sketchable"], function() {
   // connect to a server. casmacatHtr will receive async server responses
   var casmacatHtr = new HtrClient();
   casmacatHtr.connect('http://' + window.casmacat.htrServer + '/casmacat');
+  var $cnv = $('#drawing-canvas');
+
+  casmacatHtr.configure({
+      canvasSize: { width: $cnv.width(), height: $cnv.height() },
+      device: window.navigator.userAgent
+  });
 
   // Socket.IO callbacks -------------------------------------------------------
   // See https://github.com/LearnBoost/socket.io/wiki/Exposed-events
@@ -86,7 +92,7 @@ require(["jsketch", "jquery.sketchable"], function() {
       n = $(t[0].nextSibling);
       t.remove(); 
       t = n;
-    } while (!t.is('.editable-token'));
+    } while (!t.is('.editable-token') && t[0].nextSibling);
     
     casmacatItp.setPrefix({
       target:   $target.text(),
@@ -259,7 +265,9 @@ require(["jsketch", "jquery.sketchable"], function() {
 
     if (insertion_token && insertion_token.text().length === 0) {
       insertion_token.remove();
-      insertion_token_space.remove();
+      if (insertion_token_space) {
+        insertion_token_space.remove();
+      }
     }
     insert_after_token = undefined;
     insertion_token = undefined;
@@ -290,19 +298,20 @@ require(["jsketch", "jquery.sketchable"], function() {
 
 
   function update_htr_suggestions(data, color) {
-    if (!data.text || data.text === "") return;
+    var best= data.nbest[0];
+    if (!best.text || best.text === "") return;
     var is_final = false;
     if (!color) {
       color = "black";
       is_final = true;
     }
-    console.log(data.text, data.textSegmentation);
+    console.log(best.text, best.textSegmentation);
 
-    $('#htr-suggestions').text(data.text).css('color', color);
+    $('#htr-suggestions').text(best.text).css('color', color);
     var htrData = cnv.data('htr');
     
     if (htrData.target) {
-      $('#target').editable('replaceText', data.text, data.textSegmentation, htrData.target.token, is_final);
+      $('#target').editable('replaceText', best.text, best.textSegmentation, htrData.target.token, is_final);
     }
   }
 

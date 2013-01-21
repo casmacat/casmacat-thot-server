@@ -179,11 +179,42 @@ $(function(){
   .bind('caretleave', function(e, d) {
       $(d.token).trigger('mouseleave');
   })
-  // prevent new lines
   .keydown(function(e) {
+    // prevent new lines
     if (e.which === 13) {
       e.stopPropagation();
       e.preventDefault();
+    } 
+    // prevent tabs that move to the next word or to the next priority word
+    else if (false && e.which === 9) {
+      e.stopPropagation();
+      e.preventDefault();
+      var res = $('#target').editable('getTokenAtCaret');
+      console.log(res);
+      
+      
+
+      var $elem = $(res.elem)
+        , $curr = $(res.elem.parentNode);
+
+      if (!$curr.hasClass('editable-token') || res.pos === res.elem.length) {
+        $curr = $elem.next('.editable-token');
+      }
+
+      if ($curr) {
+        var $next = $curr.next('span.editable-token')
+          , priority = $next.data('priority');
+        console.log($elem, $curr, $next);
+        if (priority) {
+          var rightSiblings = $next.nextAll();
+          for (var i = 0; i < rightSiblings.length; ++i) {
+            if ($(rightSiblings[i]).data('priority') > priority) break;
+          }
+          $next = $(rightSiblings[i]);
+        }
+        console.log($next);
+        $('#target').editable('setCaretAtToken', $next.get(0));
+      }
     }
   });
 
