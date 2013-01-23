@@ -40,7 +40,7 @@ if (typeof io === 'undefined') throw "Socket IO not found";
         self.server.on(ev[e], function(obj){
           if (obj) {
             try {
-              if (self.debug && obj.errors.length > 0) {
+              if (self.debug && obj.errors && obj.errors.length > 0) {
                 console.error(obj.errors);
               }
             } catch(err) {

@@ -12,7 +12,7 @@ $(function(){
   // See https://github.com/LearnBoost/socket.io/wiki/Exposed-events
   casmacatItp.on('disconnect', function() {
     blockUI("Server disconnected");
-    this.server.socket.reconnect();
+    casmacatItp.checkConnection();
   });
   
   casmacatItp.on('reconnecting', function() { 

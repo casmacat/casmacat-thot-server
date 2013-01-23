@@ -18,7 +18,15 @@ require(["jsketch", "jquery.sketchable"], function() {
 
   // Socket.IO callbacks -------------------------------------------------------
   // See https://github.com/LearnBoost/socket.io/wiki/Exposed-events
-  casmacatHtr.on('disconnect', function(){ this.server.socket.reconnect(); });
+  casmacatHtr.on('disconnect', function(){ 
+    casmacatHtr.checkConnection(); 
+  });
+  casmacatHtr.on('reconnect', function(){ 
+    casmacatHtr.configure({
+        canvasSize: { width: $cnv.width(), height: $cnv.height() },
+        device: window.navigator.userAgent
+    });
+  });
   //casmacatHtr.on('receiveLog', function(msg) { console.log('server says:', msg); });
 
 
@@ -298,6 +306,7 @@ require(["jsketch", "jquery.sketchable"], function() {
 
 
   function update_htr_suggestions(data, color) {
+    if (!data || !data.nbest) return;
     var best= data.nbest[0];
     if (!best.text || best.text === "") return;
     var is_final = false;

@@ -314,10 +314,13 @@ class HtrConnection(SocketConnection):
       if 'config' not in self.__dict__:
         MyLogger.participants.add(self)
         self.config = copy.deepcopy(models.config['htr'])
+      else:
+        print >> sys.stderr, "Reusing connection"
 
     @event
     def on_close(self):
       MyLogger.participants.remove(self)
+      del self.config
       print >> sys.stderr, "Disconnection Info", repr(self)
 
 
