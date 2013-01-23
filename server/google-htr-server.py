@@ -240,12 +240,14 @@ class HtrConnection(SocketConnection):
 
         self.partial_result = response[1][0][1][0] 
         for res in response[1][0][1]:
-          partial_result_tok, partial_result_seg = models.tokenizer.preprocess(res)
-          print >> sys.stderr, "partial response", partial_result_tok
-          obj['nbest'].append({
-                'text': res, 
-                'textSegmentation': partial_result_seg
-          })
+          if res != "":
+            print "RES", res 
+            partial_result_tok, partial_result_seg = models.tokenizer.preprocess(res)
+            print >> sys.stderr, "partial response", partial_result_tok
+            obj['nbest'].append({
+                  'text': res, 
+                  'textSegmentation': partial_result_seg
+            })
 
         self.last_result = { 'errors': [], 'data': obj } 
         return self.last_result 
