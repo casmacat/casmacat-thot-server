@@ -443,6 +443,7 @@ $(function(){
         count = 0,
         list = $('<dl/>');
         
+    if (!data && !data.nbest) return;
     for (var i = 0; i < data.nbest.length; i++) {
       var match = data.nbest[i];
       // XXX: If prediction came from click in the middle of a token, then the
