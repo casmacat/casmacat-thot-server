@@ -1,3 +1,5 @@
+  //var undefined;
+  
   function getTokens(elems) {
     var tokens = new Array();
     for (var i = 0; i < elems.length; i++) {
@@ -120,8 +122,8 @@
     return path.reverse();
   };
 
-  function rectDistance(rect, x, y, delta) {
-    var r = { 
+  function rectDistance(rect, point, delta) {
+    var x = point[0], y = point[1], r = { 
       x1: rect.left - delta,
       x2: rect.left + rect.width + delta,
       y1: rect.top - delta,
@@ -153,18 +155,18 @@
     return rect;
   }
 
-  function nodeDistance(node, x, y, delta) {
+  function nodeDistance(node, point, delta) {
     var rect = getRect($(node));
-    return rectDistance(rect, x, y, delta);
+    return rectDistance(rect, point, delta);
   }
 
-  function _nodeDistance(node, x, y, delta) {
+  function _nodeDistance(node, point, delta) {
     var rects = node.getClientRects();
     var min = Number.MAX_VALUE;
     var minDist;
     
     for (var i = 0; i < rects.length; i++) {
-      var dist = rectDistance(rects[i], x, y, delta);
+      var dist = rectDistance(rects[i], point, delta);
       if (dist.d < min) {
         minDist = dist;
       }
@@ -242,7 +244,7 @@
 
       var tokens = []
       for (var i = 0; i < spans.length; i++) {
-        var distance = nodeDistance(spans[i], point[0], point[1], delta);
+        var distance = nodeDistance(spans[i], point, delta);
         tokens.push({ token: spans[i], distance: distance });
       }
       tokens.sort(function(a,b){ return a.distance.d - b.distance.d});

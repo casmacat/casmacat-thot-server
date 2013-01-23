@@ -220,6 +220,29 @@ class CasmacatConnection(SocketConnection):
             }
       self.respond('getAlignmentsResult', { 'errors': [], 'data': obj })
 
+    @event('setReplacementRule')
+    @timer('setReplacementRule')
+    @thrower('setReplacementRuleResult')
+    def getTokens(self, data):
+      data =  to_utf8(data)
+      print 'data:', data
+      source, target = to_utf8(data['source']), to_utf8(data['target'])
+
+      start_time = datetime.datetime.now()
+      source_tok, source_seg = models.tokenizer.preprocess(source)
+      target_tok, target_seg = models.tokenizer.preprocess(target)
+      elapsed_time = datetime.datetime.now() - start_time
+
+      obj = { 
+              'source': source, 
+              'sourceSegmentation': source_seg, 
+              'target': target, 
+              'targetSegmentation': target_seg,
+              'elapsedTime': elapsed_time.total_seconds()*1000.0
+            }
+      self.respond('getTokensResult', { 'errors': [], 'data': obj })
+
+
     @event('getTokens')
     @timer('getTokens')
     @thrower('getTokensResult')

@@ -185,6 +185,7 @@ function trim_text($text, $words = 5)
 	<button id="btn-clear">Clear</button>
     <img src="images/drawhere.png" class="drawhere" alt="Draw here!" />
   </div>
+  <div id="info"></div>
 
   <br/><br/><!-- HTR Canvas is absolute positioned -->
   

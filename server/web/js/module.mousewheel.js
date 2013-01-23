@@ -1,4 +1,4 @@
-// Dependencies: jquery.mousewheel plugin
+// Dependencies: jquery.mousewheel, jquery.hotkeys
 
 (function(exports, global){
 
@@ -40,7 +40,7 @@
     };
 
     function dump(fn) {
-      console.log( "["+self.id+"]", fn, "| size:", stack.length, "pos:", pos );
+      //console.log( "["+self.id+"]", fn, "| size:", stack.length, "pos:", pos );
     }
 
     var self = this;
@@ -62,6 +62,7 @@
     
     // Mandatory intialization method ------------------------------------------
     self.init = function(elem, options) {
+      // Mandatory(?) listeners: mouse + keyboard
       $(elem).mousewheel(function(e,delta){
         if (delta > 0) {
           onMoveUp(e);
@@ -70,8 +71,12 @@
         }
         // block scroll over element
         return false;
+      }).bind('keydown', 'Ctrl+up', function(e){
+        onMoveUp(e);
+      }).bind('keydown', 'Ctrl+down', function(e){ 
+        onMoveDown(e);
       });
-      // Attach listeners
+      // Attach other listeners, if any
       for (var opt in options) {
         if (options.hasOwnProperty(opt) && typeof options[opt] !== 'undefined') {
           self[opt] = options[opt];
@@ -88,6 +93,6 @@
   };
   
   // Expose module
-  exports.MW = global.MW = module;
+  exports.MouseWheel = global.MouseWheel = module;
   
 })('object' === typeof module ? module.exports : {}, this);

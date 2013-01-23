@@ -264,18 +264,18 @@
   // main drawing callbacks if interactive is set to true ----------------------
       
   function getMousePos(e) {
-    var elem = $(e.target), pos = elem.offset();
+    var elem = $(e.target), pos = elem.offset(), g = getCanvasGap(e);
     return {
-      x: e.pageX - pos.left,
-      y: e.pageY - pos.top,
+      x: e.pageX - pos.left - g.left,
+      y: e.pageY - pos.top - g.top,
     }
   };
       
   function mousemoveHandler(e) {
     var elem = $(e.target), data = elem.data(_ns);
     if (!data.canvas.isDrawing) return;
-    var p = getMousePos(e), g = getCanvasGap(e);
-    data.canvas.lineTo(p.x - g.left, p.y - g.top);
+    var p = getMousePos(e);
+    data.canvas.lineTo(p.x, p.y);
     //data.coords.push({ x:p.x, y:p.y, type:0 });
     //data.coords.push([ p.x, p.y, 0 ]);
     var timeDelta = new Date().getTime() - data.timestamp;
@@ -288,10 +288,10 @@
   function mousedownHandler(e) {
     var elem = $(e.target), data = elem.data(_ns);  
     data.canvas.isDrawing = true;
-    var p = getMousePos(e), g = getCanvasGap(e);
+    var p = getMousePos(e);
     data.canvas.beginPath();
     // mark visually 1st point of stroke
-    data.canvas.fillCircle(p.x - g.left, p.y - g.top, options.graphics.lineWidth);
+    data.canvas.fillCircle(p.x, p.y, options.graphics.lineWidth);
     //data.coords.push({ x:p.x, y:p.y, type:1 });
     //data.coords.push([ p.x, p.y, 1 ]);
     var timeDelta;

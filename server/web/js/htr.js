@@ -34,6 +34,31 @@ require(["jsketch", "jquery.sketchable"], function() {
     
   $('#btn-decode, #btn-clear').attr('disabled', 'true');
 
+  function getRelativeXY(point) {
+    var leftBorder  = parseInt(cnv.css('borderLeftWidth')) || 0;
+    var topBorder   = parseInt(cnv.css('borderTopWidth'))  || 0;
+    var leftPadding = parseInt(cnv.css('paddingLeft'))    || 0;
+    var topPadding  = parseInt(cnv.css('paddingTop'))     || 0;
+    var offset = cnv.offset();
+    var mouseX = point[0] - offset.left - leftBorder - leftPadding;
+    var mouseY = point[1] - offset.top - topBorder - topPadding;
+    //console.log("Relative:", point, [mouseX, mouseY]);
+    return [mouseX, mouseY];
+  }
+
+  function getAbsoluteXY(point) {
+    var leftBorder  = parseInt(cnv.css('borderLeftWidth')) || 0;
+    var topBorder   = parseInt(cnv.css('borderTopWidth'))  || 0;
+    var leftPadding = parseInt(cnv.css('paddingLeft'))    || 0;
+    var topPadding  = parseInt(cnv.css('paddingTop'))     || 0;
+    var offset = cnv.offset();
+    var mouseX = point[0] + offset.left + leftBorder + leftPadding;
+    var mouseY = point[1] + offset.top + topBorder + topPadding;
+    //console.log("Absolute:", point, [mouseX, mouseY]);
+    return [mouseX, mouseY];
+  }
+
+
   // helper function to limit the number of server requests
   // at least throttle_ms have to pass for events to trigger 
   var decoderTimer = 0, timerMs = 400;
@@ -103,6 +128,7 @@ require(["jsketch", "jquery.sketchable"], function() {
     } while (!t.is('.editable-token') && t[0].nextSibling);
     
     casmacatItp.setPrefix({
+      source: $source.text(),
       target:   $target.text(),
       caretPos: $target.editable('getTokenPos', t.next()),
       numResults: 1,    
@@ -142,60 +168,45 @@ require(["jsketch", "jquery.sketchable"], function() {
     var $source = $('#source');
     var $target = $('#target');
     var centroid = MathLib.centroid(stroke);
-    var offset = cnv.offset();
-    centroid[0] += offset.left; 
-    centroid[1] += offset.top;  
+    centroid = getAbsoluteXY(centroid);
 
-    // obtain closest tokens to centroid with up to 3 pixels inside token boxes 
-    var tokenDistances = $target.editable('getTokensAtXY', centroid, -3);
-    //console.log(stroke[0].slice(),  centroid.slice(), stroke[stroke.length-1].slice());
-
-    //var _tl = $(tokenDistances.filter(function(a){ return a.distance.dx >= 0})[0].token);
-    //var _tr = $(tokenDistances.filter(function(a){ return a.distance.dx <  0})[0].token);
-    //console.log('gesture recognized', gesture, getRect(_tl), centroid, getRect(_tr));
-    //console.log('gesture recognized', gesture, centroid, getRect($(tokenDistances[0].token)));
-
-    // if there are no tokens, then ignore the gesture
-    if (tokenDistances.length === 0) {
-      console.log('There are no tokens for gesture', gesture, 'context');
-    }
-    // gestures that are issued over a token
-    else if (tokenDistances[0].distance.d === 0) {
-      var token = tokenDistances[0];
-      switch (gesture.name) {
-        case 'dot': // reject 
+    switch (gesture.name) {
+      case 'dot': // reject 
+        var tokenDistances = $target.editable('getTokensAtXY', centroid, 0);
+        var tokenDistancesInLine = tokenDistances.filter(function(a){ return a.distance.dy === 0});;
+        if (tokenDistancesInLine.length > 0 && tokenDistancesInLine[0].distance.d < 3) {
+          var token = tokenDistancesInLine[0];
           doRejectGesture($(token.token));
-          break;
-        case 'se': // delete
+        }
+        break;
+      case 'se': // delete
+        var tokenDistances = $target.editable('getTokensAtXY', centroid, 0);
+        var tokenDistancesInLine = tokenDistances.filter(function(a){ return a.distance.dy === 0});;
+        if (tokenDistancesInLine.length > 0 && tokenDistancesInLine[0].distance.d < 3) {
+          var token = tokenDistancesInLine[0];
           doDeleteGesture($(token.token));
-          break;
-        default:
-          console.log("Gesture not implemented or out of context", gesture, centroid, tokenDistances);
-      }
-    }
-    // gestures that are issued between tokens
-    else if (tokenDistances[0].distance.dy === 0) {
-      switch (gesture.name) {
-        case 's': // insert
-          var leftTokens = tokenDistances.filter(function(a){ return a.distance.dx >= 0});
+        }
+        break;
+      case 's': // insert
+        var tokenDistances = $target.editable('getTokensAtXY', centroid, -3);
+        var tokenDistancesInLine = tokenDistances.filter(function(a){ return a.distance.dy === 0});;
+        if (tokenDistancesInLine.length > 0 && tokenDistancesInLine[0].distance.d !== 0) {
+          var leftTokens = tokenDistancesInLine.filter(function(a){ return a.distance.dx > 0});
           var $token = (leftTokens.length > 0)?$(leftTokens[0].token):null;
+          console.log('left tokens', leftTokens);
           doInsertGesture($token);
-          break;
-        default:
-          console.log("Gesture not implemented or out of context", gesture, centroid, tokenDistances);
-      }
-    }
-    // gestures that are issued appart from text 
-    else if (tokenDistances[0].distance.dx < 0 || tokenDistances[0].distance.dy !== 0) {
-      switch (gesture.name) {
-        case 'ne': // validate 
+        }
+        break;
+      case 'ne': // validate 
+        var tokenDistances = $target.editable('getTokensAtXY', centroid, 0);
+        if (tokenDistances[0].distance.dx < 0 || tokenDistances[0].distance.dy !== 0) {
           doValidateGesture();
-          break;
-        default:
-          console.log("Gesture not implemented or out of context", gesture, centroid, tokenDistances);
-      }
+        }
+        break;
+      default:
+        console.log("Gesture not implemented or out of context", gesture, centroid, tokenDistances);
     }
-    else  console.log("Gesture not implemented or out of context", gesture, centroid, tokenDistances);
+    
       
     cnv.sketchable('clear');
   }
@@ -253,6 +264,8 @@ require(["jsketch", "jquery.sketchable"], function() {
           cnv.get(0).width = cnv.get(0).width;
         }
      },
+  }).bind('mousemove', function (e) { 
+      $('#info').text("m: " + getRelativeXY([e.clientX, e.clientY])); 
   });
   
   

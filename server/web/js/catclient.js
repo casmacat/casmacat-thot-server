@@ -266,6 +266,27 @@ if (typeof io === 'undefined') throw "Socket IO not found";
       self.server.emit('getValidatedContributions');
     };
 
+    /** 
+    * Searches and replaces rules for the current segment.
+    * @param {Object} 
+    * @setup obj
+    *   sourceRule {String}
+    *   targetRule {String}
+    *   matchCase {Boolean}
+    *   isRegExp {Boolean}
+    *   persistent {Boolean} TODO
+    * @trigger setReplacementRuleResult
+    * @return {Object}
+    *   errors {Array} List of error messages
+    *   data {Object}
+    *   @setup data
+    *     elapsedTime {Number} ms
+    */    
+    self.setReplacementRule = function(obj) {
+      self.checkConnection();
+      self.server.emit('setReplacementRule', {data: obj});
+    };
+
     /*
     // Unused methods
     self.uploadDocument = function(doc, mt_sys_id, gen_wg) {

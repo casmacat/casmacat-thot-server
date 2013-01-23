@@ -69,7 +69,7 @@ $(function(){
       startImt(bestResult.target);
     }
     
-    mw.addElement(data);
+    mousewheel.addElement(data);
   });
 
   // Handle post-editing (target has changed but not source)
@@ -80,7 +80,7 @@ $(function(){
 
   	update_translation_display(data);
   	
-  	//mw.addElement(data);
+  	//mousewheel.addElement(data);
   });
 
   // Handle alignment changes (updates highlighting and alignment matrix) 
@@ -100,7 +100,7 @@ $(function(){
     console.log('prediction changed', data);
     update_suggestions(data);
     
-    mw.addElement(data);
+    mousewheel.addElement(data);
   });
 
   // Measure network latency
@@ -285,7 +285,7 @@ $(function(){
     //$('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
     // If cursor pos has chaged, invalidate previous states
     if (typeof currentCaretPos != 'undefined' && d.pos !== currentCaretPos) {
-      mw.invalidate();
+      mousewheel.invalidate();
     }
     currentCaretPos = d.pos;
   })
@@ -389,7 +389,7 @@ $(function(){
     casmacatItp.decode(query);
     $(this).val("Loading...").attr("disabled", true);
     
-    mw.invalidate();
+    mousewheel.invalidate();
   });
 
   $('#btn-update').click(function(e) {
@@ -443,7 +443,7 @@ $(function(){
         count = 0,
         list = $('<dl/>');
         
-    if (!data && !data.nbest) return;
+    if (!data || !data.nbest) return;
     for (var i = 0; i < data.nbest.length; i++) {
       var match = data.nbest[i];
       // XXX: If prediction came from click in the middle of a token, then the
@@ -916,10 +916,8 @@ $(function(){
   /*******************************************************************************/
   /*                                 Init calls                                  */
   /*******************************************************************************/ 
-
-  require(["jquery.rotatecells", "jquery.editable"]);
   
-  require(["jquery.blockUI"], function(){
+  require(["jquery.blockUI", "jquery.rotatecells"], function(){
     blockUI("Connecting...");
     //setTimeout(function(){
       updateConfidenceSlider();
@@ -938,10 +936,10 @@ $(function(){
   
   // TODO: Load modules from here onwards --------------------------------------
   
-  var mw;
-  require(["jquery.mousewheel", "module.mousewheel"], function(){
-    mw = new MW();
-    mw.init('#target', {
+  var mousewheel;
+  require(["jquery.mousewheel", "jquery.hotkeys", "module.mousewheel"], function(){
+    mousewheel = new MouseWheel();
+    mousewheel.init('#target', {
       change: function(data) {
         if (!Boolean($('#target').editable('getText'))) {
           return false;
@@ -955,6 +953,12 @@ $(function(){
         }
       }
     });    
+  });
+
+  var memento;
+  require(["jquery.editable", "module.memento"], function(){
+    memento = new Memento();
+    memento.init('#target');
   });
   
 });
