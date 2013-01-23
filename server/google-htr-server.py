@@ -380,10 +380,10 @@ if __name__ == "__main__":
 
     port = 3003
     try: 
-      port = models.config["server"]["port"]
+      port = int(sys.argv[2])
     except:
       try:
-        port = int(sys.argv[2])
+        port = models.config["server"]["port"]
       except:
         pass
 
