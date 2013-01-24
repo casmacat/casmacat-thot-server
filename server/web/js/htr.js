@@ -211,6 +211,7 @@ require(["jsketch", "jquery.sketchable"], function() {
     cnv.sketchable('clear');
   }
 
+  var lastElementOnMouse;
 
   // instantiate a drawable canvas 
   var cnv = $('#drawing-canvas').sketchable({
@@ -266,6 +267,26 @@ require(["jsketch", "jquery.sketchable"], function() {
         }
      },
   }).bind('mousemove', function (e) { 
+    // var $this = $(this);
+    // $this.hide();
+    // var elem = $(document.elementFromPoint(e.clientX, e.clientY));
+    // $this.show();
+    var tokens = $('#target').editable('getTokensAtXY', [e.clientX, e.clientY]);
+    var elem; 
+    if (tokens.length > 0 && tokens[0].distance.d == 0) {
+      elem = $(tokens[0].token);
+    }
+
+    //console.log(lastElementOnMouse, elem);
+    if (elem != lastElementOnMouse) {
+      if (lastElementOnMouse) lastElementOnMouse.mouseout();
+      if (elem) elem.mouseover();
+    }
+    if (elem) {
+      elem.mousemove()
+    }
+    lastElementOnMouse = elem;
+
       //$('#info').text("m: " + getRelativeXY([e.clientX, e.clientY])); 
   });
   
