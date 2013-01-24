@@ -228,7 +228,8 @@ require(["jsketch", "jquery.sketchable"], function() {
             gesture = gestureRecognizer.recognize(strokes);
             // first HTR stroke
             if (!gesture || insert_after_token) {
-              var tokenDistance = getTokenDistanceAtPointer(e);
+              var centroid = getAbsoluteXY(MathLib.centroid(strokes[0].slice(0, 20)));
+              var tokenDistance = getTokenDistanceAtPointer({clientX: centroid[0], clientY: centroid[1]});
               casmacatHtr.startSession({
                   source: $('#source').editable('getText'),
                   target: $('#target').editable('getText'),
