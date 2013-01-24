@@ -60,6 +60,14 @@ if (typeof io === 'undefined') throw "Socket IO not found";
     };
     
     /**
+    * Check connection status 
+    */
+    self.isConnected = function() {
+      return self.server.socket.open;
+    };
+
+    
+    /**
     * Tries to reconnect if connection drops.
     */
     self.checkConnection = function() {

@@ -3,7 +3,23 @@ if (typeof casmacat === 'undefined') throw "casmacat object not defined";
 var casmacatItp; // To be reused by other scripts
 
 $(function(){
- 
+   
+  blockUI("Connecting...");
+
+  function firstConnection() {
+    updateConfidenceSlider();
+    updatePrioritySlider();
+    toggleControlPanel();
+    $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
+    casmacatItp.ping({
+      ms: new Date().getTime()
+    });
+    casmacatItp.getServerConfig();
+    if (casmacat.htrServer) {
+      $('#btn-epen').click();
+    }
+  }
+
   // Connect to a server; casmacat will receive async server responses
   casmacatItp = new PredictiveCatClient(true);
   casmacatItp.connect('http://' + casmacat.itpServer + '/casmacat');
@@ -11,6 +27,7 @@ $(function(){
   // Socket.IO callbacks -------------------------------------------------------
   // See https://github.com/LearnBoost/socket.io/wiki/Exposed-events
   casmacatItp.on('connect', function() {
+    firstConnection();
     unblockUI();
   });
   
@@ -868,7 +885,7 @@ $(function(){
     $epen.css({
       top: pos.top - ofs,
       height: siz.height,
-      left: 2, // FIXME: this Review
+      left: 2, // FIXME: Review this
       width: siz.width,
     });
 
@@ -904,11 +921,12 @@ $(function(){
     return false;
   };
 
-  function blockUI(msg) {
+  function blockUI(msg, fn) {
     $('#global').block({
       message: '<h2>' + msg + '</h2>',
       centerY: false, // Fix weird position issue in some modern browsers
-      css: { fontSize:'150%', padding:'1% 2%', top:'45%', borderWidth:'3px', borderRadius:'10px', '-webkit-border-radius':'10px', '-moz-border-radius':'10px' }
+      css: { fontSize:'150%', padding:'1% 2%', top:'45%', borderWidth:'3px', borderRadius:'10px', '-webkit-border-radius':'10px', '-moz-border-radius':'10px' },
+//      onUnblock: fn
     });  
   };
   
@@ -920,25 +938,11 @@ $(function(){
   /*******************************************************************************/
   /*                                 Init calls                                  */
   /*******************************************************************************/ 
-  
-  require(["jquery.blockUI", "jquery.rotatecells"], function(){
-    blockUI("Connecting...");
-    console.log('unblock added');
-    //setTimeout(function(){
-      updateConfidenceSlider();
-      updatePrioritySlider();
-      toggleControlPanel();
-      $('#matrix, #btn-alignments, #btn-updatedsentences, #updatedsentences').hide();
-      casmacatItp.ping({
-        ms: new Date().getTime()
-      });
-      casmacatItp.getServerConfig();
-      if (casmacat.htrServer) {
-        $('#btn-epen').click();
-      }
-    //}, 100);
-  });
-  
+
+  require(["jquery.rotatecells"]);
+  //require(["jquery.blockUI"], function(){
+  //});
+ 
   // TODO: Load modules from here onwards --------------------------------------
   
   var mousewheel;
