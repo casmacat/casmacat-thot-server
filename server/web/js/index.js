@@ -402,6 +402,7 @@ $(function(){
 */
 
   $('#btn-translate').click(function(e) {
+    $('.drawhere').remove();
     $('#target').editable('setText', "");
     var query = {
       source: $('#source').text(),
