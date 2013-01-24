@@ -383,7 +383,7 @@
         caretRect = jQuery.extend({}, token.range.getClientRects()[0]);
       }
       catch (err) {
-        console.warn(err);
+//        console.warn(err, printStackTrace());
         caretRect = jQuery.extend({}, this.get(0).getClientRects()[0]);
         // Recompute caretRect to eliminate margins, borders and paddings
         caretRect.top += parseFloat($this.css('border-top-width')) + parseFloat($this.css('padding-top')); // parseFloat($this.css('margin-top')) + 

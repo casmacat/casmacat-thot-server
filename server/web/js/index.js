@@ -541,6 +541,7 @@ $(function(){
   };
 
   $('#target')[0].addEventListener('DOMSubtreeModified', reposHtrCanvas, false);
+  $('#target')[0].addEventListener('DOMCharacterDataModified', reposHtrCanvas, false);
 
 
   // get the aligned html ids for source and target tokens

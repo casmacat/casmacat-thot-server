@@ -125,7 +125,7 @@ require(["jsketch", "jquery.sketchable"], function() {
       n = $(t[0].nextSibling);
       t.remove(); 
       t = n;
-    } while (!t.is('.editable-token') && t[0].nextSibling);
+    } while (t.length && !t.is('.editable-token'));
     
     casmacatItp.setPrefix({
       source: $source.text(),

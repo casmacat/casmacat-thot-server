@@ -21,8 +21,8 @@ if (typeof io === 'undefined') throw "Socket IO not found";
       if (self.debug) {
         var emit = self.server.emit;
         self.server.emit = function() {
+          console.log("emit", arguments);
           emit.apply(this, arguments);
-          console.log("emit", String.apply(this, arguments));
         }
       }
     };
