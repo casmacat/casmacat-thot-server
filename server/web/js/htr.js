@@ -281,8 +281,8 @@ require(["jsketch", "jquery.sketchable"], function() {
 
       //console.log(lastElementOnMouse, elem);
       if (elem != lastElementOnMouse) {
-        if (lastElementOnMouse) lastElementOnMouse.mouseout();
-        if (elem) elem.mouseover();
+        if (lastElementOnMouse) lastElementOnMouse.mouseleave();
+        if (elem) elem.mouseenter();
       }
       if (elem) {
         elem.mousemove()
