@@ -10,6 +10,10 @@ $(function(){
 
   // Socket.IO callbacks -------------------------------------------------------
   // See https://github.com/LearnBoost/socket.io/wiki/Exposed-events
+  casmacatItp.on('connect', function() {
+    unblockUI();
+  });
+  
   casmacatItp.on('disconnect', function() {
     blockUI("Server disconnected");
     casmacatItp.checkConnection();
@@ -919,6 +923,7 @@ $(function(){
   
   require(["jquery.blockUI", "jquery.rotatecells"], function(){
     blockUI("Connecting...");
+    console.log('unblock added');
     //setTimeout(function(){
       updateConfidenceSlider();
       updatePrioritySlider();

@@ -218,11 +218,13 @@ require(["jsketch", "jquery.sketchable"], function() {
       interactive: true,
       events: {
         mouseDown: function(e) {
+          clearTimeout(decoderTimer); // this must preceed in order to cancel the timer
           e.preventDefault(); // prevent displaying caret
-          clearTimeout(decoderTimer);
         },
         mouseUp: function(e) {
           var gesture, strokes = cnv.sketchable('strokes');
+
+          if (!strokes || !strokes[0]) return false;
 
           // one stroke means either gesture or first HTR stroke
           if (strokes.length === 1) {
@@ -250,6 +252,9 @@ require(["jsketch", "jquery.sketchable"], function() {
             }
           }
 
+          //var s = strokes[strokes.length-1];
+          //$('h1').text(1000*s.length/(s[s.length-1][2] - s[0][2]) + " " + s.length);
+
           // if it is not a gesture, then we are doing HTR. Append last stroke
           if (!gesture) {
             casmacatHtr.addStroke({points: strokes[strokes.length-1], is_pen_down: true});      
@@ -267,25 +272,23 @@ require(["jsketch", "jquery.sketchable"], function() {
         }
      },
   }).bind('mousemove', function (e) { 
-    // var $this = $(this);
-    // $this.hide();
-    // var elem = $(document.elementFromPoint(e.clientX, e.clientY));
-    // $this.show();
-    var tokens = $('#target').editable('getTokensAtXY', [e.clientX, e.clientY]);
-    var elem; 
-    if (tokens.length > 0 && tokens[0].distance.d == 0) {
-      elem = $(tokens[0].token);
-    }
+    if (!cnv.data('sketchable').canvas.isDrawing) {
+      var tokens = $('#target').editable('getTokensAtXY', [e.clientX, e.clientY]);
+      var elem; 
+      if (tokens.length > 0 && tokens[0].distance.d == 0) {
+        elem = $(tokens[0].token);
+      }
 
-    //console.log(lastElementOnMouse, elem);
-    if (elem != lastElementOnMouse) {
-      if (lastElementOnMouse) lastElementOnMouse.mouseout();
-      if (elem) elem.mouseover();
+      //console.log(lastElementOnMouse, elem);
+      if (elem != lastElementOnMouse) {
+        if (lastElementOnMouse) lastElementOnMouse.mouseout();
+        if (elem) elem.mouseover();
+      }
+      if (elem) {
+        elem.mousemove()
+      }
+      lastElementOnMouse = elem;
     }
-    if (elem) {
-      elem.mousemove()
-    }
-    lastElementOnMouse = elem;
 
       //$('#info').text("m: " + getRelativeXY([e.clientX, e.clientY])); 
   });

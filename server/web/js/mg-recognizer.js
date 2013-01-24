@@ -53,10 +53,6 @@ function MinGestures(conf) {
   };
       
   this.recognize = function(strokes) {
-    if (strokes[0].length <= dotThr) {
-      return { name: 'dot', score: 1 };
-    }
-
     var stroke = [];
     // mirror y axis so that coordinate system us standard
     for (var i = 0; i < strokes[0].length; ++i) { 
@@ -67,6 +63,11 @@ function MinGestures(conf) {
 
     var bb = MathLib.boundingBox(lied.stroke);
     var aspectRatio = bb.width/bb.height;
+
+    if (strokes[0].length <= dotThr || (bb.width < dotThr && bb.height < dotThr)) {
+      return { name: 'dot', score: 1 };
+    }
+
 
     var pixBwd = MathLib.computePixelsBackwards(lied.stroke);
 
