@@ -540,6 +540,8 @@ $(function(){
     }
   };
 
+  $('#target')[0].addEventListener('DOMSubtreeModified', reposHtrCanvas, false);
+
 
   // get the aligned html ids for source and target tokens
   function get_alignment_ids(alignments, sourcespans, targetspans) {
