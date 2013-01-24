@@ -265,7 +265,7 @@ require(["jsketch", "jquery.sketchable"], function() {
         }
      },
   }).bind('mousemove', function (e) { 
-      $('#info').text("m: " + getRelativeXY([e.clientX, e.clientY])); 
+      //$('#info').text("m: " + getRelativeXY([e.clientX, e.clientY])); 
   });
   
   

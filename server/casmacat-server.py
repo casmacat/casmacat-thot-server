@@ -159,15 +159,30 @@ ROOT = os.path.normpath(os.path.dirname(__file__))
 def filter_utf8(string):
   return string.encode('utf-8')
 
+def convert(data):
+  if isinstance(data, unicode):
+    return filter_utf8(data)
+  elif isinstance(data, basestring):
+    return data
+  elif isinstance(data, collections.Mapping):
+    return dict(map(convert, data.iteritems()))
+  elif isinstance(data, collections.Iterable):
+    return type(data)(map(convert, data))
+  else:
+    return data
+
 def to_utf8(obj):
-  if obj == None:
-    return obj
-  elif isinstance(obj, basestring):
-    return filter_utf8(obj)
-  elif isinstance(obj, list): 
-    return [to_utf8(w) for w in obj]
-  print "Unknown type", type(obj), "for object", obj
-  raise "Unknown type"
+  return convert(obj)
+
+#def to_utf8(obj):
+#  if obj == None:
+#    return obj
+#  elif isinstance(obj, basestring):
+#    return filter_utf8(obj)
+#  elif isinstance(obj, list): 
+#    return [to_utf8(w) for w in obj]
+#  print "Unknown type", type(obj), "for object", obj
+#  raise "Unknown type"
 
 
 class IndexHandler(web.RequestHandler):
@@ -224,7 +239,6 @@ class CasmacatConnection(SocketConnection):
     @timer('setReplacementRule')
     @thrower('setReplacementRuleResult')
     def getTokens(self, data):
-      data =  to_utf8(data)
       print 'data:', data
       source, target = to_utf8(data['source']), to_utf8(data['target'])
 
