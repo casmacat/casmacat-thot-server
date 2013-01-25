@@ -48,7 +48,7 @@ function trim_text($text, $words = 5)
   <?php } ?>  
   <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
 </head>
-<body>
+<body spellcheck="false">
 
 <div id="global">
   <h1 id="title">CasMaCat API demo</h1>
