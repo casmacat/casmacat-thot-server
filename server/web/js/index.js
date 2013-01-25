@@ -193,12 +193,14 @@ $(function(){
   // caretenter is a new event from jquery.editable that is triggered
   // whenever the caret enters in a new token span
   $('#source, #target').bind('caretenter', function(e, d) {
-      $(d.token).trigger('mouseenter');
+    var aligs = $(d.token).data('alignments').alignedIds;
+    show_alignments(aligs, 'caret-align');
   })
   // caretleave is a new event from jquery.editable that is triggered
   // whenever the caret leaves a token span
   .bind('caretleave', function(e, d) {
-      $(d.token).trigger('mouseleave');
+    var aligs = $(d.token).data('alignments').alignedIds;
+    hide_alignments(aligs, 'caret-align');
   })
   .keydown(function(e) {
     // prevent new lines
@@ -570,15 +572,15 @@ $(function(){
   };
 
   
-  function show_alignments(aligs) {
+  function show_alignments(aligs, classname) {
     for (var j = 0; j < aligs.length; j++) {
-      $(aligs[j]).toggleClass('align', true);
+      $(aligs[j]).toggleClass(classname, true);
     }
   }
 
-  function hide_alignments(aligs) {
+  function hide_alignments(aligs, classname) {
     for (var j = 0; j < aligs.length; j++) {
-      $(aligs[j]).toggleClass('align', false);
+      $(aligs[j]).toggleClass(classname, false);
     }
   }
 
@@ -592,16 +594,11 @@ $(function(){
       if (!data) {
         $span.mouseenter(function (e) {
           var aligs = $(e.target).data('alignments').alignedIds;
-          show_alignments(aligs);
+          show_alignments(aligs, 'mouse-align');
         });
         $span.mouseleave(function (e) {
           var aligs = $(e.target).data('alignments').alignedIds;
-          if (this.parentNode && $(this.parentNode).is('.editable')) {
-            var data = $(this.parentNode).data('editable');
-            if (data.currentElement != this) {
-              hide_alignments(aligs);
-            }
-          }
+          hide_alignments(aligs, 'mouse-align');
         });
       }
       else {
@@ -609,7 +606,7 @@ $(function(){
       }
       data = { alignedIds: aligids[i] };
       data.onremove = function(alignedIds) { 
-        return function(e) { hide_alignments(alignedIds); }
+        return function(e) { hide_alignments(alignedIds, 'mouse-align caret-align'); }
       }(data.alignedIds);
 
       $span[0].addEventListener('DOMNodeRemoved', data.onremove, false);
