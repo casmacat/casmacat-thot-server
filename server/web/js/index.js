@@ -569,27 +569,51 @@ $(function(){
     return {sourceal: sourceal, targetal: targetal};	  	
   };
 
+  
+  function show_alignments(aligs) {
+    for (var j = 0; j < aligs.length; j++) {
+      $(aligs[j]).toggleClass('align', true);
+    }
+  }
+
+  function hide_alignments(aligs) {
+    for (var j = 0; j < aligs.length; j++) {
+      $(aligs[j]).toggleClass('align', false);
+    }
+  }
+
+
   // add alignment events so that aligned words are highlighted
-  function add_alignment_events(spans, aligids) {
+  function add_alignment_events($node, spans, aligids) {
     // add mouseenter mouseleave events to token spans
-    //XXX: what happens is the span had already been assigned align visualization events? 
-    // many event (equal) handlers are called?
     for (var i = 0; i < spans.length; i++) {
-      $(spans[i]).mouseenter(aligids[i], function (e) {
-        for (var j = 0; j < e.data.length; j++) {
-          $(e.data[j]).toggleClass('align', true);
-        }
-      });
-      $(spans[i]).mouseleave(aligids[i], function (e) {
-        if (this.parentNode && $(this.parentNode).is('.editable')) {
-          var data = $(this.parentNode).data('editable');
-          if (data.currentElement != this) {
-            for (var j = 0; j < e.data.length; j++) {
-              $(e.data[j]).toggleClass('align', false);
+      var $span = $(spans[i]);
+      var data = $span.data('alignments');
+      if (!data) {
+        $span.mouseenter(function (e) {
+          var aligs = $(e.target).data('alignments').alignedIds;
+          show_alignments(aligs);
+        });
+        $span.mouseleave(function (e) {
+          var aligs = $(e.target).data('alignments').alignedIds;
+          if (this.parentNode && $(this.parentNode).is('.editable')) {
+            var data = $(this.parentNode).data('editable');
+            if (data.currentElement != this) {
+              hide_alignments(aligs);
             }
           }
-        }
-      });
+        });
+      }
+      else {
+        $span[0].removeEventListener('DOMNodeRemoved', data.onremove, false);
+      }
+      data = { alignedIds: aligids[i] };
+      data.onremove = function(alignedIds) { 
+        return function(e) { hide_alignments(alignedIds); }
+      }(data.alignedIds);
+
+      $span[0].addEventListener('DOMNodeRemoved', data.onremove, false);
+      $span.data('alignments', data);
     } 
   };
 
@@ -624,10 +648,10 @@ $(function(){
     var targetal = aligids.targetal;
 
     // add mouseenter mouseleave events to source spans
-    add_alignment_events(sourcespans, sourceal);
+    add_alignment_events($('#source'), sourcespans, sourceal);
 
     // add mouseenter mouseleave events to target spans
-    add_alignment_events(targetspans, targetal);
+    add_alignment_events($('#target'), targetspans, targetal);
 
     if ($('#opt-alignments').is(':checked') && $('#matrix').is(":visible")) {
       update_aligment_matrix(alignments);
