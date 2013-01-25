@@ -542,9 +542,6 @@ $(function(){
     }
   };
 
-  $('#target')[0].addEventListener('DOMSubtreeModified', reposHtrCanvas, false);
-  $('#target')[0].addEventListener('DOMCharacterDataModified', reposHtrCanvas, false);
-
 
   // get the aligned html ids for source and target tokens
   function get_alignment_ids(alignments, sourcespans, targetspans) {
@@ -918,6 +915,18 @@ $(function(){
     $canvas.attr('height', $canvas.height());
     //$canvas.sketchable('clear');
   };
+
+  var lastTargetHeight = 0;
+  function reposHtrCanvasIfTargetResized() {
+    var currTargetHeight = $('#target').height();
+    if (currTargetHeight != lastTargetHeight) reposHtrCanvas();
+    lastTargetHeight = currTargetHeight; 
+  }
+  $('#target')[0].addEventListener('DOMSubtreeModified', reposHtrCanvasIfTargetResized, false);
+  $('#target')[0].addEventListener('DOMCharacterDataModified', reposHtrCanvasIfTargetResized, false);
+
+
+
 
   function trimText(text, numWords, delimiter) {
     if (!numWords)  numWords  = 5;
