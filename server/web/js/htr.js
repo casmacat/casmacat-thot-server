@@ -62,6 +62,7 @@ require(["jsketch", "jquery.sketchable"], function() {
   // helper function to limit the number of server requests
   // at least throttle_ms have to pass for events to trigger 
   var decoderTimer = 0, timerMs = 400;
+  var canvasForwarderTimer = 0, canvasForwarderTimerMs = 100;
   var insert_after_token, insertion_token, insertion_token_space;
 
   function getTokenDistanceAtPointer(e) {
@@ -219,7 +220,7 @@ require(["jsketch", "jquery.sketchable"], function() {
       events: {
         mouseDown: function(e) {
           clearTimeout(decoderTimer); // this must preceed in order to cancel the timer
-          e.preventDefault(); // prevent displaying caret
+//          e.preventDefault(); // prevent displaying caret
         },
         mouseUp: function(e) {
           var gesture, strokes = cnv.sketchable('strokes');
@@ -272,24 +273,26 @@ require(["jsketch", "jquery.sketchable"], function() {
         }
      },
   }).bind('mousemove', function (e) { 
-    if (!cnv.data('sketchable').canvas.isDrawing) {
-      var tokens = $('#target').editable('getTokensAtXY', [e.clientX, e.clientY]);
-      var elem; 
-      if (tokens.length > 0 && tokens[0].distance.d == 0) {
-        elem = $(tokens[0].token);
-      }
+    clearTimeout(canvasForwarderTimer);
+    if (canvasForwarderTimerMs > 0 && !cnv.data('sketchable').canvas.isDrawing) {
+      canvasForwarderTimer = setTimeout(function () {
+        var tokens = $('#target').editable('getTokensAtXY', [e.clientX, e.clientY]);
+        var elem; 
+        if (tokens.length > 0 && tokens[0].distance.d == 0) {
+          elem = $(tokens[0].token);
+        }
 
-      //console.log(lastElementOnMouse, elem);
-      if (elem != lastElementOnMouse) {
-        if (lastElementOnMouse) lastElementOnMouse.mouseleave();
-        if (elem) elem.mouseenter();
-      }
-      if (elem) {
-        elem.mousemove()
-      }
-      lastElementOnMouse = elem;
+        //console.log(lastElementOnMouse, elem);
+        if (elem != lastElementOnMouse) {
+          if (lastElementOnMouse) lastElementOnMouse.mouseleave();
+          if (elem) elem.mouseenter();
+        }
+        if (elem) {
+          elem.mousemove()
+        }
+        lastElementOnMouse = elem;
+      }, canvasForwarderTimerMs)
     }
-
       //$('#info').text("m: " + getRelativeXY([e.clientX, e.clientY])); 
   });
   
