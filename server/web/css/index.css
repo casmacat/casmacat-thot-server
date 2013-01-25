@@ -102,11 +102,11 @@ textarea {
 .wordconf-bad, #slider-bad {
 	color: red;
 }
-.caret-align {
-	background-color: aquamarine;
-}
 .mouse-align {
 	background-color: yellow;
+}
+.caret-align {
+	background-color: aquamarine;
 }
 #hidden {
 	position: absolute;
