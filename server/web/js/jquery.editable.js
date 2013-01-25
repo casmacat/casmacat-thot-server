@@ -122,12 +122,12 @@
     return path.reverse();
   };
 
-  function rectDistance(rect, point, delta) {
+  function rectDistance(rect, point) {
     var x = point[0], y = point[1], r = { 
-      x1: rect.left - delta,
-      x2: rect.left + rect.width + delta,
-      y1: rect.top - delta,
-      y2: rect.top + rect.height + delta,
+      x1: rect.left,
+      x2: rect.left + rect.width,
+      y1: rect.top,
+      y2: rect.top + rect.height,
     };
 
     var dist = { d: 0, dx: 0, dy: 0 };
@@ -146,32 +146,51 @@
   }
 
 
-  function getRect($node) {
+  function getRect($node, delta) {
+    var delta = delta || 0;
     var rect    = $node.offset();
-    rect.width  = $node.outerWidth();
-    rect.height = $node.outerHeight();
+    rect.left -= delta;
+    rect.top  -= delta;
+    rect.width  = $node.outerWidth()  + 2*delta;
+    rect.height = $node.outerHeight() + 2*delta;
     rect.right  = rect.left + rect.width;
     rect.bottom = rect.top  + rect.height;
     return rect;
   }
 
-  function nodeDistance(node, point, delta) {
-    var rect = getRect($(node));
-    return rectDistance(rect, point, delta);
+  function boundingBox(points) {
+  	var minX = +Infinity, maxX = -Infinity, minY = +Infinity, maxY = -Infinity;
+  	for (var i = 0; i < points.length; i++) {
+  	  minX = Math.min(minX, points[i][0]);
+  	  minY = Math.min(minY, points[i][1]);
+  	  maxX = Math.max(maxX, points[i][0]);
+  	  maxY = Math.max(maxY, points[i][1]);
+  	}
+  	return { left: minX, top: minY, width: maxX - minX, height: maxY - minY, right: maxX, bottom: maxY };
   }
 
-  function _nodeDistance(node, point, delta) {
-    var rects = node.getClientRects();
-    var min = Number.MAX_VALUE;
-    var minDist;
-    
-    for (var i = 0; i < rects.length; i++) {
-      var dist = rectDistance(rects[i], point, delta);
-      if (dist.d < min) {
-        minDist = dist;
+  function nodeCollision(node, points, delta) {
+    var rect = getRect($(node), delta);
+    var bb = boundingBox(points);
+    if (rect.left > bb.right || rect.right < bb.left || rect.top > bb.bottom || rect.bottom < bb.top) return 0;
+    else {
+      var l = points.length;
+      var distance = {d: l, dx: l, dy: l};
+      for (var i = 0; i < l; ++i) {
+        var x = points[i][0], y = points[i][1];
+        var isInX = (x >= rect.left && x <= rect.right);
+        var isInY = (y >= rect.top  && y <= rect.bottom)
+        if (isInX && isInY) distance.d--;
+        if (isInX) distance.dx--;
+        if (isInY) distance.dy--;
       }
-    }
-    return minDist;
+      return distance;
+    } 
+  }
+
+  function nodeDistance(node, point, delta) {
+    var rect = getRect($(node), delta);
+    return rectDistance(rect, point);
   }
 
   function nodeCenter(node) {
@@ -237,6 +256,20 @@
       return {elem: elem, pos: pos};
     },
 
+    getTokensAtStroke: function(points, delta) {
+      if (!delta) delta = 0; 
+      var $this = $(this);
+      var spans = $.makeArray($('span', $this));
+
+      var tokens = []
+      for (var i = 0; i < spans.length; ++i) {
+        var distance = nodeCollision(spans[i], point, delta);
+        tokens.push({ token: spans[i], distance: distance });
+      }
+      tokens.sort(function(a,b){ return a.distance.d - b.distance.d});
+      return tokens;
+    },
+
     getTokensAtXY: function(point, delta) {
       if (!delta) delta = 0; 
       var $this = $(this);
@@ -266,7 +299,7 @@
       var tokens = [];
       for (var i = 0; i < spans.length; i++) {
         var center = nodeCenter(spans[i]);
-        var distance = rectDistance(rect, center.x, center.y, delta);
+        var distance = rectDistance(rect, center.x, center.y);
         tokens.push({ token: spans[i], distance: distance });
       }
       tokens.sort(function(a,b){ return a.distance.d - b.distance.d});
