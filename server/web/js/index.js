@@ -193,14 +193,18 @@ $(function(){
   // caretenter is a new event from jquery.editable that is triggered
   // whenever the caret enters in a new token span
   $('#source, #target').bind('caretenter', function(e, d) {
-    var aligs = $(d.token).data('alignments').alignedIds;
-    show_alignments(aligs, 'caret-align');
+    var alignments = $(d.token).data('alignments');
+    if (alignments && alignments.alignedIds) {
+      show_alignments(alignments.alignedIds, 'caret-align');
+    }
   })
   // caretleave is a new event from jquery.editable that is triggered
   // whenever the caret leaves a token span
   .bind('caretleave', function(e, d) {
-    var aligs = $(d.token).data('alignments').alignedIds;
-    hide_alignments(aligs, 'caret-align');
+    var alignments = $(d.token).data('alignments');
+    if (alignments && alignments.alignedIds) {
+      hide_alignments(alignments.alignedIds, 'caret-align');
+    }
   })
   .keydown(function(e) {
     // prevent new lines
