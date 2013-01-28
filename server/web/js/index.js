@@ -15,6 +15,10 @@ $(function(){
       ms: new Date().getTime()
     });
     casmacatItp.getServerConfig();
+    casmacatItp.configure({
+      suggestions: $('#opt-suggestions').is(':checked'), 
+      mode: $('input[@name=show]:checked').val()
+    });
     if (casmacat.htrServer) {
       $('#btn-epen').click();
     }
