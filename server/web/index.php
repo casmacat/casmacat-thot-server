@@ -71,12 +71,12 @@ function trim_text($text, $words = 5)
           <input type="radio" name="show" id="opt-pe" value="PE" /> Post-editing (no suffix update)
           <input type="radio" name="show" id="opt-itp" value="ITP" checked="checked" /> ITP (predictive)
           <input type="radio" name="show" id="opt-itp-ol" value="ITP-OL" /> ITP-OL (online learning)
-        </form>
         <div class="block mt">
+          <label for="opt-prioritizer">Suggestion length:</label><select name="prioritizer" id="opt-prioritizer"><option value="none">None</option></select> 
           <input type="checkbox" id="opt-suggestions" /> <label for="opt-suggestions">Display suggestions</label>
           <input type="checkbox" id="opt-confidences" checked="checked" /> <label for="opt-confidences">Display confidences</label>
-          <input type="checkbox" id="opt-alignments" checked="checked" /> <label for="opt-alignments">Display alignments</label>
         </div>
+        </form>
         <!--div id="caret">undef</div-->
       </div>
       

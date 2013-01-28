@@ -3,8 +3,7 @@
 
 import sys, traceback, os
 import datetime, time
-import random, math, codecs
-
+import random, math, codecs, copy
 try: import simplejson as json
 except ImportError: import json
 
@@ -465,12 +464,13 @@ class CasmacatConnection(SocketConnection):
           prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
-          if models.word_prioritizer and self.source_tok:
+          if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
+            wp = models.word_prioritizers[self.config["prioritizer"]]
             n_ok = len(prefix_tok)
             if last_token_is_partial:
               n_ok -= 1
             validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
-            priority = models.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+            priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
             match["priorities"] = priority
 
           add_match(predictions, match)
@@ -515,13 +515,14 @@ class CasmacatConnection(SocketConnection):
           prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
-          if models.word_prioritizer and self.source_tok:
+          if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
+            wp = models.word_prioritizers[self.config["prioritizer"]]
             n_ok = len(prefix_tok)
             if last_token_is_partial:
               n_ok -= 1
             validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
-            priority = models.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
-            match["wordPriority"] = priority
+            priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+            match["priorities"] = priority
 
           add_match(predictions, match)
       prepare(predictions)
@@ -601,6 +602,35 @@ class RouterConnection(SocketConnection):
 # Create tornadio router
 CasmacatRouter = TornadioRouter(RouterConnection)
 
+
+class WordPriorityContainer:
+  last_id = 0
+  def __init__(self, config):
+    self.config = copy.deepcopy(config)
+    if "id" not in self.config: 
+      self.config["id"] = "word_priority_plugin_%d" % last_id
+      last_id += 1
+    start_time = datetime.datetime.now()
+    self.word_priority_plugin = WordPriorityPlugin(config["module"], config["parameters"])
+    self.word_priority_factory = self.word_priority_plugin.create()
+    if not self.word_priority_factory: raise Exception("Word prioritizer plugin failed")
+    self.word_priority_factory.setLogger(logger)
+    self.word_prioritizer = self.word_priority_factory.createInstance()
+    if not self.word_prioritizer: raise Exception("Word prioritizer instance failed")
+    elapsed_time = datetime.datetime.now() - start_time
+    print "TIME:%s loaded:%s" % ("word-prioritizer", fmt_delta(elapsed_time))
+
+  def __del__(self):
+    self.word_priority_factory.deleteInstance(self.word_prioritizer);
+    self.word_priority_plugin.destroy(self.word_priority_factory)
+    self.word_prioritizer, self.word_priority_factory = None, None
+    del self.word_priority_plugin
+
+  def reset(self):
+    pass
+
+ 
+
 class Models:
   def __init__(self, config_fn):
     self.config = json.load(open(config_fn))
@@ -679,20 +709,15 @@ class Models:
     elapsed_time = datetime.datetime.now() - start_time
     print "TIME:%s loaded:%s" % ("confidencer", fmt_delta(elapsed_time))
 
+    self.word_prioritizers = {}
     if "word-prioritizer" in self.config:
-      start_time = datetime.datetime.now()
-      self.word_priority_plugin = WordPriorityPlugin(self.config["word-prioritizer"]["module"], self.config["word-prioritizer"]["parameters"])
-      self.word_priority_factory = self.word_priority_plugin.create()
-      if not self.word_priority_factory: raise Exception("Word prioritizer plugin failed")
-      self.word_priority_factory.setLogger(logger)
-      self.word_prioritizer = self.word_priority_factory.createInstance()
-      if not self.word_prioritizer: raise Exception("Word prioritizer instance failed")
-      elapsed_time = datetime.datetime.now() - start_time
-      print "TIME:%s loaded:%s" % ("word-prioritizer", fmt_delta(elapsed_time))
-    else:
-      self.word_priority_plugin  = None 
-      self.word_priority_factory = None 
-      self.word_prioritizer      = None
+      if type(self.config["word-prioritizer"]) is list:
+        for wp in self.config["word-prioritizer"]:
+          plugin = WordPriorityContainer(wp)
+          self.word_prioritizers[plugin.config['id']] = plugin
+      else:
+        plugin = WordPriorityContainer(self.config["word-prioritizer"])
+        self.word_prioritizers[plugin.config['id']] = plugin
 
     self.assign_models()    
     print >> sys.stderr, "Plugins loaded"
@@ -700,11 +725,9 @@ class Models:
   
   @timer('delete_plugins')
   def delete_plugins(self):
-    if self.word_priority_factory:
-      self.word_priority_factory.deleteInstance(self.word_prioritizer);
-      self.word_priority_plugin.destroy(self.word_priority_factory)
-      self.word_prioritizer, self.word_priority_factory = None, None
-      del self.word_priority_plugin
+    for k, v in self.word_prioritizers.iteritems():
+      del v
+    self.word_prioritizers = None
 
     self.confidence_factory.deleteInstance(self.confidencer);
     self.confidence_plugin.destroy(self.confidence_factory)

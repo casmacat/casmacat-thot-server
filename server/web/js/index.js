@@ -17,7 +17,8 @@ $(function(){
     casmacatItp.getServerConfig();
     casmacatItp.configure({
       suggestions: $('#opt-suggestions').is(':checked'), 
-      mode: $('input[@name=show]:checked').val()
+      mode: $('input[@name=show]:checked').val(),
+      prioritizer: $('#opt-prioritizer').val()
     });
     if (casmacat.htrServer) {
       $('#btn-epen').click();
@@ -52,7 +53,8 @@ $(function(){
     unblockUI();
     casmacatItp.configure({
       suggestions: $('#opt-suggestions').is(':checked'), 
-      mode: $('input[@name=show]:checked').val()
+      mode: $('input[@name=show]:checked').val(),
+      prioritizer: $('#opt-prioritizer').val()
     });
   });
 
@@ -73,7 +75,8 @@ $(function(){
     unblockUI();
     var cfg = {
       suggestions: $('#opt-suggestions').is(':checked'), 
-      mode: $('input[@name=show]:checked').val()
+      mode: $('input[@name=show]:checked').val(),
+      prioritizer: $('#opt-prioritizer').val()
     };
     casmacatItp.configure(cfg);
   });
@@ -136,6 +139,7 @@ $(function(){
 
   // Receive server configuration 
   casmacatItp.on('getServerConfigResult', function(data, err) {
+    console.log('server config obtained', data);
     var c = data.config;
     if (c) {
       if (c.sentences && c.sentences.length > 0) {
@@ -150,8 +154,17 @@ $(function(){
       if (c.confidencer && c.confidencer.threshold) {
         updateConfidenceSlider(c.confidencer.thresholds);
       }
-      if (c.prioritizer && c.prioritizer.threshold) {
-        updatePrioritySlider(c.prioritizer.threshold);
+      if (c["word-prioritizer"]) {
+        var pris = c["word-prioritizer"]; 
+        if (!pris instanceof Array) pris = [pris]; 
+        var $select = $('select#opt-prioritizer');
+        $select.html( $('<option value="none">None</option>') );
+        for (var i = 0; i < pris.length; ++i) {
+          $select.append( $('<option value="'+pris[i].id+'">'+pris[i].id+'</option>') );
+        }
+        if (pris[0].threshold) {
+          updatePrioritySlider(pris[0].threshold);
+        }
       }
       reposHtrCanvas();
     }
@@ -433,7 +446,7 @@ $(function(){
     casmacatItp.validate(query);
   });
 
-  $('#show-options input').change(function() {
+  $('#show-options input, #show-options select').change(function() {
     var show_type = $('input[@name=show]:checked').val();
     switch(show_type) {
       case 'PE':
@@ -450,7 +463,7 @@ $(function(){
         break;
     }
     //if (!$('#target').is(':empty')) {
-      casmacatItp.configure({suggestions:$('#opt-suggestions').is(':checked'), mode:show_type});
+      casmacatItp.configure({suggestions:$('#opt-suggestions').is(':checked'), mode:show_type, prioritizer:$('#opt-prioritizer').val()});
     //}
   });
 

@@ -279,13 +279,16 @@ public:
 
   virtual IWordPriorityEngine *createInstance(const std::string &specialization_id = "") {
 		// TODO: create different instances according to specialization_id
-		
-    //NWordPrioritizer *rc = new NWordPrioritizer(_n_word_len);
-		ConfidenceNWordPrioritizer *rc = new ConfidenceNWordPrioritizer(_n_word_len,_threshold,_confidence_prefix);
-		
-		rc->setLogger(_logger);
-
-		return rc;
+    if (_confidence_prefix == "") {
+      NWordPrioritizer *rc = new NWordPrioritizer(_n_word_len);
+  		rc->setLogger(_logger);
+  		return rc;
+    }
+    else {
+  		ConfidenceNWordPrioritizer *rc = new ConfidenceNWordPrioritizer(_n_word_len,_threshold,_confidence_prefix);
+  		rc->setLogger(_logger);
+  		return rc;
+    }
   }
 
   virtual void deleteInstance(IWordPriorityEngine *instance) {
