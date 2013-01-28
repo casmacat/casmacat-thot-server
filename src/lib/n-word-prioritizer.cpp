@@ -279,7 +279,7 @@ public:
 
   virtual IWordPriorityEngine *createInstance(const std::string &specialization_id = "") {
 		// TODO: create different instances according to specialization_id
-    if (_confidence_prefix == "") {
+    if (_confidence_prefix.empty()) {
       NWordPrioritizer *rc = new NWordPrioritizer(_n_word_len);
   		rc->setLogger(_logger);
   		return rc;
