@@ -183,13 +183,13 @@ public:
     for (size_t i = 0; i < target.size(); i++) {
       if (validated[i]) priorities[i] = 0;
       else {
-        priorities[i] = priority;
 				if (confidences[i] < _threshold) count++;
         
 				if (count == _n_word_len) {
           count = 0;
           priority++;
         } 
+        priorities[i] = priority;
       }
     }
   }
