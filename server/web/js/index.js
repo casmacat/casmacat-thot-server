@@ -151,7 +151,7 @@ $(function(){
         });
         $('#source').text( $select.first().val() );
       }
-      if (c.confidencer && c.confidencer.threshold) {
+      if (c.confidencer && c.confidencer.thresholds) {
         updateConfidenceSlider(c.confidencer.thresholds);
       }
       if (c["word-prioritizer"]) {
@@ -237,7 +237,6 @@ $(function(){
       console.log(res);
       
       
-
       var $elem = $(res.elem)
         , $curr = $(res.elem.parentNode);
 
@@ -247,12 +246,13 @@ $(function(){
 
       if ($curr) {
         var $next = $curr.next('span.editable-token')
-          , priority = $next.data('priority');
+          , priority = $next.data('priority')
+          , priorityLen = $('#slider-priority').slider("option", "value");
         console.log($elem, $curr, $next);
         if (priority) {
           var rightSiblings = $next.nextAll();
           for (var i = 0; i < rightSiblings.length; ++i) {
-            if ($(rightSiblings[i]).data('priority') > priority) break;
+            if ($(rightSiblings[i]).data('priority') > priority + priorityLen) break;
           }
           $next = $(rightSiblings[i]);
         }
@@ -678,9 +678,19 @@ $(function(){
     // get target span tokens 
     var spans = $('.editable-token', $target), 
         userPriority = parseInt($('#slider-priority-text').text()),
-        currentSpan = $('#target').editable('getTokenAtCaret').elem.parentNode;
-        currentPriority = priorities[$(currentSpan).index()];
-    // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
+        currentSpan = $('#target').editable('getTokenAtCaret').elem;
+
+    if ($(currentSpan.parentNode).is('.editable-token')) {
+      currentSpan = currentSpan.parentNode;
+    }
+    else {
+      while (!$(currentSpan).is('.editable-token') && currentSpan.nextSibling) {
+        currentSpan = currentSpan.nextSibling;
+      }
+    }
+
+    var currentPriority = priorities[$(currentSpan).index()];
+    console.log(userPriority, $('#target').editable('getTokenAtCaret'), currentSpan, currentPriority, priorities);
     for (var c = 0; c < priorities.length; ++c) {
       var $span = $(spans[c]), opacity = 1.0, scale = 2.0;
       if (priorities[c] >= currentPriority + userPriority) {
