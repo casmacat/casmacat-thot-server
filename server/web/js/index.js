@@ -94,7 +94,7 @@ $(function(){
     update_suggestions(data);
     
     if ($('#opt-itp, #opt-itp-ol').is(':checked')) {
-      startImt(bestResult.target);
+      startImt(data.source);
     }
     
     mousewheel.addElement(data);
