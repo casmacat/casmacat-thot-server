@@ -204,6 +204,23 @@ class ExampleHandler(web.RequestHandler):
     def get(self, filename):
         self.render(os.path.join("examples", filename))
 
+class ReplacementRule:
+  def __init__(self, data):
+    self.source_rule = data['sourceRule']
+    self.target_rule = data['targetRule']
+    self.replacement = data['targetReplacement']
+    self.match_case  = data['matchCase']
+    self.is_regexp   = data['isRegexp']
+    self.persistent  = data['persistent']
+
+    self.re_source = re.compile()
+    self.re_target = re.compile()
+
+  def apply(self, source, target):
+    source_match = self.re_source.search(source)
+    if source_match:
+      target_match = self.re_target.sub(self.replacement, target)
+    return target
 
 class CasmacatConnection(SocketConnection):
     def respond(self, *args, **kwargs):
@@ -237,23 +254,16 @@ class CasmacatConnection(SocketConnection):
     @event('setReplacementRule')
     @timer('setReplacementRule')
     @thrower('setReplacementRuleResult')
-    def getTokens(self, data):
+    def setReplacementRule(self, data):
       print 'data:', data
-      source, target = to_utf8(data['source']), to_utf8(data['target'])
+      source_rule, target_rule = to_utf8(data['sourceRule']), to_utf8(data['targetRule'])
 
       start_time = datetime.datetime.now()
-      source_tok, source_seg = models.tokenizer.preprocess(source)
-      target_tok, target_seg = models.tokenizer.preprocess(target)
+      
       elapsed_time = datetime.datetime.now() - start_time
 
-      obj = { 
-              'source': source, 
-              'sourceSegmentation': source_seg, 
-              'target': target, 
-              'targetSegmentation': target_seg,
-              'elapsedTime': elapsed_time.total_seconds()*1000.0
-            }
-      self.respond('getTokensResult', { 'errors': [], 'data': obj })
+      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      self.respond('setReplacementRuleResult', { 'errors': [], 'data': obj })
 
 
     @event('getTokens')

@@ -280,6 +280,7 @@ if (typeof io === 'undefined') throw "Socket IO not found";
     * @setup obj
     *   sourceRule {String}
     *   targetRule {String}
+    *   targetReplacement {String}
     *   matchCase {Boolean}
     *   isRegExp {Boolean}
     *   persistent {Boolean} TODO
