@@ -209,6 +209,9 @@ $(function(){
   // #source and #target events
   // caretenter is a new event from jquery.editable that is triggered
   // whenever the caret enters in a new token span
+  $('#target').bind('caretenter', function(e, d) {
+    update_word_priority_display($(this), $(d.token));
+  });
   $('#source, #target').bind('caretenter', function(e, d) {
     var alignments = $(d.token).data('alignments');
     if (alignments && alignments.alignedIds) {
@@ -322,16 +325,17 @@ $(function(){
 
   
   var typedWords = {};
+  var currentCaretPos;
   // caretmove is a new event from jquery.editable that is triggered
   // whenever the caret has changed position
   $('#target').bind('caretmove', function(e, d) {
     //var text = $(this).text();
     //$('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
     // If cursor pos has chaged, invalidate previous states
-    if (typeof currentCaretPos != 'undefined' && d.pos !== currentCaretPos) {
+    if (typeof currentCaretPos != 'undefined' && d.pos !== currentCaretPos.pos) {
       mousewheel.invalidate();
     }
-    currentCaretPos = d.pos;
+    currentCaretPos = d;
   })
   // on blur hide suggestions
   .blur(function(e) {
@@ -499,7 +503,7 @@ $(function(){
           $target.editable('setText', match.target, match.targetSegmentation);
 
           if (match.priorities) {
-            update_word_priority_display($target, match.priorities);
+            update_word_priorities($target, match.priorities);
           }
       
           // requests the server for new alignment and confidence info
@@ -674,32 +678,40 @@ $(function(){
   };
 
 
-  function update_word_priority_display($target, priorities) {
+  function update_word_priorities($target, priorities) {
+    // get target span tokens 
+
+    $('.editable-token', $target).each(function(index) {
+      $(this).data('priority', priorities[index]);
+    });
+
+    var $currentToken = $($target.editable('getTokenAtCaret').elem);
+    update_word_priority_display($target, $currentToken);
+  }
+
+  function update_word_priority_display($target, $token) {
     // get target span tokens 
     var spans = $('.editable-token', $target), 
-        userPriority = parseInt($('#slider-priority-text').text()),
-        currentSpan = $('#target').editable('getTokenAtCaret').elem;
+        userPriority = parseInt($('#slider-priority-text').text());
 
-    if ($(currentSpan.parentNode).is('.editable-token')) {
-      currentSpan = currentSpan.parentNode;
+    console.log('token', $token);
+    if ($token.parent().is('.editable-token')) {
+      $token = $token.parent();
     }
     else {
-      while (!$(currentSpan).is('.editable-token') && currentSpan.nextSibling) {
-        currentSpan = currentSpan.nextSibling;
+      while (!$token.is('.editable-token') && $token[0].nextSibling) {
+        $token = $($token[0].nextSibling);
       }
     }
 
-    var currentPriority = priorities[$(currentSpan).index()];
-    console.log(userPriority, $('#target').editable('getTokenAtCaret'), currentSpan, currentPriority, priorities);
-    for (var c = 0; c < priorities.length; ++c) {
-      var $span = $(spans[c]), opacity = 1.0, scale = 2.0;
-      if (priorities[c] >= currentPriority + userPriority) {
+    var currentPriority = $token.data('priority');
+    spans.each(function() {
+      var $span = $(this), opacity = 1.0, scale = 2.0;
+      if ($span.data('priority') >= currentPriority + userPriority) {
         opacity = 0.5; //Math.pow(2, (-priorities[c] + 2) * scale);
       }
-
-      $span.data('priority', priorities[c])
-           .css({ opacity: opacity });
-    }
+      $span.css({ opacity: opacity });
+    });
     //console.log("user priority:", userPriority, "word priorities:", priorities);
   }
  
@@ -839,6 +851,12 @@ $(function(){
     }
   });
 
+  $("#opt-prioritizer").change(function(e){
+    if (typeof currentCaretPos != 'undefined' && currentCaretPos.token) {
+      update_word_priority_display($('#target'), $(currentCaretPos.token.elem));
+    }
+  });
+
 
   $('#source').text($('#source-list').val());
   $('#source-list').change(function(e) {
@@ -910,6 +928,9 @@ $(function(){
   function updatePrioritySlider(value) {
     if (!value) value = $('#slider-priority').slider("option", "value");
     $('#slider-priority-text').text(value);
+    if (typeof currentCaretPos != 'undefined' && currentCaretPos.token) {
+      update_word_priority_display($('#target'), $(currentCaretPos.token.elem));
+    }
   };
     
   function toggleControlPanel() {
