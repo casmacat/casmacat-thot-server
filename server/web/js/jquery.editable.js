@@ -253,6 +253,13 @@
         else break;
       }
 
+      if (pos === elem.length && !$(elem.parentNode).is('.editable-token')) {
+        if (walker.nextNode()) {
+          elem = walker.currentNode;
+          pos  = 0;
+        }
+      }
+
       return {elem: elem, pos: pos};
     },
 
