@@ -233,34 +233,33 @@ $(function(){
       e.preventDefault();
     } 
     // prevent tabs that move to the next word or to the next priority word
-    else if (false && e.which === 9) {
+    else if (e.which === 9) {
       e.stopPropagation();
       e.preventDefault();
-      var res = $('#target').editable('getTokenAtCaret');
-      console.log(res);
-      
-      
-      var $elem = $(res.elem)
-        , $curr = $(res.elem.parentNode);
-
-      if (!$curr.hasClass('editable-token') || res.pos === res.elem.length) {
-        $curr = $elem.next('.editable-token');
-      }
-
-      if ($curr) {
-        var $next = $curr.next('span.editable-token')
-          , priority = $next.data('priority')
-          , priorityLen = $('#slider-priority').slider("option", "value");
-        console.log($elem, $curr, $next);
-        if (priority) {
-          var rightSiblings = $next.nextAll();
-          for (var i = 0; i < rightSiblings.length; ++i) {
-            if ($(rightSiblings[i]).data('priority') > priority + priorityLen) break;
-          }
-          $next = $(rightSiblings[i]);
+      if ($('#opt-prioritizer').val() != 'none') {
+        var $token = $('#target .editable-token').filter(function(e){ return $(this).css('opacity') < 1.0}).first();
+        if ($token) {
+          $('#target').editable('setCaretAtToken', $token.get(0));
         }
-        console.log($next);
-        $('#target').editable('setCaretAtToken', $next.get(0));
+        else {
+          $('#target').editable('setCaretPos', $('#target').text().length);
+        }
+      }
+      else {
+        if (currentCaretPos && currentCaretPos.token) {
+          var $token = $(currentCaretPos.token.elem);
+          if ($token.parent().is('.editable-token')) {
+            $token = $token.parent();
+          }
+          $token = $token.next('.editable-token');
+
+          if ($token) {
+            $('#target').editable('setCaretAtToken', $token.get(0));
+          }
+          else {
+            $('#target').editable('setCaretPos', $('#target').text().length);
+          }
+        }
       }
     }
   });
@@ -694,7 +693,6 @@ $(function(){
     var spans = $('.editable-token', $target), 
         userPriority = parseInt($('#slider-priority-text').text());
 
-    console.log('token', $token);
     if ($token.parent().is('.editable-token')) {
       $token = $token.parent();
     }
@@ -708,7 +706,7 @@ $(function(){
     spans.each(function() {
       var $span = $(this), opacity = 1.0, scale = 2.0;
       if ($span.data('priority') >= currentPriority + userPriority) {
-        opacity = 0.5; //Math.pow(2, (-priorities[c] + 2) * scale);
+        opacity = 0.3; //Math.pow(2, (-priorities[c] + 2) * scale);
       }
       $span.css({ opacity: opacity });
     });
