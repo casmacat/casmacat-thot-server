@@ -253,8 +253,12 @@
         else break;
       }
 
-      if (pos === elem.length && !$(elem.parentNode).is('.editable-token')) {
-        if (walker.nextNode()) {
+      if (walker.nextNode()) {
+        // if the caret is at the end of the current token we can have two cases
+        // where we would like to move to the beginning of the next token:
+        // 1. the current token is not editable-token, so it is a 'space' token
+        // 2. the next token is an editable-token so we move to the beginning of the next token 
+        if (pos === elem.length && (!$(elem.parentNode).is('.editable-token') || $(walker.currentNode.parentNode).is('.editable-token') )) {
           elem = walker.currentNode;
           pos  = 0;
         }
