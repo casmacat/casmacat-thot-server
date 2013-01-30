@@ -344,6 +344,7 @@
 
       var token = $this.editable('getTokenAtCaretPos', pos);
       var elem = token.elem;
+      pos = token.pos;
 
       if (!elem) {
         $this.editable('forgetCaret');
