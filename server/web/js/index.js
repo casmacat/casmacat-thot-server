@@ -1,7 +1,7 @@
 if (typeof casmacat === 'undefined') throw "casmacat object not defined";
 
 var casmacatItp; // To be reused by other scripts
-
+var PredictiveCatClient = require("catclient.predictive");
 $(function(){
    
   blockUI("Connecting...");
@@ -1029,29 +1029,29 @@ $(function(){
  
   // TODO: Load modules from here onwards --------------------------------------
   
-  var mousewheel;
-  require(["jquery.mousewheel", "jquery.hotkeys", "module.mousewheel"], function(){
-    mousewheel = new MouseWheel();
-    mousewheel.init('#target', {
-      change: function(data) {
-        if (!Boolean($('#target').editable('getText'))) {
-          return false;
-        }
-        if (data) {
-          console.log("Loading previous data...");
-          update_suggestions(data);
-        } else {
-          console.log("Rejecting...");
-          reject();
-        }
+  var MouseWheel = require("module.mousewheel");
+  var mousewheel = new MouseWheel();
+  mousewheel.init('#target', {
+    change: function(data) {
+      if (!Boolean($('#target').editable('getText'))) {
+        return false;
       }
-    });    
+      if (data) {
+        console.log("Loading previous data...");
+        update_suggestions(data);
+      } else {
+        console.log("Rejecting...");
+        reject();
+      }
+    }
   });
 
-  var memento;
-  require(["jquery.editable", "module.memento"], function(){
-    memento = new Memento();
-    memento.init('#target');
+  include("jquery.editable", function(){
+    $('.editable').editable();
   });
+
+  var Memento = require("module.memento");
+  var memento = new Memento();
+  memento.init('#target');
   
 });

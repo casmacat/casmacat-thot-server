@@ -1,7 +1,7 @@
-if (typeof CatClient === 'undefined') throw "CatClient not found";
 
-(function(exports, global){
+(function(module, global){
 
+  var CatClient = require("catclient");
   var PredictiveCatClient = CatClient;
 
   $.extend(PredictiveCatClient.prototype, {
@@ -103,6 +103,7 @@ if (typeof CatClient === 'undefined') throw "CatClient not found";
   });
 
   // Expose
-  exports.PredictiveCatClient = global.PredictiveCatClient = PredictiveCatClient;
+  //exports.PredictiveCatClient = global.PredictiveCatClient = PredictiveCatClient;
+  module.exports = PredictiveCatClient;
 
-})('object' === typeof module ? module.exports : {}, this);
+})('object' === typeof module ? module: {}, this);

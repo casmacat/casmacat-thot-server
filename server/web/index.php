@@ -1,5 +1,5 @@
 <?php 
-if (empty($_GET['itp-server'])) die('No server set: <a href="?itp-server='.$_SERVER['SERVER_NAME'].':3019&htr-server='.$_SERVER['SERVER_NAME'].':3003">try this example</a>');
+if (empty($_GET['itp-server'])) die('No server set: <a href="?itp-server='.$_SERVER['SERVER_NAME'].':3019&htr-server='.$_SERVER['SERVER_NAME'].':3004">try this example</a>');
 
 // Helper function(s) FIXME: include from external file
 function trim_text($text, $words = 5) 
@@ -34,13 +34,10 @@ function trim_text($text, $words = 5)
     htrServer: "<?=$_GET['htr-server']?>",
   }
   </script>
-  <script type="text/javascript" data-main="js/" src="js/require.min.js"></script>
+  <script type="text/javascript" data-main="js/" src="js/require.node.js"></script>
   <script type="text/javascript" src="js/jquery.min.js"></script>
   <script type="text/javascript" src="js/jquery-ui.min.js"></script>
   <script type="text/javascript" src="js/jquery.blockUI.js"></script>
-  <script type="text/javascript" src="js/socket.io.js"></script>
-  <script type="text/javascript" src="js/catclient.js"></script>
-  <script type="text/javascript" src="js/predictivecatclient.js"></script>
   <?php if (!empty($_GET['htr-server'])) { ?>
     <script type="text/javascript" src="js/htrclient.js"></script>
     <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>

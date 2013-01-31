@@ -1,10 +1,8 @@
-// Dependencies: jquery.mousewheel, jquery.hotkeys
-require("jquery.mousewheel");
-require("jquery.hotkeys");
+// Dependencies: jquery.hotkeys
 
 (function(module, global){
 
-  function MouseWheel(elem, options) {
+  function Memento(elem, options) {
     
     // Private -----------------------------------------------------------------
     var stack = [], pos = 0;
@@ -49,7 +47,7 @@ require("jquery.hotkeys");
     
     
     // Public API --------------------------------------------------------------
-    self.id = "MW";
+    self.id = "Memento";
     self.version = "0.1";
     
     self.addElement = function(elem) {
@@ -61,40 +59,34 @@ require("jquery.hotkeys");
       resetState();
       dump("invalidate");
     };
-    
+            
     // Mandatory intialization method ------------------------------------------
     self.init = function(elem, options) {
-      // Mandatory(?) listeners: mouse + keyboard
-      $(elem).mousewheel(function(e,delta){
-        if (delta > 0) {
-          onMoveUp(e);
-        } else if (delta < 0) { 
-          onMoveDown(e);
+      // Wrap original so that we don't lose track of inner states
+      var wrapper = $(elem).wrap('<div class="_'+self.id+'"/>');
+      wrapper.bind('change', function(e){
+        if ($(this).data('memento')) {
         }
-        // block scroll over element
-        return false;
-      }).bind('keydown', 'Ctrl+up', function(e){
-        onMoveUp(e);
-      }).bind('keydown', 'Ctrl+down', function(e){ 
-        onMoveDown(e);
+      }).bind('keydown', 'Ctrl+z', function(e){
+        self.undo(e);
+      }).bind('keydown', 'Ctrl+y', function(e){ 
+        self.redo(e);
       });
-      // Attach other listeners, if any
-      for (var opt in options) {
-        if (options.hasOwnProperty(opt) && typeof options[opt] !== 'undefined') {
-          self[opt] = options[opt];
-        }
-      }
       console.log("Loaded", self);
     };
     
     // Listeners ---------------------------------------------------------------
-    self.change = function(data) {
+    self.undo = function(data) {
       return data;
     };
-    
+
+    self.redo = function(data) {
+      return data;
+    };
+        
   };
   
   // Expose module
-  module.exports = MouseWheel;
+  module.exports = Memento;
   
 })('object' === typeof module ? module : {}, this);

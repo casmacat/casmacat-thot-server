@@ -1,6 +1,6 @@
-if (typeof io === 'undefined') throw "Socket IO not found";
 
-(function(exports, global){
+(function(module, global){
+  include('socket.io');
 
   var CatClient = function(debug) {
     if (typeof debug === 'undefined') {
@@ -310,6 +310,7 @@ if (typeof io === 'undefined') throw "Socket IO not found";
   };
 
   // Expose
-  exports.CatClient = global.CatClient = CatClient;
+  //exports.CatClient = global.CatClient = CatClient;
+  module.exports = CatClient;
 
-})('object' === typeof module ? module.exports : {}, this);
+})('object' === typeof module ? module : {}, this);

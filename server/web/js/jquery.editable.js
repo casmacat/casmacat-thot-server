@@ -205,10 +205,10 @@
     init: function(options) {
       return this.each(function() {
         
-        var $this = $(this),
-            data = $this.data('editable');
+        var $this = $(this), data = $this.data('editable');
         
         $this.attr('contenteditable', true);
+        
         // If the plugin hasn't been initialized yet
         if (!data) {
           $(this).data('editable', {ntok: 0});
@@ -725,7 +725,3 @@
   };
 
 })(jQuery);
-
-$(function() {
-  $('.editable').editable();
-});
