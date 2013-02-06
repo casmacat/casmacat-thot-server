@@ -142,10 +142,10 @@ var Memento = require("module.memento");
    
         self.v.updateSuggestions(data);
         
-        //var conf = userCfg();
-        //if (conf.mode != 'PE') {
-        //  itp.startSession({source: data.source});
-        //}
+        var conf = userCfg();
+        if (conf.mode != 'PE') {
+          itp.startSession({source: data.source});
+        }
         
         self.mousewheel.addElement(data);
 

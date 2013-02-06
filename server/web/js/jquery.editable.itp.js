@@ -111,7 +111,17 @@
 
     validate: function() { 
       var data = $(this).data(namespace);
-      data.itpServer.decode({source: data.$source.editable('getText'), target: data.$target.editable('getText')});
+      data.itpServer.validate({source: data.$source.editable('getText'), target: data.$target.editable('getText')});
+    },
+
+    getValidatedContributions: function() { 
+      var data = $(this).data(namespace);
+      data.itpServer.getValidatedContributions();
+    },
+
+    reset: function() { 
+      var data = $(this).data(namespace);
+      data.itpServer.reset();
     },
 
     trigger: function(name, evData) { 
@@ -124,6 +134,11 @@
       data.$target.editable('setText', str);
     },
 
+    updateConfig: function(config) {
+      var data = $(this).data(namespace);
+      $.extend(data.config, config);
+      data.itpServer.configure(data.config);
+    },
   };
 
 

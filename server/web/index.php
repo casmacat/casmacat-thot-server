@@ -120,7 +120,7 @@ function trim_text($text, $words = 5)
     <select id="source-list">
       <?php 
         $selected_sentences = array(
-          "* participación de los países candidatos en los programas comunitarios .",
+          "* participación de los países candidatos en los programas comunitarios . (original)",
           "queda claro que la sentencia Bosman tiene consecuencias no solo para el fútbol , sino también para otros deportes en los que el jugador sea asalariado",
           "la responsabilidad de la Comisión radica , ante todo , en comprobar la eficacia de los sistemas de control .",
           "no obstante , las autoridades de los demás Estados miembros deben colaborar con los países exportadores para detectar y reprimir las irregularidades que se cometan .",
