@@ -1,220 +1,27 @@
-  //var undefined;
-  
-  function getTokens(elems) {
-    var tokens = new Array();
-    for (var i = 0; i < elems.length; i++) {
-      tokens.push($(elems[i]).text());
-    }
-    return tokens;
-  }
-
-  function tokenize_by_segments(str, segs) {
-    var tokens = [];
-    for (var tok_id = 0; tok_id < segs.length; tok_id++) {
-      var pos = segs[tok_id];
-      var tok = str.slice(pos[0], pos[1]);
-      tokens.push(tok);
-    }
-    return tokens;
-  };
-
-  function edit_distance(s1, s2) {
-    if (s1 == s2) return 0;
-
-    var s1_len = s1.length, 
-        s2_len = s2.length;
-    if (s1_len === 0) return s2_len;
-    if (s2_len === 0) return s1_len;
-
-    var v0 = new Array(s1_len+1);
-    var v1 = new Array(s1_len+1);
-
-    var cost=0;
-    for (var s1_idx = 0; s1_idx < s1_len + 1; s1_idx++) {
-        v0[s1_idx] = s1_idx;
-    }
-    for (var s2_idx = 1; s2_idx <= s2_len; s2_idx++) {
-        v1[0] = s2_idx;
-        var char_s2 = s2[s2_idx - 1];
-
-        for (var s1_idx = 0; s1_idx < s1_len; s1_idx++) {
-            var char_s1 = s1[s1_idx];
-            cost = (char_s1 == char_s2) ? 0 : 1;
-            var m_min = v0[s1_idx+1] + 1;
-            var b = v1[s1_idx] + 1;
-            var c = v0[s1_idx] + cost;
-            if (b < m_min) m_min = b; 
-            if (c < m_min) m_min = c; 
-            v1[s1_idx+1] = m_min;
-        }
-        var v_tmp = v0;
-        v0 = v1;
-        v1 = v_tmp;
-    }
-    return v0[s1_len]/Math.max(s1_len, s2_len);
-  };
-
-  function merge_tokens(spans, tokens) {
-    var l1 = (spans)?spans.length:0, l2 = (tokens)?tokens.length:0;
-
-    if (spans === tokens) {
-      var path = new Array();
-      for (var i = 0; i < l2; i++) path.push([i, i, 'N']);
-      return path; 
-    }
-
-    if (l2 === 0){
-      var path = new Array();
-      for (var i = 0; i < l1; i++) path.push([i, -1, 'D']);
-      return path; 
-    }
- 
-    if (l1 === 0) {
-      var path = new Array();
-      for (var i = 0; i < l2; i++) path.push([-1, i, 'I']);
-      return path; 
-    }
-
-    var i = 0, j = 0, d = [], b = [];
-    for (i = 0 ; i <= l1 ; i++) {
-        d[i] = [];
-        d[i][0] = i;
-        b[i] = [];
-        b[i][0] = 'D';
-    }
-    for (j = 0 ; j <= l2 ; j++) {
-        d[0][j] = j;
-        b[0][j] = 'I';
-    }
-    for (i = 1 ; i <= l1 ; i++) {
-        for (j = 1 ; j <= l2 ; j++) {
-            var dist = (spans[i-1] === tokens[j-1])?0:1;
-            if (dist > 0) {
-              dist += edit_distance(spans[i-1], tokens[j-1]);
-            }
-
-            d[i][j] = d[i - 1][j - 1] + dist;
-            b[i][j] = ((dist > .0)?'S':'N');
-
-            var ins = d[i][j - 1] + 1;
-            if (ins < d[i][j]) {
-              d[i][j] = ins;
-              b[i][j] = 'I';
-            }
-
-            var del = d[i - 1][j] + 1;
-            if (del < d[i][j]) { /* deletion */
-              d[i][j] = del;
-              b[i][j] = 'D';
-            }
-        }
-    }
-    delete b[0][0];
-
-    var op = b[l1][l2];
-    var path = new Array();
-    while (op) {
-      path.push([((op == 'I')?-1:l1-1), ((op == 'D')?-1:l2-1), op]);
-      if      (op == 'S' || op == 'N') op = b[--l1][--l2];
-      else if (op == 'D') op = b[--l1][  l2];
-      else if (op == 'I') op = b[  l1][--l2];
-    }
-    return path.reverse();
-  };
-
-  function rectDistance(rect, point) {
-    var x = point[0], y = point[1], r = { 
-      x1: rect.left,
-      x2: rect.left + rect.width,
-      y1: rect.top,
-      y2: rect.top + rect.height,
-    };
-
-    var dist = { d: 0, dx: 0, dy: 0 };
-    if ((r.x1 <= x && x <= r.x2) && (r.y1 <= y && y <= r.y2)) return dist;
-
-    if (x < r.x1) dist.dx = x - r.x1;
-    else if (x > r.x2) dist.dx = x - r.x2;
-    else dist.dx = 0;
-
-    if (y < r.y1) dist.dy = y - r.y1;
-    else if (y > r.y2) dist.dy = y - r.y2;
-    else dist.dy = 0;
-    
-    dist.d = Math.sqrt(Math.pow(dist.dx, 2) + Math.pow(dist.dy, 2));
-    return dist;
-  }
-
-
-  function getRect($node, delta) {
-    var delta = delta || 0;
-    var rect    = $node.offset();
-    rect.left -= delta;
-    rect.top  -= delta;
-    rect.width  = $node.outerWidth()  + 2*delta;
-    rect.height = $node.outerHeight() + 2*delta;
-    rect.right  = rect.left + rect.width;
-    rect.bottom = rect.top  + rect.height;
-    return rect;
-  }
-
-  function boundingBox(points) {
-  	var minX = +Infinity, maxX = -Infinity, minY = +Infinity, maxY = -Infinity;
-  	for (var i = 0; i < points.length; i++) {
-  	  minX = Math.min(minX, points[i][0]);
-  	  minY = Math.min(minY, points[i][1]);
-  	  maxX = Math.max(maxX, points[i][0]);
-  	  maxY = Math.max(maxY, points[i][1]);
-  	}
-  	return { left: minX, top: minY, width: maxX - minX, height: maxY - minY, right: maxX, bottom: maxY };
-  }
-
-  function nodeCollision(node, points, delta) {
-    var rect = getRect($(node), delta);
-    var bb = boundingBox(points);
-    if (rect.left > bb.right || rect.right < bb.left || rect.top > bb.bottom || rect.bottom < bb.top) return 0;
-    else {
-      var l = points.length;
-      var distance = {d: l, dx: l, dy: l};
-      for (var i = 0; i < l; ++i) {
-        var x = points[i][0], y = points[i][1];
-        var isInX = (x >= rect.left && x <= rect.right);
-        var isInY = (y >= rect.top  && y <= rect.bottom)
-        if (isInX && isInY) distance.d--;
-        if (isInX) distance.dx--;
-        if (isInY) distance.dy--;
-      }
-      return distance;
-    } 
-  }
-
-  function nodeDistance(node, point, delta) {
-    var rect = getRect($(node), delta);
-    return rectDistance(rect, point);
-  }
-
-  function nodeCenter(node) {
-    //var r = node.getClientRects()[0];
-    var r = getRect($(node));
-    return { x: r.x + r.width/2, y: r.y + r.height/2 } 
-  }
-
 (function($) {
 
+  var NLP = require('nlp-utils');
+  var G   = require('geometry-utils');
+
   var methods = {
-    init: function(options) {
+    init: function(_options) {
+      // extend default options with user defined options
+      var options = $.extend({
+        disabled: false, // if true, disable content editable. The user cannot change the content
+      }, _options);
+
       return this.each(function() {
-        
         var $this = $(this), data = $this.data('editable');
         
-        $this.attr('contenteditable', true);
+        $this.attr('contenteditable', !options.disabled);
+        $this.css('white-space', 'pre-wrap');
         
         // If the plugin hasn't been initialized yet
         if (!data) {
           $(this).data('editable', {ntok: 0});
         }
 
-        $this.bind('blur click mouseleave keyup', this, function(ev) {
+        $this.bind('blur.editable click.editable mouseleave.editable keyup.editable', this, function(ev) {
           $(ev.data).editable('updateCaret');
         });
 
@@ -228,9 +35,9 @@
             data = $this.data('editable');
 
         // Namespacing FTW
-        $(window).unbind('.editable');
-        data.editable.remove();
+        $this.unbind('.editable');
         $this.removeData('editable');
+        $this.text($this.text());
       })
     },
 
@@ -274,7 +81,7 @@
 
       var tokens = []
       for (var i = 0; i < spans.length; ++i) {
-        var distance = nodeCollision(spans[i], point, delta);
+        var distance = G.nodeCollision(spans[i], point, delta);
         tokens.push({ token: spans[i], distance: distance });
       }
       tokens.sort(function(a,b){ return a.distance.d - b.distance.d});
@@ -288,7 +95,7 @@
 
       var tokens = []
       for (var i = 0; i < spans.length; i++) {
-        var distance = nodeDistance(spans[i], point, delta);
+        var distance = G.nodeDistance(spans[i], point, delta);
         tokens.push({ token: spans[i], distance: distance });
       }
       tokens.sort(function(a,b){ return a.distance.d - b.distance.d});
@@ -309,8 +116,8 @@
 
       var tokens = [];
       for (var i = 0; i < spans.length; i++) {
-        var center = nodeCenter(spans[i]);
-        var distance = rectDistance(rect, center.x, center.y);
+        var center = G.nodeCenter(spans[i]);
+        var distance = G.rectDistance(rect, center.x, center.y);
         tokens.push({ token: spans[i], distance: distance });
       }
       tokens.sort(function(a,b){ return a.distance.d - b.distance.d});
@@ -481,7 +288,6 @@
           data = $this.data('editable');
 
       //XXX: can we assume this?
-      //console.log('tokens gotten "' + data['str'] + '" === "' + str + '"');
       if (data['str'] === str) return;
       data['str'] = str;
 
@@ -495,9 +301,9 @@
         }
 
         // get old tokens from data and new tokens
-        var new_tokens = tokenize_by_segments(str, segs);
+        var new_tokens = NLP.tokenizeBySegments(str, segs);
         // diff both tokens to keep unchanged spans
-        var merge = merge_tokens(old_tokens, new_tokens);
+        var merge = NLP.mergeTokens(old_tokens, new_tokens);
 
         //console.log("old tokens:", old_tokens);
         //console.log("new tokens:", new_tokens);
@@ -650,7 +456,7 @@
         if (segs && segs.length > 0) {
   
           // get old tokens from data and new tokens
-          var str_tokens = tokenize_by_segments(str, segs);
+          var str_tokens = NLP.tokenizeBySegments(str, segs);
   
           var id = $this.attr('id');
   

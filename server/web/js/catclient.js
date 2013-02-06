@@ -1,8 +1,8 @@
-
 (function(module, global){
+
   include('socket.io');
 
-  var CatClient = function(debug) {
+  var CatClient = function(debug, replay) {
     if (typeof debug === 'undefined') {
       debug = false;
     }
@@ -10,6 +10,7 @@
     var self = this;
 
     self.debug  = debug;
+    self.replay = replay;
     self.server = null;
     
     /**
@@ -18,10 +19,18 @@
     */
     self.connect = function(url) {
       self.server = new io.connect(url);
+      if (self.replay) {
+        self.server.emit = function() {};
+      }
       if (self.debug) {
         var emit = self.server.emit;
         self.server.emit = function() {
-          console.log("emit", arguments);
+          if (arguments.length === 2) {
+            console.log("emit", [arguments[0]], arguments[1]);
+          }
+          else {
+            console.log("emit", arguments);
+          }
           emit.apply(this, arguments);
         }
       }
@@ -43,9 +52,21 @@
               if (self.debug && obj.errors && obj.errors.length > 0) {
                 console.error(obj.errors);
               }
-            } catch(err) {
+            } catch (err) {
               // Probably obj.errors is undefined
             } finally {
+              if (self.debug) {
+                var msg = "received";
+                if (obj && obj.data && obj.data.elapsedTime) {
+                  msg = msg + " (" + obj.data.elapsedTime.toFixed(1) + "ms)";
+                }
+                if (arguments.length === 1) {
+                  console.log(msg, [ev[e]], arguments[0]);
+                }
+                else {
+                  console.log(msg, [ev[e]], arguments);
+                }
+              }
               fn(obj.data, obj.errors);
             }
           } else {
@@ -55,9 +76,25 @@
       }
 
       if (self.debug) {
-        console.log("on", ev, "executed");
+        console.log("on", ev, "attached");
       }
     };
+
+    /**
+    * Trigger event 
+    */
+    self.trigger = function() {
+      console.log("trigger", arguments);
+      self.server.$emit.apply(self.server, arguments);
+    };
+
+    /**
+    * removeAllListeners 
+    */
+    self.removeAllListeners = function() {
+      self.server.$events = {};
+    };
+
     
     /**
     * Check connection status 

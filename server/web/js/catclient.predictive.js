@@ -1,4 +1,3 @@
-
 (function(module, global){
 
   var CatClient = require("catclient");

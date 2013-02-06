@@ -276,7 +276,7 @@ $(function(){
         if (data.str != source) {
           var query = {
             source: source,
-            //num_results: 2,
+            //numResults: 2,
           }
           casmacatItp.decode(query);
         }
