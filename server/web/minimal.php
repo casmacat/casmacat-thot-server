@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
-  <title>CASMACAT demo</title>
+  <title>CASMACAT minimal interface</title>
   <script type="text/javascript" src="js/require.node.js"></script>
   <script type="text/javascript" src="js/jquery.min.js"></script>
   <script type="text/javascript" src="js/jquery.editable.itp.js"></script>

@@ -40,10 +40,10 @@ function trim_text($text, $words = 5)
   <script type="text/javascript" src="js/jquery.blockUI.js"></script>
   <?php if (!empty($_GET['htr-server'])) { ?>
     <script type="text/javascript" src="js/htrclient.js"></script>
-    <script type="text/javascript" src="js/htr.js?<?=time()?>"></script>
-    <script type="text/javascript" src="js/mg-recognizer.js?<?=time()?>"></script>
+    <script type="text/javascript" src="js/htr.js"></script>
+    <script type="text/javascript" src="js/mg-recognizer.js"></script>
   <?php } ?>  
-  <script type="text/javascript" src="js/index.js?<?=time()?>"></script>
+  <script type="text/javascript" src="js/index.js"></script>
 </head>
 <body spellcheck="false">
 
