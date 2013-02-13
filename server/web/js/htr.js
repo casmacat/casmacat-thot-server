@@ -1,6 +1,8 @@
 $(function(){
 
-require(["jsketch", "jquery.sketchable"], function() {
+  require("jsketch");
+  require("jquery.sketchable");
+  HtrClient = require("htrclient");
 
   /*******************************************************************************/
   /*           create server connection and handle server events                 */
@@ -107,14 +109,7 @@ require(["jsketch", "jquery.sketchable"], function() {
 
 
   function doRejectGesture($token) {
-    var $source = $('#source');
-    var $target = $('#target');
-    casmacatItp.rejectSuffix({
-      source: $source.text(),
-      target: $target.text(),
-      caretPos: $target.editable('getTokenPos', $token[0]),
-      numResults: 1,
-    });
+    $('#target').editableItp('rejectSuffix', $('#target').editable('getTokenPos', $token[0]))
     console.log('reject', $token);
   }
 
@@ -128,12 +123,7 @@ require(["jsketch", "jquery.sketchable"], function() {
       t = n;
     } while (t.length && !t.is('.editable-token'));
     
-    casmacatItp.setPrefix({
-      source: $source.text(),
-      target:   $target.text(),
-      caretPos: $target.editable('getTokenPos', t.next()),
-      numResults: 1,    
-    });
+    $('#target').editableItp('setPrefix', $('#target').editable('getTokenPos', t.next()))
     console.log('delete', $token);
   }
 
@@ -322,10 +312,7 @@ require(["jsketch", "jquery.sketchable"], function() {
     insertion_token = undefined;
     insertion_token_space = undefined;
 
-    casmacatItp.getTokens({
-      source: $('#source').editable('getText'),
-      target: $('#target').editable('getText'),
-    });
+    $('#target').editableItp('updateTokens');
   });
 
   // on click send strokes to the htr server
@@ -366,6 +353,4 @@ require(["jsketch", "jquery.sketchable"], function() {
   }
 
 
-}); // end require
-  
 });

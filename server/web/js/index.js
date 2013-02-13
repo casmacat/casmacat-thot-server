@@ -100,11 +100,22 @@ $(function(){
     });
 
     // Handle models changes (after OL) 
-    $target.on('validate', function(data, err) {
+    $target.on('validate', function(ev, data, err) {
       //console.log('models:', data);
       $('#btn-update').val('Update').attr('disabled', false);
     });
     
+    $target.on('alignments', function(ev, data, err) {
+      if (!data || !data.nbest) return;
+      update_aligment_matrix(data.nbest.matrix);
+    })
+    .on('decode', function (ev, data, err) {
+      // resizes the alignment matrix in a smoothed manner but it does not fill missing alignments 
+      // (makes a diff between previous and current tokens and inserts/replaces/deletes columns and rows)
+      updateTable(data);
+    });
+
+
 
     // UI events -----------------------------------------------------------------
 
@@ -235,38 +246,6 @@ $(function(){
     };
 
 
-    // updates the translation display and queries for new alignments and word confidences
-    function update_translation_display(data) {
-      // getTokens doesn't have nbest, so this check is required
-      var bestResult = data.nbest ? data.nbest[0] : data;
-      var source     = data.source,
-          sourceSeg  = data.sourceSegmentation,
-          target     = bestResult.target,
-          targetSeg  = bestResult.targetSegmentation;
-      
-      // sets the text in the editable div. It tokenizes the sentence and wraps tokens in spans
-      $source.editable('setText', source, sourceSeg);
-      $target.editable('setText', target, targetSeg);
-
-      // resizes the alignment matrix in a smoothed manner but it does not fill missing alignments 
-      // (makes a diff between previous and current tokens and inserts/replaces/deletes columns and rows)
-      updateTable($('#demo-table'), tokenize_by_segments(source, sourceSeg), tokenize_by_segments(target, targetSeg));
-
-      // requests the server for new alignment and confidence info
-      var query = {
-        source: source,
-        target: target,
-        //validated_words: []
-      }
-      if ($('#opt-alignments').is(':checked')) {
-        $target.getAlignments(query);
-      }
-      if ($('#opt-confidences').is(':checked')) {
-        $target.getConfidences(query);
-      }
-    };
-
-
     // update the alignments in the alignment matrix
     function update_aligment_matrix(alignments) {
       // update alignment matrix info
@@ -285,6 +264,7 @@ $(function(){
 
 
     function update_aligment_matrix(confidences) {
+      if (!$('#matrix').is(":visible")) return;
       for (var c = 0; c < confidences.length; ++c) {
         var $span = $(spans[c]), conf = Math.round(confidences[c]*100)/100, cssClass;
         // also update bottom of alignment matrix with values
@@ -292,8 +272,21 @@ $(function(){
       }
     };
         
-    function updateTable(table, src, tgt) {
+    function updateTable(data) {
       if (!$('#matrix').is(":visible")) return;
+      var table = $('#demo-table');
+      // getTokens doesn't have nbest, so this check is required
+      var bestResult = data.nbest ? data.nbest[0] : data;
+      var source     = data.source,
+          sourceSeg  = data.sourceSegmentation,
+          target     = bestResult.target,
+          targetSeg  = bestResult.targetSegmentation;
+       
+      var NLP = require('nlp-utils');
+      var src = NLP.tokenizeBySegments(source, sourceSeg)
+        , tgt = NLP.tokenizeBySegments(target, targetSeg)
+        ;
+
       //console.log(table);
       var src_tok = getTokens($('tbody tr', table).find('th.right:eq(0)'));
       var tgt_tok = getTokens($('thead th:gt(0)', table));

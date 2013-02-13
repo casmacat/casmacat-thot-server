@@ -109,6 +109,14 @@
       data.itpServer.endSession();
     },
 
+    updateTokens: function() { 
+      var data = $(this).data(namespace);
+      data.itpServer.getTokens({
+        source: data.$source.editable('getText'), 
+        target: data.$target.editable('getText')
+      });
+    },
+
     validate: function() { 
       var data = $(this).data(namespace);
       data.itpServer.validate({source: data.$source.editable('getText'), target: data.$target.editable('getText')});
@@ -139,6 +147,27 @@
       $.extend(data.config, config);
       data.itpServer.configure(data.config);
     },
+
+    rejectSuffix: function(caretPos) {
+      var data = $(this).data(namespace);
+      data.itpServer.rejectSuffix({
+        source: data.$source.text(),
+        target: data.$target.text(),
+        caretPos: caretPos,
+        numResults: 1,
+      });
+    },
+
+    setPrefix: function(caretPos) {
+      var data = $(this).data(namespace);
+      data.itpServer.setPrefix({
+        source: data.$source.text(),
+        target:   data.$target.text(),
+        caretPos: caretPos,
+        numResults: 1,    
+      });
+    },
+
   };
 
 

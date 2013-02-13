@@ -72,6 +72,7 @@ function trim_text($text, $words = 5)
           <label for="opt-prioritizer">Suggestion length:</label><select name="prioritizer" id="opt-prioritizer"><option value="none">None</option></select> 
           <input type="checkbox" id="opt-suggestions" /> <label for="opt-suggestions">Display suggestions</label>
           <input type="checkbox" id="opt-confidences" checked="checked" /> <label for="opt-confidences">Display confidences</label>
+          <input type="checkbox" id="opt-alignments" /> <label for="opt-alignments">Display alignments</label>
         </div>
         </form>
         <!--div id="caret">undef</div-->

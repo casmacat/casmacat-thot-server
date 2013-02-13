@@ -1,7 +1,6 @@
-if (typeof CatClient === 'undefined') throw "CatClient not found";
+(function(module, global){
 
-(function(exports, global){
-
+  var CatClient = require("catclient");
   var HtrClient = CatClient;
 
   $.extend(HtrClient.prototype, {
@@ -69,6 +68,6 @@ if (typeof CatClient === 'undefined') throw "CatClient not found";
   });
 
   // Expose
-  exports.HtrClient = global.HtrClient = HtrClient;
+  module.exports = HtrClient;
 
-})('object' === typeof module ? module.exports : {}, this);
+})('object' === typeof module ? module: {}, this);
