@@ -40,7 +40,7 @@ namespace casmacat {
     /**
      * obtain updated weight vector from the nbest list and nbest features
      */
-    virtual void updateLogWeights(const std::vector<double>& currentWeights,
+    virtual void updatelogWeights(const std::vector<double>& currentWeights,
                                   const std::string& reference,
                                   const std::vector<std::string>& nblist,
                                   const std::vector<std::vector<double> >& scoreCompsVec,
