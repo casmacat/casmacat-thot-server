@@ -288,7 +288,7 @@
           data = $this.data('editable');
 
       //XXX: can we assume this?
-      if (data['str'] === str) return;
+      //if (data['str'] === str) return;
       data['str'] = str;
 
       if (segs && segs.length > 0) {

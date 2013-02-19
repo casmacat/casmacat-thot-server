@@ -13,12 +13,28 @@ $(function(){
     $('#global').unblock();
   };
 
+  function getTranslationMode() {
+    return $('input[@name=show]:checked').val();
+  };
+
+  function getSelectedText() {
+    var range;
+    if (window.getSelection) {  // all browsers, except IE before version 9
+      range = window.getSelection().toString();
+    } else if (document.selection.createRange) { // Internet Explorer
+      range = document.selection.createRange().text;
+    }
+    return range;
+  };
+        
   blockUI("Connecting...");
 
   require("jquery.rotatecells");
  
   // create itp elements and attach events
-  include("jquery.editable.itp", function(){
+  require("jquery.editable.itp");
+  
+  
     var $target = $('#target'), $source = $('#source');
     var $canvas = $('#drawing-canvas'), $epen = $('#epen');
       
@@ -110,9 +126,21 @@ $(function(){
       update_aligment_matrix(data.nbest.matrix);
     })
     .on('decode', function (ev, data, err) {
+      if (getTranslationMode().indexOf("ITP") > -1) {
+        $target.editableItp('startSession');
+      }
       // resizes the alignment matrix in a smoothed manner but it does not fill missing alignments 
       // (makes a diff between previous and current tokens and inserts/replaces/deletes columns and rows)
       updateTable(data);
+      
+      // Search & Replace
+      $(this).mouseup(function(e){
+        var sel = getSelectedText();
+        if (sel) {
+          console.log("selected text '", sel, "' coming from ", e.target);
+        }
+      });
+
     });
 
 
@@ -122,7 +150,7 @@ $(function(){
     // on blur hide suggestions
     $target.blur(function(e) {
       $('#suggestions').css({'visibility': 'hidden'});
-    })
+    });
 
     $('#btn-epen').click(function(e) {
       var $this = $('img', this);
@@ -170,7 +198,7 @@ $(function(){
     });
 
     $('#show-options input, #show-options select').change(function() {
-      var show_type = $('input[@name=show]:checked').val();
+      var show_type = getTranslationMode();
       switch(show_type) {
         case 'PE':
         case 'ITP':
@@ -198,7 +226,7 @@ $(function(){
       var $target = $target, 
           targetText = $target.text(),
           d = $target.editable('getCaretXY'),
-          show_type = $('input[@name=show]:checked').val(),
+          show_type = getTranslationMode(),
           count = 0,
           list = $('<dl/>');
           
@@ -479,7 +507,7 @@ $(function(){
     };
     
     function makeControlPanelSummary() {
-      $('#set-mode').text( $('#show-options input[@name=show]:checked').val() );
+      $('#set-mode').text( getTranslationMode() );
       $('#set-suggestions').text( $('#opt-suggestions').is(':checked') );
       $('#set-confidences').text( $('#opt-confidences').is(':checked') + " ["+ confThreshold.bad*100 + "/"+ confThreshold.doubt*100 +"]" );
       $('#set-alignments').text( $('#opt-alignments').is(':checked') + " [matrix: "+ $('#matrix').is(':hidden') +"]" );
@@ -508,9 +536,6 @@ $(function(){
     $target[0].addEventListener('DOMSubtreeModified', reposHtrCanvasIfTargetResized, false);
     $target[0].addEventListener('DOMCharacterDataModified', reposHtrCanvasIfTargetResized, false);
 
-
-
-
     function trimText(text, numWords, delimiter) {
       if (!numWords)  numWords  = 5;
       if (!delimiter) delimiter = " ";    
@@ -527,7 +552,5 @@ $(function(){
 
       return trimmed;
     };
-
-  });
  
 });
