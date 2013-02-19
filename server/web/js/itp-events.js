@@ -24,6 +24,9 @@ var Memento = require("module.memento");
     }
     return false;
   };
+
+  // This is needed for the MouseWheel to remember the state before committing a reject
+  var decodedResult;
   
   var ItpEvents = function($target, namespace, nsClass) {
     var self = this;
@@ -62,6 +65,7 @@ var Memento = require("module.memento");
           self.vis.updateSuggestions(data);
         } else {
           console.log("Rejecting...");
+          self.mousewheel.addElement(decodedResult);
           reject();
         }
       }
@@ -174,6 +178,7 @@ var Memento = require("module.memento");
         //  itp.startSession({source: data.source});
         //}
 
+        decodedResult = data;
         // Clean previous states
         self.mousewheel.invalidate();
         self.memento.invalidate();
@@ -360,23 +365,33 @@ var Memento = require("module.memento");
         itp.startSession({source: $source.editable('getText')});
       });
 
+    
       self.typedWords = {};
-      self.currentCaretPos;
+      self.currentCaretPos; // { pos, token }
+
+      function forgetState(caretPos) {
+        // IF "implicit reject on click" AND "cursor pos has chaged": invalidate previous states
+        if (typeof self.currentCaretPos != 'undefined' && caretPos !== self.currentCaretPos.pos) {
+          self.mousewheel.invalidate();
+          //self.memento.invalidate();
+        }
+      };
+            
       // caretmove is a new event from jquery.editable that is triggered
       // whenever the caret has changed position
       $target.bind('caretmove' + nsClass, function(e, d) {
         //var text = $(this).text();
         //$('#caret').html('<span class="prefix">' + text.substr(0, d.pos) + '</span>' + '<span class="suffix">' + text.substr(d.pos) + "</span>");
-        /*
-        // IF "implicit reject on click" AND "cursor pos has chaged": invalidate previous states
-        if (typeof self.currentCaretPos != 'undefined' && d.pos !== self.currentCaretPos.pos) {
-          self.mousewheel.invalidate();
-        }
-        */
+        forgetState(d.pos);
         self.currentCaretPos = d;
       })
       // on ctrl+click reject suffix 
       .bind('click' + nsClass, function(e) {
+        var cpos = $target.editable('getCaretPos');
+        forgetState(cpos);
+        // Update only the caret position
+        self.currentCaretPos.pos = cpos;
+        // Issue a reject only if CTRL is pressed
         if (e.ctrlKey) reject();
       })
       // on keyup throttle a new translation
