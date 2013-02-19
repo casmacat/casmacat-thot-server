@@ -5,7 +5,7 @@ $(function(){
   /*******************************************************************************/
 
   // connect to a server. casmacatHtr will receive async server responses
-  var casmacatHtr = new CasmacatClient('http://' + window.casmacatHtrServer + '/casmacat');
+  var casmacatHtr = new CasmacatClientPredictive('http://' + window.casmacatHtrServer + '/casmacat');
 
   // handle disconections and debug information
   casmacatHtr.on('disconnect', function(){ this.socket.reconnect(); });
