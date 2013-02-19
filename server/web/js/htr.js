@@ -11,7 +11,7 @@ $(function(){
   // connect to a server. casmacatHtr will receive async server responses
   var casmacatHtr = new HtrClient();
   casmacatHtr.connect('http://' + window.casmacat.htrServer + '/casmacat');
-  var $cnv = $('#drawing-canvas');
+  var $cnv = $('#drawing-canvas'), $htrSug = $('#htr-suggestions span');
 
   casmacatHtr.configure({
       canvasSize: { width: $cnv.width(), height: $cnv.height() },
@@ -160,7 +160,8 @@ $(function(){
     var $target = $('#target');
     var centroid = MathLib.centroid(stroke);
     centroid = getAbsoluteXY(centroid);
-
+        
+    $htrSug.text(gesture.name.toUpperCase() + " gesture");
     switch (gesture.name) {
       case 'dot': // reject 
         var tokenDistances = $target.editable('getTokensAtXY', centroid, 0);
@@ -258,7 +259,7 @@ $(function(){
         clear: function(elem, data) {
           // cnv.removeData('htr');
           clearTimeout(decoderTimer);
-          $('#htr-suggestions').empty();
+          $htrSug.delay(1000).fadeOut("slow", function(){ $(this).empty().show(); });
           cnv.get(0).width = cnv.get(0).width;
         }
      },
@@ -312,7 +313,7 @@ $(function(){
     insertion_token = undefined;
     insertion_token_space = undefined;
 
-    $('#target').editableItp('updateTokens');
+    //$('#target').editableItp('updateTokens'); // XXX: Where is it defined?
   });
 
   // on click send strokes to the htr server
@@ -344,7 +345,7 @@ $(function(){
     }
     console.log(best.text, best.textSegmentation);
 
-    $('#htr-suggestions').text(best.text).css('color', color);
+    $htrSug.text(best.text).css('color', color);
     var htrData = cnv.data('htr');
     
     if (htrData.target) {
