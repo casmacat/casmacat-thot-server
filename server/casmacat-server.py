@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, traceback, os
+import sys, traceback, os, re
 import datetime, time
 import random, math, codecs, copy
+import collections
 try: import simplejson as json
 except ImportError: import json
 
@@ -21,7 +22,7 @@ def fmt_delta(elapsed_time):
   ms = elapsed_time.microseconds/1000.0
 
   time = []
-  if elapsed_time.days > 0: 
+  if elapsed_time.days > 0:
     time.append("%d days" % (days))
   if h > 0:
     time.append("%dh" % (h))
@@ -30,16 +31,16 @@ def fmt_delta(elapsed_time):
   if s > 0:
     time.append("%ds" % (s))
   time.append("%.2fms" % ms)
-  return " ".join(time) 
+  return " ".join(time)
 
-# decorator to measure the time to process the function 
+# decorator to measure the time to process the function
 class timer(object):
   def __init__(self, name):
     """
     If there are decorator arguments, the function
     to be decorated is not passed to the constructor!
     """
-    self.name = name 
+    self.name = name
 
   def __call__(self, function):
     """
@@ -97,11 +98,11 @@ class MyLogger(Logger):
     return
     if type in self.tag:
       msg = "%s: %s" % (self.tag[type], msg)
-    else: 
+    else:
       msg = "LOG: %s" % msg
     for p in self.participants:
       p.respond('receive_log', msg)
-    
+
 logger = MyLogger()
 
 def new_match(created_by, target, target_seg, elapsed_time):
@@ -137,7 +138,7 @@ def new_predictions(source, source_seg, caret_pos):
   data = {}
   data['source'] = source
   data['sourceSegmentation'] = source_seg
-  data['caretPos'] = caret_pos 
+  data['caretPos'] = caret_pos
   data['nbest'] = []
   return { 'errors': [], 'data': data }
 
@@ -178,7 +179,7 @@ def to_utf8(obj):
 #    return obj
 #  elif isinstance(obj, basestring):
 #    return filter_utf8(obj)
-#  elif isinstance(obj, list): 
+#  elif isinstance(obj, list):
 #    return [to_utf8(w) for w in obj]
 #  print "Unknown type", type(obj), "for object", obj
 #  raise "Unknown type"
@@ -206,21 +207,114 @@ class ExampleHandler(web.RequestHandler):
 
 class ReplacementRule:
   def __init__(self, data):
-    self.source_rule = data['sourceRule']
     self.target_rule = data['targetRule']
     self.replacement = data['targetReplacement']
-    self.match_case  = data['matchCase']
-    self.is_regexp   = data['isRegexp']
-    self.persistent  = data['persistent']
+    self.fails = 0
+    if 'ruleId' in data:
+      self.rule_id   = data['ruleId']
+    else:
+      self.rule_id   = None
+    if 'sourceRule' in data and data['sourceRule'] != "":
+      self.source_rule = data['sourceRule']
+    else:
+      self.source_rule = None
+    if 'matchCase' in data:
+      self.match_case  = data['matchCase']
+    else:
+      self.match_case = False
+    if 'isRegExp' in data:
+      self.is_regexp   = data['isRegExp']
+    else:
+      self.is_regexp   = False
+    if 'persistent' in data:
+      self.persistent  = data['persistent']
+    else:
+      self.persistent  = False 
 
-    self.re_source = re.compile()
-    self.re_target = re.compile()
+    flags = 0
+    if not self.match_case:
+      flags = re.IGNORECASE
+
+    sr = self.source_rule
+    tr = self.target_rule
+    if not self.is_regexp:
+      if sr: sr = re.escape(sr)
+      tr = re.escape(tr)
+
+    if sr:
+      self.re_source = re.compile(sr, flags)
+    else:
+      self.re_source = None 
+    self.re_target = re.compile(tr, flags)
 
   def apply(self, source, target):
-    source_match = self.re_source.search(source)
-    if source_match:
-      target_match = self.re_target.sub(self.replacement, target)
+    try:
+      if self.re_source:
+        source_match = self.re_source.search(source)
+      else:
+        source_match = True
+      if source_match:
+        target = self.re_target.sub(self.replacement, target)
+    except:
+      self.fails += 1
     return target
+
+  def toJSON(self):
+    data = {
+      'ruleId': self.rule_id, 
+      'nFails': self.fails, 
+      'sourceRule': self.source_rule, 
+      'targetRule': self.target_rule, 
+      'targetReplacement': self.replacement, 
+      'matchCase': self.match_case, 
+      'isRegExp': self.is_regexp, 
+      'persistent': self.persistent 
+    }
+    return data    
+
+class Rules:
+  def __init__(self):
+    self.rules = []
+    self.idx = {}
+    self.last_id = 0
+
+  def add(self, rule):
+    rule_id = rule.rule_id
+    if rule_id: 
+      old = self.idx[rule_id]
+      pos = self.rules.index(old)
+      self.idx[rule_id] = rule
+      self.rules[pos]   = rule
+
+    else:
+      rule_id = self.last_id
+      self.last_id += 1
+      rule.rule_id = rule_id
+      self.rules.append(rule)
+      self.idx[rule_id] = rule
+
+    return rule_id
+
+  def remove(self, rule_id):
+    if rule_id in self.idx:
+      old = self.idx[rule_id]
+      del self.idx[rule_id]
+      self.rules.remove(old)
+
+  def apply(self, source, _target):
+    target = _target
+    for rule in self.rules:
+      target = rule.apply(source, target)
+    return target
+
+  def __len__(self):
+    return len(self.rules)
+
+  def toJSON(self):
+    data = []
+    for rule in self.rules:
+      data.append(rule.toJSON())
+    return data
 
 class CasmacatConnection(SocketConnection):
     def respond(self, *args, **kwargs):
@@ -240,12 +334,12 @@ class CasmacatConnection(SocketConnection):
       start_time = datetime.datetime.now()
       matrix = models.aligner.align(source_tok, target_tok)
       elapsed_time = datetime.datetime.now() - start_time
-      
+
       logger.log(DEBUG_LOG, matrix);
-      obj = { 'alignments': matrix, 
-              'source': source, 
-              'sourceSegmentation': source_seg, 
-              'target': target, 
+      obj = { 'alignments': matrix,
+              'source': source,
+              'sourceSegmentation': source_seg,
+              'target': target,
               'targetSegmentation': target_seg,
               'elapsedTime': elapsed_time.total_seconds()*1000.0
             }
@@ -259,11 +353,34 @@ class CasmacatConnection(SocketConnection):
       source_rule, target_rule = to_utf8(data['sourceRule']), to_utf8(data['targetRule'])
 
       start_time = datetime.datetime.now()
-      
+      rule_id  = self.rules.add(ReplacementRule(to_utf8(data)))
+
       elapsed_time = datetime.datetime.now() - start_time
 
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0, 'ruleId': rule_id }
       self.respond('setReplacementRuleResult', { 'errors': [], 'data': obj })
+
+
+    @event('getReplacementRules')
+    @timer('getReplacementRules')
+    @thrower('getReplacementRulesResult')
+    def getReplacementRules(self):
+      start_time = datetime.datetime.now()
+      rules = self.rules.toJSON()
+      elapsed_time = datetime.datetime.now() - start_time
+      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0, 'rules': rules }
+      self.respond('getReplacementRulesResult', { 'errors': [], 'data': obj })
+
+
+    @event('delReplacementRule')
+    @timer('delReplacementRule')
+    @thrower('delReplacementRuleResult')
+    def delReplacementRule(self, data):
+      start_time = datetime.datetime.now()
+      self.rules.remove(data['ruleId'])
+      elapsed_time = datetime.datetime.now() - start_time
+      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      self.respond('delReplacementRuleResult', { 'errors': [], 'data': obj })
 
 
     @event('getTokens')
@@ -278,10 +395,10 @@ class CasmacatConnection(SocketConnection):
       target_tok, target_seg = models.tokenizer.preprocess(target)
       elapsed_time = datetime.datetime.now() - start_time
 
-      obj = { 
-              'source': source, 
-              'sourceSegmentation': source_seg, 
-              'target': target, 
+      obj = {
+              'source': source,
+              'sourceSegmentation': source_seg,
+              'target': target,
               'targetSegmentation': target_seg,
               'elapsedTime': elapsed_time.total_seconds()*1000.0
             }
@@ -299,20 +416,20 @@ class CasmacatConnection(SocketConnection):
       if 'validatedTokens' not in data: data['validatedTokens'] = []
 
       start_time = datetime.datetime.now()
-      validated_words = [] 
-      diff = len(target_tok) - len(data['validatedTokens']) 
+      validated_words = []
+      diff = len(target_tok) - len(data['validatedTokens'])
       if diff >= 0: validated_words = data['validatedTokens']
       validated_words.extend([False]*diff)
       sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, validated_words)
       elapsed_time = datetime.datetime.now() - start_time
 
-      obj = { 
-        'quality': sent, 
-        'confidences': conf, 
-        'source': source, 
-        'sourceSegmentation': source_seg, 
-        'target': target, 
-        'targetSegmentation': target_seg, 
+      obj = {
+        'quality': sent,
+        'confidences': conf,
+        'source': source,
+        'sourceSegmentation': source_seg,
+        'target': target,
+        'targetSegmentation': target_seg,
         'elapsedTime': elapsed_time.total_seconds()*1000.0
       }
       print 'confidences:', obj
@@ -380,11 +497,14 @@ class CasmacatConnection(SocketConnection):
           start_time = datetime.datetime.now()
           target_tok = mt.translate(source_tok)
           elapsed_time = datetime.datetime.now() - start_time
-  
+
           target, target_seg = models.tokenizer.postprocess(target_tok)
+          if len(self.rules):
+            target = self.rules.apply(source, target)
+            target_tok, target_seg = models.tokenizer.preprocess(target)
           match = new_match(name, target, target_seg, elapsed_time)
           add_match(contributions, match)
-            
+
 
       prepare(contributions)
       self.respond('decodeResult', contributions)
@@ -422,7 +542,7 @@ class CasmacatConnection(SocketConnection):
       self.source = to_utf8(data['source'])
       for name, session in self.imt_session.iteritems():
           models.imt_systems[name].deleteSession(session)
-      self.imt_session = {} 
+      self.imt_session = {}
 
       source_tok, source_seg = models.tokenizer.preprocess(self.source)
       self.source_tok, self.source_seg = source_tok, source_seg
@@ -436,7 +556,7 @@ class CasmacatConnection(SocketConnection):
 
       obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
       self.respond('startSessionResult', { 'errors': [], 'data': obj })
-        
+
     @event('setPrefix')
     @timer('setPrefix')
     @thrower('setPrefixResult')
@@ -448,30 +568,37 @@ class CasmacatConnection(SocketConnection):
 
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target))
 
-      prefix = to_utf8(target[:caret_pos]) 
-      suffix = to_utf8(target[caret_pos:]) 
+      prefix = to_utf8(target[:caret_pos])
+      suffix = to_utf8(target[caret_pos:])
 
       print >> sys.stderr, "prefix '%s'" % prefix, type(prefix)
-      print >> sys.stderr, "suffix '%s'" % suffix, type(suffix) 
+      print >> sys.stderr, "suffix '%s'" % suffix, type(suffix)
 
       prefix_tok, prefix_seg = models.tokenizer.preprocess(prefix)
       suffix_tok, suffix_seg = models.tokenizer.preprocess(suffix)
 
       last_token_is_partial = True
+      prefix_last_tok = len(prefix_tok) - 1 
       if len(prefix) == 0 or prefix[-1].isspace():
         last_token_is_partial = False
-      print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
+      print >> sys.stderr, "last_token_is_partial", last_token_is_partial
 
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
-      
+
       for name, session in self.imt_session.iteritems():
         if name == self.config['mode'] or self.config['suggestions']:
           start_time = datetime.datetime.now()
           prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
           elapsed_time = datetime.datetime.now() - start_time
-          print >> sys.stderr, name, "prediction_tok", prediction_tok 
-  
+          print >> sys.stderr, name, "prediction_tok", prediction_tok
+
           prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
+          if len(self.rules):
+            r_pref = prediction[:prediction_seg[prefix_last_tok][1]]
+            r_suf = prediction[prediction_seg[prefix_last_tok][1]:]
+            print 'XXXXX', r_pref, '###', r_suf
+            prediction = r_pref + self.rules.apply(self.source, r_suf)
+            prediction_tok, prediction_seg = models.tokenizer.preprocess(prediction)
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
           if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
@@ -499,30 +626,37 @@ class CasmacatConnection(SocketConnection):
 
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target))
 
-      prefix = to_utf8(target[:caret_pos]) 
-      suffix = to_utf8(target[caret_pos:]) 
+      prefix = to_utf8(target[:caret_pos])
+      suffix = to_utf8(target[caret_pos:])
 
       print >> sys.stderr, "prefix '%s'" % prefix, type(prefix)
-      print >> sys.stderr, "suffix '%s'" % suffix, type(suffix) 
+      print >> sys.stderr, "suffix '%s'" % suffix, type(suffix)
 
       prefix_tok, prefix_seg = models.tokenizer.preprocess(prefix)
       suffix_tok, suffix_seg = models.tokenizer.preprocess(suffix)
 
       last_token_is_partial = True
+      prefix_last_tok = len(prefix_tok) - 1 
       if len(prefix) == 0 or prefix[-1].isspace():
         last_token_is_partial = False
-      print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
+      print >> sys.stderr, "last_token_is_partial", last_token_is_partial
 
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
-      
+
       for name, session in self.imt_session.iteritems():
         if name == self.config['mode'] or self.config['suggestions']:
           start_time = datetime.datetime.now()
           prediction_tok = session.rejectSuffix(prefix_tok, suffix_tok, last_token_is_partial)
           elapsed_time = datetime.datetime.now() - start_time
-          print >> sys.stderr, name, "prediction_tok", prediction_tok 
-  
+          print >> sys.stderr, name, "prediction_tok", prediction_tok
+
           prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
+          if len(self.rules):
+            r_pref = prediction[:prediction_seg[prefix_last_tok][1]]
+            r_suf = prediction[prediction_seg[prefix_last_tok][1]:]
+            print 'XXXXX', r_pref, '###', r_suf
+            prediction = r_pref + self.rules.apply(self.source, r_suf)
+            prediction_tok, prediction_seg = models.tokenizer.preprocess(prediction)
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
           if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
@@ -545,7 +679,7 @@ class CasmacatConnection(SocketConnection):
     def endSessionResult(self):
       for name, session in self.imt_session.iteritems():
           models.imt_systems[name].deleteSession(session)
-      self.imt_session = {} 
+      self.imt_session = {}
       logger.log(DEBUG_LOG, "ending imt session");
 
       elapsed_time = datetime.datetime.now() - start_time
@@ -567,7 +701,7 @@ class CasmacatConnection(SocketConnection):
     @thrower('configureResult')
     def configure(self, data):
       self.config = data
-      print >> sys.stderr, self.config 
+      print >> sys.stderr, self.config
       self.respond('configureResult', { 'errors': [], 'data': data })
 
     @event('getServerConfig')
@@ -589,12 +723,14 @@ class CasmacatConnection(SocketConnection):
     def on_open(self, info):
       print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
-      self.imt_session = {} 
+      self.imt_session = {}
       self.config = { 'suggestions': False, 'mode': u'PE' }
+      self.rules = Rules()
 
     @event
     def on_close(self):
       MyLogger.participants.remove(self)
+      self.rules = None
 
 
 class RouterConnection(SocketConnection):
@@ -617,7 +753,7 @@ class WordPriorityContainer:
   last_id = 0
   def __init__(self, config):
     self.config = copy.deepcopy(config)
-    if "id" not in self.config: 
+    if "id" not in self.config:
       self.config["id"] = "word_priority_plugin_%d" % last_id
       last_id += 1
     start_time = datetime.datetime.now()
@@ -639,7 +775,7 @@ class WordPriorityContainer:
   def reset(self):
     pass
 
- 
+
 
 class Models:
   def __init__(self, config_fn):
@@ -649,7 +785,7 @@ class Models:
     self.imt_systems = {}
     self.ol_systems = {}
     self.updates = []
-  
+
   def assign_models(self):
     self.mt_systems["ITP"] = self.static_mt
     self.imt_systems["ITP"] = self.static_mt
@@ -657,11 +793,11 @@ class Models:
     self.mt_systems["ITP-OL"] = self.online_mt
     self.imt_systems["ITP-OL"] = self.online_mt
     self.ol_systems["ITP-OL"] = self.online_mt
-    
+
     self.ol_systems["ALIGNER"] = self.aligner
     self.ol_systems["CONFIDENCER"] = self.confidencer
 
-    
+
   @timer('create_plugins')
   def create_plugins(self):
     start_time = datetime.datetime.now()
@@ -674,7 +810,7 @@ class Models:
     elapsed_time = datetime.datetime.now() - start_time
     print "TIME:%s loaded:%s" % ("tokenizer", fmt_delta(elapsed_time))
 
-    
+
     if "name" in self.config["mt"]:
       self.mt_plugin = ImtPlugin(self.config["mt"]["module"], self.config["mt"]["parameters"], self.config["mt"]["name"])
     else:
@@ -708,7 +844,7 @@ class Models:
     elapsed_time = datetime.datetime.now() - start_time
     print "TIME:%s loaded:%s" % ("aligner", fmt_delta(elapsed_time))
 
-    
+
     start_time = datetime.datetime.now()
     self.confidence_plugin = ConfidencePlugin(self.config["confidencer"]["module"], self.config["confidencer"]["parameters"])
     self.confidence_factory = self.confidence_plugin.create()
@@ -729,10 +865,10 @@ class Models:
         plugin = WordPriorityContainer(self.config["word-prioritizer"])
         self.word_prioritizers[plugin.config['id']] = plugin
 
-    self.assign_models()    
+    self.assign_models()
     print >> sys.stderr, "Plugins loaded"
-  
-  
+
+
   @timer('delete_plugins')
   def delete_plugins(self):
     for k, v in self.word_prioritizers.iteritems():
@@ -748,7 +884,7 @@ class Models:
     self.alignment_plugin.destroy(self.alignment_factory)
     self.aligner, self.alignment_factory = None, None
     del self.alignment_plugin
-    
+
     self.mt_factory.deleteInstance(self.static_mt);
     self.mt_plugin.destroy(self.mt_factory)
     self.static_mt, self.mt_factory = None, None
@@ -756,7 +892,7 @@ class Models:
     self.ol_factory.deleteInstance(self.online_mt);
     self.mt_plugin.destroy(self.ol_factory)
     self.online_mt, self.ol_factory = None, None
-    
+
     del self.mt_plugin
 
     self.tokenizer_factory.deleteInstance(self.tokenizer);
@@ -767,13 +903,13 @@ class Models:
   @timer('reset')
   def reset(self):
     if len(self.updates) > 0:
-      
+
       self.updates = []
       print >> sys.stderr, "deleteInstance confidencer"
       self.confidence_factory.deleteInstance(self.confidencer);
       print >> sys.stderr, "destroy confidence factory"
       self.confidence_plugin.destroy(self.confidence_factory)
-  
+
       print >> sys.stderr, "create confidence factory"
       self.confidence_factory = self.confidence_plugin.create()
       if not self.confidence_factory: raise Exception("Confidence plugin failed")
@@ -781,13 +917,13 @@ class Models:
       print >> sys.stderr, "create confidencer instance"
       self.confidencer = self.confidence_factory.createInstance()
       if not self.confidencer: raise Exception("Confidencer instance failed")
-  
-  
+
+
       print >> sys.stderr, "deleteInstance aligner"
       self.alignment_factory.deleteInstance(self.aligner);
       print >> sys.stderr, "destroy alignment factory"
       self.alignment_plugin.destroy(self.alignment_factory)
-  
+
       print >> sys.stderr, "create alignment factory"
       self.alignment_factory = self.alignment_plugin.create()
       if not self.alignment_factory: raise Exception("Alignment plugin failed")
@@ -795,13 +931,13 @@ class Models:
       print >> sys.stderr, "create aligner instance"
       self.aligner = self.alignment_factory.createInstance()
       if not self.aligner: raise Exception("Aligner instance failed")
-  
-      
+
+
       print >> sys.stderr, "deleteInstance online mt"
       self.ol_factory.deleteInstance(self.online_mt);
       print >> sys.stderr, "destroy online mt factory"
       self.mt_plugin.destroy(self.ol_factory)
-  
+
       print >> sys.stderr, "create online mt factory"
       self.ol_factory = self.mt_plugin.create()
       if not self.ol_factory: raise Exception("Online MT plugin failed")
@@ -809,11 +945,11 @@ class Models:
       print >> sys.stderr, "create online mt instance"
       self.online_mt = self.ol_factory.createInstance()
       if not self.online_mt: raise Exception("Online MT instance failed")
-      
+
       self.assign_models()
-    
-    print >> sys.stderr, "Reset finished"    
-    
+
+    print >> sys.stderr, "Reset finished"
+
 
 if __name__ == "__main__":
     from sys import argv
@@ -821,7 +957,7 @@ if __name__ == "__main__":
     import atexit
 
     logfn = "casmacat-server.log"
-    try: 
+    try:
       logfn = models.config["server"]["logfile"]
     except:
       pass
@@ -835,7 +971,7 @@ if __name__ == "__main__":
     atexit.register(models.delete_plugins)
 
     port = 3019
-    try: 
+    try:
       port = int(sys.argv[2])
     except:
       try:
@@ -846,14 +982,14 @@ if __name__ == "__main__":
     # Create socket application
     application = web.Application(
         CasmacatRouter.apply_routes([
-                                      (r"/", IndexHandler), 
+                                      (r"/", IndexHandler),
                                       (r"/js/(.*)", JsHandler),
                                       (r"/css/(.*)", CssHandler),
                                       (r"/examples/(.*)", ExampleHandler)
                                     ]),
         flash_policy_port = 843,
         flash_policy_file = os.path.join(ROOT, 'flashpolicy.xml'),
-        socket_io_port = port 
+        socket_io_port = port
     )
 
 

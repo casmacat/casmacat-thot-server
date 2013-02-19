@@ -168,8 +168,10 @@
       });
     },
 
+    itpServer: function(str) { 
+      return $(this).data(namespace).itpServer;
+    },
   };
-
 
 
   $.fn.editableItp = function(method) {
