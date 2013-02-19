@@ -59,6 +59,7 @@
             elem.bind("mousedown", mousedownHandler);
             elem.bind("mouseup", mouseupHandler);
             elem.bind("mousemove", mousemoveHandler);
+            elem.bind("mouseout", mouseoutHandler);
             elem.bind("touchstart", touchHandler);
             elem.bind("touchend", touchHandler);
             elem.bind("touchmove", touchHandler);
@@ -271,6 +272,13 @@
     }
   };
       
+  function mouseoutHandler(e) {
+    var elem = $(e.target), data = elem.data(_ns);
+    if (data.canvas.isDrawing) {
+      mouseupHandler(e);
+    }
+  };
+  
   function mousemoveHandler(e) {
     var elem = $(e.target), data = elem.data(_ns);
     if (!data.canvas.isDrawing) return;
