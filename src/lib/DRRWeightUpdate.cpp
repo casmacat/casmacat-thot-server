@@ -2,16 +2,17 @@
 #include <iomanip>
 #include "drr.h"
 
-#include "cdec/mteval/ns.h"
-#include "cdec/utils/tdict.h"
-#include "Eigen/Dense"
-#include "Eigen/LU"
+#include "ns.h"
+#include "tdict.h"
+#include "Dense"
+#include "LU"
 
 extern "C"
 {
 void *__dso_handle = NULL;
 }
 
+#include <casmacat/IWeightUpdateEngine.h>
 #include <casmacat/IPluginFactory.h>
 #include <casmacat/utils.h>
 
@@ -19,7 +20,7 @@ using namespace std;
 using namespace casmacat;
 using namespace Eigen;
 
-class DRRWeightUpdate: public WeightUpdateEngine, Loggable {
+class DRRWeightUpdate: public IWeightUpdateEngine, Loggable {
   Logger *_logger;
 public: 
   DRRWeightUpdate(): _logger(0) { }
@@ -31,10 +32,10 @@ public:
   }
   
   virtual void updatelogWeights(const vector<double>& currentWeights,
-                                string reference,
+                                const string& reference,
                                 const vector<string>& nblist,
                                 const vector<vector<double> >& scoreCompsVec,
-                                vector<double> *newWeights;
+                                vector<double> &newWeights
                                ) {
 //  vector<string> hyps;
 //  for (int i=0;i<nblist.size();++i) hyps.push_back(nblist.second);
@@ -53,7 +54,7 @@ public:
   }
 };
 
-class DRRWeightUpdateFactory: public WeightUpdateFactory {
+class DRRWeightUpdateFactory: public IWeightUpdateFactory {
   Logger *_logger;
   DRRWeightUpdate *dwu;
 public:
@@ -84,7 +85,9 @@ public:
   virtual DRRWeightUpdate *createInstance(const std::string &specialization_id = "") {
     return dwu;
   }
+
+  virtual void deleteInstance(IWeightUpdateEngine* drrweightupdate) { delete drrweightupdate; }
 };
 
 
-EXPORT_CASMACAT_PLUGIN(DRRWeightUpdate, DRRWeightUpdateFactory);
+EXPORT_CASMACAT_PLUGIN(IWeightUpdateEngine, DRRWeightUpdateFactory);
