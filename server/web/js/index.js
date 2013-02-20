@@ -77,7 +77,7 @@ $(function(){
           $select.empty();
           $('#source, #target').empty();
           $.each(c.sentences, function(index, value) {
-            $select.append( $('<option value="'+value+'">'+trimText(value, 12)+'</option>') );
+            $select.append( $('<option>'+trimText(value, 12)+'</option>').val(value) );
           });
           $source.text( $select.first().val() );
         }
