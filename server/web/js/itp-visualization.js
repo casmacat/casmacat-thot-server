@@ -198,8 +198,7 @@
     self.updateWordPriorityDisplay = function($target, $token) {
       // get target span tokens 
       var spans = $('.editable-token', $target)
-        , userPriorityLength = userCfg().priorityLength
-        ;
+        , userPriorityLength = userCfg().priorityLength;
 
       if ($token.parent().is('.editable-token')) {
         $token = $token.parent();

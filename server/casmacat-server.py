@@ -493,7 +493,7 @@ class CasmacatConnection(SocketConnection):
       mode = self.config['mode']
       if mode == "PE": mode = "ITP"
       for name, mt in models.mt_systems.iteritems():
-        if name == mode or self.config['suggestions']:
+        if name == mode or self.config['useSuggestions']:
           start_time = datetime.datetime.now()
           target_tok = mt.translate(source_tok)
           elapsed_time = datetime.datetime.now() - start_time
@@ -550,7 +550,7 @@ class CasmacatConnection(SocketConnection):
 
       start_time = datetime.datetime.now()
       for name, imt in models.imt_systems.iteritems():
-        if name == self.config['mode'] or self.config['suggestions']:
+        if name == self.config['mode'] or self.config['useSuggestions']:
           self.imt_session[name] = imt.newSession(source_tok)
       elapsed_time = datetime.datetime.now() - start_time
 
@@ -586,7 +586,7 @@ class CasmacatConnection(SocketConnection):
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
 
       for name, session in self.imt_session.iteritems():
-        if name == self.config['mode'] or self.config['suggestions']:
+        if name == self.config['mode'] or self.config['useSuggestions']:
           start_time = datetime.datetime.now()
           prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
           elapsed_time = datetime.datetime.now() - start_time
@@ -644,7 +644,7 @@ class CasmacatConnection(SocketConnection):
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
 
       for name, session in self.imt_session.iteritems():
-        if name == self.config['mode'] or self.config['suggestions']:
+        if name == self.config['mode'] or self.config['useSuggestions']:
           start_time = datetime.datetime.now()
           prediction_tok = session.rejectSuffix(prefix_tok, suffix_tok, last_token_is_partial)
           elapsed_time = datetime.datetime.now() - start_time
@@ -724,7 +724,7 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
       self.imt_session = {}
-      self.config = { 'suggestions': False, 'mode': u'PE' }
+      self.config = { 'useSuggestions': False, 'mode': u'PE' }
       self.rules = Rules()
 
     @event

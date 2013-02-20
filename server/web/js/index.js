@@ -26,7 +26,8 @@ $(function(){
     }
     return range;
   };
-        
+
+  
   blockUI("Connecting...");
 
   require("jquery.rotatecells");
@@ -213,7 +214,13 @@ $(function(){
           console.warning("#show-options changed, but no action was performed");
           break;
       }
-      $target.editableItp('updateConfig', {suggestions:$('#opt-suggestions').is(':checked'), mode:show_type, prioritizer:$('#opt-prioritizer').val()});
+      $target.editableItp('updateConfig', {
+        mode: show_type,
+        useSuggestions: $('#opt-suggestions').is(':checked'),
+        useConfidences: $('#opt-confidences').is(':checked'),
+        useAlignments:  $('#opt-alignments').is(':checked'),
+        prioritizer:    $('#opt-prioritizer').val(),
+      });
     });
 
 
@@ -413,7 +420,7 @@ $(function(){
     });
 
     $("#opt-prioritizer").change(function(e){
-      if (typeof currentCaretPos != 'undefined' && currentCaretPos.token) {
+      if (typeof currentCaretPos !== 'undefined' && currentCaretPos.token) {
         update_word_priority_display($target, $(currentCaretPos.token.elem));
       }
     });
@@ -440,7 +447,10 @@ $(function(){
       max: 100,
       values: [ 3, 30 ],
       slide: function(event, ui) {
-        updateConfidenceSlider(ui.values);
+        updateConfidenceSlider(ui.values, false);
+      },
+      change: function(event, ui) {
+        updateConfidenceSlider(ui.values, true);
       }
     });
 
@@ -449,20 +459,23 @@ $(function(){
       max: 10,
       value: 1,
       slide: function(event, ui) {
-        updatePrioritySlider(ui.value);
+        updatePrioritySlider(ui.value, false);
+      },
+      change: function(event, ui) {
+        updatePrioritySlider(ui.value, true);
       }
     });
       
-    function updateConfidenceSlider(values) {
-      if (!values) values = $('#slider-conf').slider("option", "values");
-      confThreshold = {
+    function updateConfidenceSlider(values, upconf) {
+      if (typeof values === 'undefined') values = $('#slider-conf').slider("option", "values");
+      if (typeof upconf === 'undefined') upconf = false;
+      $('#slider-bad').text(values[0]);
+      $('#slider-doubt').text(values[1]);
+      
+      var confThreshold = {
         bad: values[0]/100,
         doubt: values[1]/100
       };
-      
-      $('#slider-bad').text(values[0]);
-      $('#slider-doubt').text(values[1]);
-
       // get target span tokens 
       var spans = $('#target > .editable-token');    
       // add class to color tokens 'wordconf-ok', 'wordconf-doubt' or 'wordconf-bad'
@@ -483,14 +496,26 @@ $(function(){
           }
           $(spans[c]).addClass(cssClass);
         }
-      }            
+      }
+
+      if (upconf) {
+        $target.editableItp('updateConfig', {
+          confidenceThresholds: confThreshold
+        });
+      }
     };
 
-    function updatePrioritySlider(value) {
-      if (!value) value = $('#slider-priority').slider("option", "value");
+    function updatePrioritySlider(value, upconf) {
+      if (typeof values === 'undefined') values = $('#slider-priority').slider("option", "value");
+      if (typeof upconf === 'undefined') upconf = false;
       $('#slider-priority-text').text(value);
-      if (typeof currentCaretPos != 'undefined' && currentCaretPos.token) {
+      if (typeof currentCaretPos !== 'undefined' && currentCaretPos.token) {
         update_word_priority_display($target, $(currentCaretPos.token.elem));
+      }
+      if (upconf) {
+        $target.editableItp('updateConfig', {
+          priorityLength: value
+        });
       }
     };
       
@@ -508,6 +533,7 @@ $(function(){
     
     function makeControlPanelSummary() {
       $('#set-mode').text( getTranslationMode() );
+      var confThreshold = $target.editableItp('getConfig').confidenceThresholds;
       $('#set-suggestions').text( $('#opt-suggestions').is(':checked') );
       $('#set-confidences').text( $('#opt-confidences').is(':checked') + " ["+ confThreshold.bad*100 + "/"+ confThreshold.doubt*100 +"]" );
       $('#set-alignments').text( $('#opt-alignments').is(':checked') + " [matrix: "+ $('#matrix').is(':hidden') +"]" );

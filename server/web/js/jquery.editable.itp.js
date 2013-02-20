@@ -56,10 +56,10 @@
               config: {
                 useAlignments: true,
                 useConfidences: true,
+                useSuggestions: false,
                 mode: 'ITP',
-                prioritizer: 'confidence',
+                prioritizer: 'none',
                 priorityLength: 1,
-                suggestions: false,
                 confidenceThresholds: { doubt: 0.4, bad: 0.03 },
               }
             };
@@ -148,6 +148,11 @@
       data.itpServer.configure(data.config);
     },
 
+    getConfig: function() {
+      var data = $(this).data(namespace);
+      return data.config;
+    },
+    
     rejectSuffix: function(caretPos) {
       var data = $(this).data(namespace);
       data.itpServer.rejectSuffix({
