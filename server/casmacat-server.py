@@ -488,6 +488,7 @@ class CasmacatConnection(SocketConnection):
       print 'data:', data
       source = to_utf8(data['source'])
       source_tok, source_seg = models.tokenizer.preprocess(source)
+      print "WGSENT", source, "->", "'" + " ".join(source_tok) + "'"
       contributions = new_contributions(source, source_seg)
 
       mode = self.config['mode']
@@ -790,9 +791,10 @@ class Models:
     self.mt_systems["ITP"] = self.static_mt
     self.imt_systems["ITP"] = self.static_mt
 
-    self.mt_systems["ITP-OL"] = self.online_mt
-    self.imt_systems["ITP-OL"] = self.online_mt
-    self.ol_systems["ITP-OL"] = self.online_mt
+    if self.online_mt:
+      self.mt_systems["ITP-OL"] = self.online_mt
+      self.imt_systems["ITP-OL"] = self.online_mt
+      self.ol_systems["ITP-OL"] = self.online_mt
 
     self.ol_systems["ALIGNER"] = self.aligner
     self.ol_systems["CONFIDENCER"] = self.confidencer
@@ -825,14 +827,18 @@ class Models:
     elapsed_time = datetime.datetime.now() - start_time
     print "TIME:%s loaded:%s" % ("static mt", fmt_delta(elapsed_time))
 
-    start_time = datetime.datetime.now()
-    self.ol_factory = self.mt_plugin.create()
-    if not self.ol_factory: raise Exception("Online MT plugin failed")
-    self.ol_factory.setLogger(logger)
-    self.online_mt = self.ol_factory.createInstance()
-    if not self.online_mt: raise Exception("Online MT instance failed")
-    elapsed_time = datetime.datetime.now() - start_time
-    print "TIME:%s loaded:%s" % ("online mt", fmt_delta(elapsed_time))
+    if "online" in self.config["mt"] and self.config["mt"]["online"]:
+      start_time = datetime.datetime.now()
+      self.ol_factory = self.mt_plugin.create()
+      if not self.ol_factory: raise Exception("Online MT plugin failed")
+      self.ol_factory.setLogger(logger)
+      self.online_mt = self.ol_factory.createInstance()
+      if not self.online_mt: raise Exception("Online MT instance failed")
+      elapsed_time = datetime.datetime.now() - start_time
+      print "TIME:%s loaded:%s" % ("online mt", fmt_delta(elapsed_time))
+    else:
+      self.ol_factory = None
+      self.online_mt = None
 
     start_time = datetime.datetime.now()
     self.alignment_plugin = AlignmentPlugin(self.config["aligner"]["module"], self.config["aligner"]["parameters"])
@@ -889,9 +895,10 @@ class Models:
     self.mt_plugin.destroy(self.mt_factory)
     self.static_mt, self.mt_factory = None, None
 
-    self.ol_factory.deleteInstance(self.online_mt);
-    self.mt_plugin.destroy(self.ol_factory)
-    self.online_mt, self.ol_factory = None, None
+    if self.online_mt:
+      self.ol_factory.deleteInstance(self.online_mt);
+      self.mt_plugin.destroy(self.ol_factory)
+      self.online_mt, self.ol_factory = None, None
 
     del self.mt_plugin
 
@@ -933,18 +940,19 @@ class Models:
       if not self.aligner: raise Exception("Aligner instance failed")
 
 
-      print >> sys.stderr, "deleteInstance online mt"
-      self.ol_factory.deleteInstance(self.online_mt);
-      print >> sys.stderr, "destroy online mt factory"
-      self.mt_plugin.destroy(self.ol_factory)
+      if self.online_mt:
+        print >> sys.stderr, "deleteInstance online mt"
+        self.ol_factory.deleteInstance(self.online_mt);
+        print >> sys.stderr, "destroy online mt factory"
+        self.mt_plugin.destroy(self.ol_factory)
 
-      print >> sys.stderr, "create online mt factory"
-      self.ol_factory = self.mt_plugin.create()
-      if not self.ol_factory: raise Exception("Online MT plugin failed")
-      self.ol_factory.setLogger(logger)
-      print >> sys.stderr, "create online mt instance"
-      self.online_mt = self.ol_factory.createInstance()
-      if not self.online_mt: raise Exception("Online MT instance failed")
+        print >> sys.stderr, "create online mt factory"
+        self.ol_factory = self.mt_plugin.create()
+        if not self.ol_factory: raise Exception("Online MT plugin failed")
+        self.ol_factory.setLogger(logger)
+        print >> sys.stderr, "create online mt instance"
+        self.online_mt = self.ol_factory.createInstance()
+        if not self.online_mt: raise Exception("Online MT instance failed")
 
       self.assign_models()
 
