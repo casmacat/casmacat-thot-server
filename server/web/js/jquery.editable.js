@@ -273,6 +273,7 @@
 
     setCaretPos: function(pos) {
       var token = this.editable('updateCaret', pos);
+
       var sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(token.range);

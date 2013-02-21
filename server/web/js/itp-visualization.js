@@ -1,5 +1,5 @@
 (function(module, global){
-  NLP = require('nlp-utils');
+  var NLP = require('nlp-utils');
 
   /*******************************************************************************/
   /*           update the HTML display and attach events                         */
@@ -198,7 +198,8 @@
     self.updateWordPriorityDisplay = function($target, $token) {
       // get target span tokens 
       var spans = $('.editable-token', $target)
-        , userPriorityLength = userCfg().priorityLength;
+        , userPriorityLength = userCfg().priorityLength
+        ;
 
       if ($token.parent().is('.editable-token')) {
         $token = $token.parent();

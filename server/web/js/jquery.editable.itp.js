@@ -79,15 +79,16 @@
 
     destroy: function() {
       return this.each(function() {
-        var $this = $(this)
-          , $source = $this.data(namespace).$source
-          ;
+        var $this = $(this);
+        if ($this.data(namespace)) {
+          var $source = $this.data(namespace).$source;
 
-        // Namespacing FTW
-        $this.data(namespace).events.removeEvents();
-        $this.removeData(namespace);
-        $source.editable('destroy');
-        $this.editable('destroy');
+          // Namespacing FTW
+          $this.data(namespace).events.removeEvents();
+          $this.removeData(namespace);
+          $source.editable('destroy');
+          $this.editable('destroy');
+        }
       })
     },
 

@@ -184,7 +184,7 @@ var Memento = require("module.memento");
         self.memento.invalidate();
         // First-time use of the mousewheel
         self.mousewheel.addElement(data);
-                
+
         //XXX: $('#btn-translate').val("Translate").attr("disabled", false);
         $target.trigger('decode', [data, err]);
         $target.trigger('editabletextchange', [data, err]);
