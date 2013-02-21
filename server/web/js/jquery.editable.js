@@ -157,7 +157,7 @@
         return undefined;
       }
 
-      if (!pos) pos = $this.editable('getCaretPos');
+      if (typeof pos === 'undefined') pos = $this.editable('getCaretPos');
       var absoluteCaretPos = pos;
 
       var token = $this.editable('getTokenAtCaretPos', pos);
@@ -273,7 +273,6 @@
 
     setCaretPos: function(pos) {
       var token = this.editable('updateCaret', pos);
-
       var sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(token.range);
