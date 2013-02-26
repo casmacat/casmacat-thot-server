@@ -49,6 +49,7 @@ class timer(object):
     it a single argument, which is the function object.
     """
     def decorator(*args, **kwargs):
+      print "TIME:%s:started" % (self.name)
       start_time = datetime.datetime.now()
 
       print >> logfd, """/*\n  Server method "%s" invoked\n  %s\n*/\n\n"%s": %s\n""" % (self.name, str(datetime.datetime.now()), self.name, json.dumps(kwargs, indent=2, separators=(',', ': '), encoding="utf-8"))
@@ -173,6 +174,11 @@ def convert(data):
 
 def to_utf8(obj):
   return convert(obj)
+
+def split_utf8(string, pos):
+  string = string.decode('utf-8')
+  return string[:pos].encode('utf-8'), string[pos:].encode('utf-8')
+
 
 #def to_utf8(obj):
 #  if obj == None:
@@ -594,9 +600,21 @@ class CasmacatConnection(SocketConnection):
           print >> sys.stderr, name, "prediction_tok", prediction_tok
 
           prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
+          # after preprocessing, prediction might not be compatible with the real prefix
+          # in case of last token NOT partial, the tokenization SHOULD NOT affect the prefix
+          # in case of last token being partial, we must ensure that the prefix is compatible
+          if not last_token_is_partial:
+            r_pref, r_suf = split_utf8(prediction, prediction_seg[prefix_last_tok + 1][0])
+            if r_pref != prefix:
+              print 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
+              prediction = prefix + r_suf
+              diff = len(prefix.decode('utf-8')) - len(r_pref.decode('utf-8'))
+              if diff != 0:
+                prediction_seg = [ (s[0], s[1]) for s in prediction_seg[:prefix_last_tok + 1] ] + [ (s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:] ]
+            
+
           if len(self.rules):
-            r_pref = prediction[:prediction_seg[prefix_last_tok][1]]
-            r_suf = prediction[prediction_seg[prefix_last_tok][1]:]
+            r_pref, r_suf = split_utf8(prediction, prediction_seg[prefix_last_tok][1])
             print 'XXXXX', r_pref, '###', r_suf
             prediction = r_pref + self.rules.apply(self.source, r_suf)
             prediction_tok, prediction_seg = models.tokenizer.preprocess(prediction)
@@ -652,9 +670,20 @@ class CasmacatConnection(SocketConnection):
           print >> sys.stderr, name, "prediction_tok", prediction_tok
 
           prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
+          # after preprocessing, prediction might not be compatible with the real prefix
+          # in case of last token NOT partial, the tokenization SHOULD NOT affect the prefix
+          # in case of last token being partial, we must ensure that the prefix is compatible
+          if not last_token_is_partial:
+            r_pref, r_suf = split_utf8(prediction, prediction_seg[prefix_last_tok + 1][0])
+            if r_pref != prefix:
+              print 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
+              prediction = prefix + r_suf
+              diff = len(prefix.decode('utf-8')) - len(r_pref.decode('utf-8'))
+              if diff != 0:
+                prediction_seg = [ (s[0], s[1]) for s in prediction_seg[:prefix_last_tok + 1] ] + [ (s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:] ]
+
           if len(self.rules):
-            r_pref = prediction[:prediction_seg[prefix_last_tok][1]]
-            r_suf = prediction[prediction_seg[prefix_last_tok][1]:]
+            r_pref, r_suf = split_utf8(prediction, prediction_seg[prefix_last_tok][1])
             print 'XXXXX', r_pref, '###', r_suf
             prediction = r_pref + self.rules.apply(self.source, r_suf)
             prediction_tok, prediction_seg = models.tokenizer.preprocess(prediction)
