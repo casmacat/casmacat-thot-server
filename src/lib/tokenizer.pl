@@ -62,15 +62,15 @@ sub preprocess {
   my($text) = @_;
   chomp($text);
 
-  #escape special chars
-  $text =~ s/\&/\&amp;/g;   # escape escape
-  $text =~ s/\|/\&#124;/g;  # factor separator
-  $text =~ s/\</\&lt;/g;    # xml
-  $text =~ s/\>/\&gt;/g;    # xml
-  $text =~ s/\'/\&apos;/g;  # xml
-  $text =~ s/\"/\&quot;/g;  # xml
-  $text =~ s/\[/\&#91;/g;   # syntax non-terminal
-  $text =~ s/\]/\&#93;/g;   # syntax non-terminal
+  #  #escape special chars
+  #  $text =~ s/\&/\&amp;/g;   # escape escape
+  #  $text =~ s/\|/\&#124;/g;  # factor separator
+  #  $text =~ s/\</\&lt;/g;    # xml
+  #  $text =~ s/\>/\&gt;/g;    # xml
+  #  $text =~ s/\'/\&apos;/g;  # xml
+  #  $text =~ s/\"/\&quot;/g;  # xml
+  #  $text =~ s/\[/\&#91;/g;   # syntax non-terminal
+  #  $text =~ s/\]/\&#93;/g;   # syntax non-terminal
 
   return $text;
 }
