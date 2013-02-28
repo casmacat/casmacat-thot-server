@@ -72,15 +72,15 @@ class PerlTokenizer: public ITextProcessor {
   string preprocess_fn, postprocess_fn;
   
 public:
-  PerlTokenizer(const string &_script_fn): vm(0), 
-    script_fn(_script_fn), delimiters(" "), 
+  PerlTokenizer(int argc, char** argv): vm(0), 
+    delimiters(" "), 
     tokenize_fn("tokenize"), detokenize_fn("detokenize"), 
     preprocess_fn("preprocess"), postprocess_fn("postprocess") 
   {
     if (_num_perl_plugin_instances == 0) {
-      int argc = 1;
-      const char *argv[] = { "", 0 };
-      PERL_SYS_INIT(&argc, (char ***)&argv);
+      int empty_argc = 1;
+      const char *empty_argv[] = { "", 0 };
+      PERL_SYS_INIT(&empty_argc, (char ***)&empty_argv);
     }
 
     vm = perl_alloc();
@@ -88,10 +88,7 @@ public:
     PL_perl_destruct_level = 1;
     PL_exit_flags |= PERL_EXIT_DESTRUCT_END;
 
-    {
-      const char * argv[] = { "", script_fn.c_str(), 0 };
-      perl_parse(vm, xs_init, 2, const_cast<char **>(argv), 0);
-    }
+    perl_parse(vm, xs_init, argc, argv, 0);
     perl_run(vm);
 
     _num_perl_plugin_instances++;
@@ -253,30 +250,46 @@ public:
 size_t PerlTokenizer::_num_perl_plugin_instances = 0;
 
 class PerlTokenizerFactory: public ITextProcessorFactory {
-  string script_fn;
+  int _argc;
+  char **_argv;
+  string _name;
 public:
-  PerlTokenizerFactory() { }
+  PerlTokenizerFactory(): _argv(0), _name("perl") { }
+  ~PerlTokenizerFactory() {
+    if (_argv != 0) {
+      char **it = _argv;
+      while (*it) { delete[] it++; }
+      delete[] _argv;
+    }
+  }
 
   virtual int init(int argc, char *argv[], Context *context = 0) {
     // invalid number of arguments
-    if (argc != 2) { return EXIT_FAILURE; }
-    script_fn = argv[1];
+    if (argc < 2) { return EXIT_FAILURE; }
+    
+    // copy arguments
+    _argc = argc;
+    _argv = new char*[argc + 1];
+    _argv[0] = new char [_name.size() + 1];
+    _argv[0] = strcpy(_argv[0], _name.c_str()); 
+    for (size_t a = 0; a < argc; a++) {
+      _argv[a] = new char [strlen(argv[a]) + 1];
+      strcpy(_argv[a], argv[a]);
+    }
+    _argv[argc] = 0;
+
     return EXIT_SUCCESS;
   }
 
   virtual string getVersion() { return PACKAGE_VERSION; }
 
   virtual ITextProcessor *createInstance(const std::string &specialization_id = "") {
-    return new PerlTokenizer(script_fn);
+    return new PerlTokenizer(_argc, _argv);
   }
 
   virtual void deleteInstance(ITextProcessor *instance) {
     delete instance;
   }
-
-  // do not forget to free all allocated resources
-  // otherwise define the destructor with an empty body
-  virtual ~PerlTokenizerFactory() { cerr << "I'm free!!!" << endl; }
 
 };
 

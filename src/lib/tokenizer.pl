@@ -13,8 +13,12 @@ use Time::HiRes;
 use Thread;
 use utf8;
 
+use Cwd 'abs_path';
+use File::Basename;
+my $dirname = abs_path(dirname(__FILE__));
+
 #my $mydir = "$RealBin/../share/nonbreaking_prefixes";
-my $mydir = "/home/valabau/work/software/mosesdecoder/scripts/share/nonbreaking_prefixes";
+my $mydir = "$dirname/nonbreaking_prefixes";
 
 my %NONBREAKING_PREFIX = ();
 my $language = "en";
