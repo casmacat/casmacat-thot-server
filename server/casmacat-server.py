@@ -646,7 +646,7 @@ class CasmacatConnection(SocketConnection):
       # we compute the prefix segmentation for the original prefix (the one given by the user)
       # the suffix of the last token might have changed
       orig_last_token_end = prefix_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
-      prefix_seg = [s for s in prefix_seg[:prefix_last_tok-1]] + [(prefix_seg[prefix_last_tok][0], orig_last_token_end)]
+      prefix_seg = [s for s in prefix_seg[:prefix_last_tok]] + [(prefix_seg[prefix_last_tok][0], orig_last_token_end)]
     
       # where the last token ends in the postprocessed prediction
       new_last_token_end = prediction_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
