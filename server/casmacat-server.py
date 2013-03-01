@@ -179,6 +179,8 @@ def split_utf8(string, pos):
   string = string.decode('utf-8')
   return string[:pos].encode('utf-8'), string[pos:].encode('utf-8')
 
+def len_utf8(string):
+  return len(string.decode('utf-8'))
 
 #def to_utf8(obj):
 #  if obj == None:
@@ -322,6 +324,8 @@ class Rules:
       data.append(rule.toJSON())
     return data
 
+
+
 class CasmacatConnection(SocketConnection):
     def respond(self, *args, **kwargs):
       print "emit", args, kwargs
@@ -334,8 +338,8 @@ class CasmacatConnection(SocketConnection):
     def getAlignments(self, data):
       print 'data:', data
       source, target = to_utf8(data['source']), to_utf8(data['target'])
-      source_tok, source_seg = models.tokenizer.preprocess(source)
-      target_tok, target_seg = models.tokenizer.preprocess(target)
+      source_tok, source_seg = models.source_tokenizer.preprocess(source)
+      target_tok, target_seg = models.target_tokenizer.preprocess(target)
 
       start_time = datetime.datetime.now()
       matrix = models.aligner.align(source_tok, target_tok)
@@ -397,10 +401,10 @@ class CasmacatConnection(SocketConnection):
       source, target = to_utf8(data['source']), to_utf8(data['target'])
 
       start_time = datetime.datetime.now()
-      source_tok, source_seg = models.tokenizer.preprocess(source)
+      source_tok, source_seg = models.source_tokenizer.preprocess(source)
       if len(self.rules):
         target = self.rules.apply(self.source, target)
-        target_tok, target_seg = models.tokenizer.preprocess(target)
+        target_tok, target_seg = models.target_tokenizer.preprocess(target)
 
       elapsed_time = datetime.datetime.now() - start_time
 
@@ -422,8 +426,8 @@ class CasmacatConnection(SocketConnection):
       source, target = to_utf8(data['source']), to_utf8(data['target'])
 
       start_time = datetime.datetime.now()
-      source_tok, source_seg = models.tokenizer.preprocess(source)
-      target_tok, target_seg = models.tokenizer.preprocess(target)
+      source_tok, source_seg = models.source_tokenizer.preprocess(source)
+      target_tok, target_seg = models.target_tokenizer.preprocess(target)
       elapsed_time = datetime.datetime.now() - start_time
 
       obj = {
@@ -442,8 +446,8 @@ class CasmacatConnection(SocketConnection):
     def getConfidencesResult(self, data):
       print 'data:', data
       source, target = to_utf8(data['source']), to_utf8(data['target'])
-      source_tok, source_seg = models.tokenizer.preprocess(source)
-      target_tok, target_seg = models.tokenizer.preprocess(target)
+      source_tok, source_seg = models.source_tokenizer.preprocess(source)
+      target_tok, target_seg = models.target_tokenizer.preprocess(target)
       if 'validatedTokens' not in data: data['validatedTokens'] = []
 
       start_time = datetime.datetime.now()
@@ -518,7 +522,7 @@ class CasmacatConnection(SocketConnection):
     def decode(self, data):
       print 'data:', data
       source = to_utf8(data['source'])
-      source_tok, source_seg = models.tokenizer.preprocess(source)
+      source_tok, source_seg = models.source_tokenizer.preprocess(source)
       print "WGSENT", source, "->", "'" + " ".join(source_tok) + "'"
       contributions = new_contributions(source, source_seg)
 
@@ -530,10 +534,10 @@ class CasmacatConnection(SocketConnection):
           target_tok = mt.translate(source_tok)
           elapsed_time = datetime.datetime.now() - start_time
 
-          target, target_seg = models.tokenizer.postprocess(target_tok)
+          target, target_seg = models.target_tokenizer.postprocess(target_tok)
           if len(self.rules):
             target = self.rules.apply(source, target)
-            target_tok, target_seg = models.tokenizer.preprocess(target)
+            target_tok, target_seg = models.target_tokenizer.preprocess(target)
           match = new_match(name, target, target_seg, elapsed_time)
           add_match(contributions, match)
 
@@ -546,9 +550,9 @@ class CasmacatConnection(SocketConnection):
     @thrower('validateResults')
     def validate(self, data):
       source = to_utf8(data['source'])
-      source_tok, source_seg = models.tokenizer.preprocess(source)
+      source_tok, source_seg = models.source_tokenizer.preprocess(source)
       target = to_utf8(data['target'])
-      target_tok, target_seg = models.tokenizer.preprocess(target)
+      target_tok, target_seg = models.target_tokenizer.preprocess(target)
       start_time = datetime.datetime.now()
       for name, ol in models.ol_systems.iteritems():
         ol.update(source_tok, target_tok)
@@ -576,7 +580,7 @@ class CasmacatConnection(SocketConnection):
           models.imt_systems[name].deleteSession(session)
       self.imt_session = {}
 
-      source_tok, source_seg = models.tokenizer.preprocess(self.source)
+      source_tok, source_seg = models.source_tokenizer.preprocess(self.source)
       self.source_tok, self.source_seg = source_tok, source_seg
       logger.log(DEBUG_LOG, "starting imt session with " + str(source_tok));
 
@@ -588,6 +592,73 @@ class CasmacatConnection(SocketConnection):
 
       obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
       self.respond('startSessionResult', { 'errors': [], 'data': obj })
+
+
+
+
+
+
+    def splitPoint(self, prediction_seg, prefix_last_tok, last_token_partial_len): 
+      if not last_token_partial_len: # if complete word return start of next token
+        return prediction_seg[prefix_last_tok + 1][0]
+      else: # if partial word return the position of the cursor. 
+        # XXX: This assumes that the prefix of the last word does not change in length
+        return prediction_seg[prefix_last_tok][0] + last_token_partial_len
+    
+    
+    # after preprocessing, prediction might not be compatible with the real prefix
+    # in case of last token NOT partial, the tokenization SHOULD NOT affect the prefix
+    # in case of last token being partial, we must ensure that the prefix is compatible
+    def postprocessPrediction(self, prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok):
+    
+      # compute the segmentation for the whole new prediction. Note that le segmentation for
+      # the prefix might have changed
+      prediction, prediction_seg = models.target_tokenizer.postprocess(prediction_tok)
+    
+      # so we split the new prediction at the point where the original cursor should be
+      s = self.splitPoint(prediction_seg, prefix_last_tok, last_token_partial_len)
+      r_pref, r_suf = split_utf8(prediction, s)
+    
+      # if the new prefix is not the one given by the user then make it so
+      if r_pref != prefix:
+        print 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
+        prediction = prefix + r_suf
+    
+      # apply the replacement rules to the suffix
+      if len(self.rules):
+        print 'XXXXX', prefix, '###', r_suf
+        prediction = prefix + self.rules.apply(self.source, r_suf)
+        prediction_tok, prediction_seg = models.target_tokenizer.preprocess(prediction)
+    
+        # as the prefix might have changed, we need to restore if 
+        s = self.splitPoint(prediction_seg, prefix_last_tok, last_token_partial_len)
+        r_pref, r_suf = split_utf8(prediction, s)
+    
+        # if the new prefix is not the one given by the user then make it so
+        if r_pref != prefix:
+          print 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
+          prediction = prefix + r_suf
+    
+    
+      # now, we have a prediction with the user prefix. XXX: we assume the tokens are also correct
+      # but we neeed to adjust the segmentation
+    
+      # we compute the prefix segmentation for the original prefix (the one given by the user)
+      # the suffix of the last token might have changed
+      orig_last_token_end = prefix_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
+      prefix_seg = [s for s in prefix_seg[:prefix_last_tok-1]] + [(prefix_seg[prefix_last_tok][0], orig_last_token_end)]
+    
+      # where the last token ends in the postprocessed prediction
+      new_last_token_end = prediction_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
+    
+      # thus, we need to move the suffix by
+      diff = orig_last_token_end - new_last_token_end
+      #       original prefix seg.,    we need to adjust the suffix with the new prefix length
+      prediction_seg = prefix_seg +  [(s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:]]
+    
+      return prediction, prediction_seg, prediction_tok
+
+
 
     @event('setPrefix')
     @timer('setPrefix')
@@ -606,13 +677,16 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, "prefix '%s'" % prefix, type(prefix)
       print >> sys.stderr, "suffix '%s'" % suffix, type(suffix)
 
-      prefix_tok, prefix_seg = models.tokenizer.preprocess(prefix)
-      suffix_tok, suffix_seg = models.tokenizer.preprocess(suffix)
+      prefix_tok, prefix_seg = models.target_tokenizer.preprocess(prefix)
+      suffix_tok, suffix_seg = models.target_tokenizer.preprocess(suffix)
 
       last_token_is_partial = True
       prefix_last_tok = len(prefix_tok) - 1 
       if len(prefix) == 0 or prefix[-1].isspace():
         last_token_is_partial = False
+        last_token_partial_len = 0
+      else:
+        last_token_partial_len = len_utf8(prefix_tok[-1])
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial
 
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
@@ -624,25 +698,8 @@ class CasmacatConnection(SocketConnection):
           elapsed_time = datetime.datetime.now() - start_time
           print >> sys.stderr, name, "prediction_tok", prediction_tok
 
-          prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
-          # after preprocessing, prediction might not be compatible with the real prefix
-          # in case of last token NOT partial, the tokenization SHOULD NOT affect the prefix
-          # in case of last token being partial, we must ensure that the prefix is compatible
-          if not last_token_is_partial:
-            r_pref, r_suf = split_utf8(prediction, prediction_seg[prefix_last_tok + 1][0])
-            if r_pref != prefix:
-              print 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
-              prediction = prefix + r_suf
-              diff = len(prefix.decode('utf-8')) - len(r_pref.decode('utf-8'))
-              if diff != 0:
-                prediction_seg = [ (s[0], s[1]) for s in prediction_seg[:prefix_last_tok + 1] ] + [ (s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:] ]
-            
+          prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
 
-          if len(self.rules):
-            r_pref, r_suf = split_utf8(prediction, prediction_seg[prefix_last_tok][1])
-            print 'XXXXX', r_pref, '###', r_suf
-            prediction = r_pref + self.rules.apply(self.source, r_suf)
-            prediction_tok, prediction_seg = models.tokenizer.preprocess(prediction)
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
           if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
@@ -676,13 +733,16 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, "prefix '%s'" % prefix, type(prefix)
       print >> sys.stderr, "suffix '%s'" % suffix, type(suffix)
 
-      prefix_tok, prefix_seg = models.tokenizer.preprocess(prefix)
-      suffix_tok, suffix_seg = models.tokenizer.preprocess(suffix)
+      prefix_tok, prefix_seg = models.target_tokenizer.preprocess(prefix)
+      suffix_tok, suffix_seg = models.target_tokenizer.preprocess(suffix)
 
       last_token_is_partial = True
       prefix_last_tok = len(prefix_tok) - 1 
       if len(prefix) == 0 or prefix[-1].isspace():
         last_token_is_partial = False
+        last_token_partial_len = 0
+      else:
+        last_token_partial_len = len_utf8(prefix_tok[-1])
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial
 
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
@@ -694,24 +754,8 @@ class CasmacatConnection(SocketConnection):
           elapsed_time = datetime.datetime.now() - start_time
           print >> sys.stderr, name, "prediction_tok", prediction_tok
 
-          prediction, prediction_seg = models.tokenizer.postprocess(prediction_tok)
-          # after preprocessing, prediction might not be compatible with the real prefix
-          # in case of last token NOT partial, the tokenization SHOULD NOT affect the prefix
-          # in case of last token being partial, we must ensure that the prefix is compatible
-          if not last_token_is_partial:
-            r_pref, r_suf = split_utf8(prediction, prediction_seg[prefix_last_tok + 1][0])
-            if r_pref != prefix:
-              print 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
-              prediction = prefix + r_suf
-              diff = len(prefix.decode('utf-8')) - len(r_pref.decode('utf-8'))
-              if diff != 0:
-                prediction_seg = [ (s[0], s[1]) for s in prediction_seg[:prefix_last_tok + 1] ] + [ (s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:] ]
+          prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
 
-          if len(self.rules):
-            r_pref, r_suf = split_utf8(prediction, prediction_seg[prefix_last_tok][1])
-            print 'XXXXX', r_pref, '###', r_suf
-            prediction = r_pref + self.rules.apply(self.source, r_suf)
-            prediction_tok, prediction_seg = models.tokenizer.preprocess(prediction)
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
           if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
@@ -857,14 +901,24 @@ class Models:
   @timer('create_plugins')
   def create_plugins(self):
     start_time = datetime.datetime.now()
-    self.tokenizer_plugin = TextProcessorPlugin(self.config["text-processor"]["module"], self.config["text-processor"]["parameters"])
-    self.tokenizer_factory = self.tokenizer_plugin.create()
-    if not self.tokenizer_factory: raise Exception("Tokenizer plugin failed")
-    self.tokenizer_factory.setLogger(logger)
-    self.tokenizer = self.tokenizer_factory.createInstance()
-    if not self.tokenizer: raise Exception("Tokenizer instance failed")
+    self.source_tokenizer_plugin = TextProcessorPlugin(self.config["source-processor"]["module"], self.config["source-processor"]["parameters"])
+    self.source_tokenizer_factory = self.source_tokenizer_plugin.create()
+    if not self.source_tokenizer_factory: raise Exception("Tokenizer plugin failed")
+    self.source_tokenizer_factory.setLogger(logger)
+    self.source_tokenizer = self.source_tokenizer_factory.createInstance()
+    if not self.source_tokenizer: raise Exception("Tokenizer instance failed")
     elapsed_time = datetime.datetime.now() - start_time
-    print "TIME:%s loaded:%s" % ("tokenizer", fmt_delta(elapsed_time))
+    print "TIME:%s loaded:%s" % ("source-tokenizer", fmt_delta(elapsed_time))
+
+    start_time = datetime.datetime.now()
+    self.target_tokenizer_plugin = TextProcessorPlugin(self.config["target-processor"]["module"], self.config["target-processor"]["parameters"])
+    self.target_tokenizer_factory = self.target_tokenizer_plugin.create()
+    if not self.target_tokenizer_factory: raise Exception("Tokenizer plugin failed")
+    self.target_tokenizer_factory.setLogger(logger)
+    self.target_tokenizer = self.target_tokenizer_factory.createInstance()
+    if not self.target_tokenizer: raise Exception("Tokenizer instance failed")
+    elapsed_time = datetime.datetime.now() - start_time
+    print "TIME:%s loaded:%s" % ("target-tokenizer", fmt_delta(elapsed_time))
 
 
     if "name" in self.config["mt"]:
@@ -956,10 +1010,15 @@ class Models:
 
     del self.mt_plugin
 
-    self.tokenizer_factory.deleteInstance(self.tokenizer);
-    self.tokenizer_plugin.destroy(self.tokenizer_factory)
-    self.tokenizer, self.tokenizer_factory = None, None
-    del self.tokenizer_plugin
+    self.source_tokenizer_factory.deleteInstance(self.source_tokenizer);
+    self.source_tokenizer_plugin.destroy(self.source_tokenizer_factory)
+    self.source_tokenizer, self.source_tokenizer_factory = None, None
+    del self.source_tokenizer_plugin
+
+    self.target_tokenizer_factory.deleteInstance(self.target_tokenizer);
+    self.target_tokenizer_plugin.destroy(self.target_tokenizer_factory)
+    self.target_tokenizer, self.target_tokenizer_factory = None, None
+    del self.target_tokenizer_plugin
 
   @timer('reset')
   def reset(self):
@@ -1018,6 +1077,11 @@ if __name__ == "__main__":
     import logging
     import atexit
 
+    models = Models(sys.argv[1])
+    models.create_plugins()
+    atexit.register(models.delete_plugins)
+
+
     logfn = "casmacat-server.log"
     try:
       logfn = models.config["server"]["logfile"]
@@ -1027,10 +1091,6 @@ if __name__ == "__main__":
 
 
     logging.getLogger().setLevel(logging.INFO)
-
-    models = Models(sys.argv[1])
-    models.create_plugins()
-    atexit.register(models.delete_plugins)
 
     port = 3019
     try:
