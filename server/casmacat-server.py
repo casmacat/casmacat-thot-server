@@ -698,20 +698,26 @@ class CasmacatConnection(SocketConnection):
           elapsed_time = datetime.datetime.now() - start_time
           print >> sys.stderr, name, "prediction_tok", prediction_tok
 
-          prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
+          # make sure that the new prediction is at least as long as the prefix
+          # which is the result of a system that doesn't have paths to continue
+          # the prefix
+          if len(prediction_tok) >= len(prefix_tok):
+            prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
 
-          match = new_prediction(name, prediction, prediction_seg, elapsed_time)
+            match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
-          if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
-            wp = models.word_prioritizers[self.config["prioritizer"]]
-            n_ok = len(prefix_tok)
-            if last_token_is_partial:
-              n_ok -= 1
-            validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
-            priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
-            match["priorities"] = priority
+            if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
+              wp = models.word_prioritizers[self.config["prioritizer"]]
+              n_ok = len(prefix_tok)
+              if last_token_is_partial:
+                n_ok -= 1
+              validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
+              priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+              match["priorities"] = priority
 
-          add_match(predictions, match)
+            add_match(predictions, match)
+          else:
+            predictions["errors"].append("The server cannot provide a completion to the prefix")
       prepare(predictions)
       print >> sys.stderr, "SUGGESTIONS:", predictions
       self.respond('setPrefixResult', predictions)
@@ -754,20 +760,26 @@ class CasmacatConnection(SocketConnection):
           elapsed_time = datetime.datetime.now() - start_time
           print >> sys.stderr, name, "prediction_tok", prediction_tok
 
-          prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
+          # make sure that the new prediction is at least as long as the prefix
+          # which is the result of a system that doesn't have paths to continue
+          # the prefix
+          if len(prediction_tok) >= len(prefix_tok):
+            prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
 
-          match = new_prediction(name, prediction, prediction_seg, elapsed_time)
+            match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
-          if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
-            wp = models.word_prioritizers[self.config["prioritizer"]]
-            n_ok = len(prefix_tok)
-            if last_token_is_partial:
-              n_ok -= 1
-            validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
-            priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
-            match["priorities"] = priority
+            if "prioritizer" in self.config and self.config["prioritizer"] in models.word_prioritizers and self.source_tok:
+              wp = models.word_prioritizers[self.config["prioritizer"]]
+              n_ok = len(prefix_tok)
+              if last_token_is_partial:
+                n_ok -= 1
+              validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
+              priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+              match["priorities"] = priority
 
-          add_match(predictions, match)
+            add_match(predictions, match)
+          else:
+            predictions["errors"].append("The server cannot provide a completion to the prefix since the user has rejected all the options")
       prepare(predictions)
       print >> sys.stderr, "SUGGESTIONS:", predictions
       self.respond('rejectSuffixResult', predictions)
