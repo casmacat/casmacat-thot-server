@@ -598,11 +598,16 @@ class CasmacatConnection(SocketConnection):
 
 
     def splitPoint(self, prediction_seg, prefix_last_tok, last_token_partial_len): 
-      if not last_token_partial_len: # if complete word return start of next token
-        return prediction_seg[prefix_last_tok + 1][0]
-      else: # if partial word return the position of the cursor. 
-        # XXX: This assumes that the prefix of the last word does not change in length
-        return prediction_seg[prefix_last_tok][0] + last_token_partial_len
+      if prefix_last_tok >= 0:
+        if not last_token_partial_len: # if complete word return start of next token
+          if len(prediction_seg) > prefix_last_tok + 1: 
+            return prediction_seg[prefix_last_tok + 1][0]
+          else:
+            return prediction_seg[prefix_last_tok][1]
+        else: # if partial word return the position of the cursor. 
+          # XXX: This assumes that the prefix of the last word does not change in length
+          return prediction_seg[prefix_last_tok][0] + last_token_partial_len
+      return 0
     
     
     # after preprocessing, prediction might not be compatible with the real prefix
@@ -643,23 +648,24 @@ class CasmacatConnection(SocketConnection):
       # but we neeed to adjust the segmentation
     
       # compute the non-token chars the user has introduced at the end of the prefix
-      diff = len_utf8(prefix) - prefix_seg[prefix_last_tok][1]
-      print >> sys.stderr, "############## PREFIX '%s'" % prefix, prefix_seg
-      print >> sys.stderr, "############## PREFIX LEN", len_utf8(prefix), prefix_seg[prefix_last_tok][1], len_utf8(prefix) - prefix_seg[prefix_last_tok][1]
+      if prefix_last_tok >= 0:
+        print >> sys.stderr, "############## PREFIX '%s'" % prefix, prefix_last_tok, prefix_seg
+        print >> sys.stderr, "############## PREFIX LEN", len_utf8(prefix), prefix_seg[prefix_last_tok][1], len_utf8(prefix) - prefix_seg[prefix_last_tok][1]
+        diff = len_utf8(prefix) - prefix_seg[prefix_last_tok][1]
 
-      # we compute the prefix segmentation for the original prefix (the one given by the user)
-      # the suffix of the last token might have changed
-      orig_last_token_end = prefix_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
-      prefix_seg = [s for s in prefix_seg[:prefix_last_tok]] + [(prefix_seg[prefix_last_tok][0], orig_last_token_end)]
+        # we compute the prefix segmentation for the original prefix (the one given by the user)
+        # the suffix of the last token might have changed
+        orig_last_token_end = prefix_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
+        prefix_seg = [s for s in prefix_seg[:prefix_last_tok]] + [(prefix_seg[prefix_last_tok][0], orig_last_token_end)]
     
-      # where the last token ends in the postprocessed prediction
-      new_last_token_end = prediction_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
+        # where the last token ends in the postprocessed prediction
+        new_last_token_end = prediction_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
     
-      # thus, we need to move the suffix by
-      diff += orig_last_token_end - new_last_token_end
-      #diff = len_utf8(prefix) - prefix_seg[prefix_last_tok][1] + orig_last_token_end - new_last_token_end
-      #       original prefix seg.,    we need to adjust the suffix with the new prefix length
-      prediction_seg = prefix_seg +  [(s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:]]
+        # thus, we need to move the suffix by
+        diff += orig_last_token_end - new_last_token_end
+        #diff = len_utf8(prefix) - prefix_seg[prefix_last_tok][1] + orig_last_token_end - new_last_token_end
+        #       original prefix seg.,    we need to adjust the suffix with the new prefix length
+        prediction_seg = prefix_seg +  [(s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:]]
     
       return prediction, prediction_seg, prediction_tok
 
