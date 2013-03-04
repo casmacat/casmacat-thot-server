@@ -642,6 +642,11 @@ class CasmacatConnection(SocketConnection):
       # now, we have a prediction with the user prefix. XXX: we assume the tokens are also correct
       # but we neeed to adjust the segmentation
     
+      # compute the non-token chars the user has introduced at the end of the prefix
+      diff = len_utf8(prefix) - prefix_seg[prefix_last_tok][1]
+      print >> sys.stderr, "############## PREFIX '%s'" % prefix, prefix_seg
+      print >> sys.stderr, "############## PREFIX LEN", len_utf8(prefix), prefix_seg[prefix_last_tok][1], len_utf8(prefix) - prefix_seg[prefix_last_tok][1]
+
       # we compute the prefix segmentation for the original prefix (the one given by the user)
       # the suffix of the last token might have changed
       orig_last_token_end = prefix_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
@@ -651,7 +656,8 @@ class CasmacatConnection(SocketConnection):
       new_last_token_end = prediction_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
     
       # thus, we need to move the suffix by
-      diff = orig_last_token_end - new_last_token_end
+      diff += orig_last_token_end - new_last_token_end
+      #diff = len_utf8(prefix) - prefix_seg[prefix_last_tok][1] + orig_last_token_end - new_last_token_end
       #       original prefix seg.,    we need to adjust the suffix with the new prefix length
       prediction_seg = prefix_seg +  [(s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:]]
     
@@ -673,11 +679,11 @@ class CasmacatConnection(SocketConnection):
       prefix = to_utf8(target[:caret_pos])
       suffix = to_utf8(target[caret_pos:])
 
-      print >> sys.stderr, "prefix '%s'" % prefix, type(prefix)
-      print >> sys.stderr, "suffix '%s'" % suffix, type(suffix)
-
       prefix_tok, prefix_seg = models.target_tokenizer.preprocess(prefix)
       suffix_tok, suffix_seg = models.target_tokenizer.preprocess(suffix)
+
+      print >> sys.stderr, "prefix '%s'" % prefix, prefix_tok, prefix_seg 
+      print >> sys.stderr, "suffix '%s'" % suffix, suffix_tok, suffix_seg
 
       last_token_is_partial = True
       prefix_last_tok = len(prefix_tok) - 1 
