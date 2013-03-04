@@ -14,7 +14,6 @@ from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 from casmacat import *
 #from numpy.testing.utils import elapsed
 
-
 def fmt_delta(elapsed_time):
   h, rem = divmod(elapsed_time.seconds, 3600)
   m , rem = divmod(rem, 60)
@@ -49,14 +48,14 @@ class timer(object):
     it a single argument, which is the function object.
     """
     def decorator(*args, **kwargs):
-      print "TIME:%s:started" % (self.name)
+      print >> sys.stderr, "TIME:%s:started" % (self.name)
       start_time = datetime.datetime.now()
 
       print >> logfd, """/*\n  Server method "%s" invoked\n  %s\n*/\n\n"%s": %s\n""" % (self.name, str(datetime.datetime.now()), self.name, json.dumps(kwargs, indent=2, separators=(',', ': '), encoding="utf-8"))
 
       ret = function(*args, **kwargs)
       elapsed_time = datetime.datetime.now() - start_time
-      print "TIME:%s:%s" % (self.name, fmt_delta(elapsed_time))
+      print >> sys.stderr, "TIME:%s:%s" % (self.name, fmt_delta(elapsed_time))
       print >> logfd, """/* Time to process method "%s": %s */\n\n\n""" % (self.name, fmt_delta(elapsed_time))
       return ret
     return decorator
@@ -84,7 +83,7 @@ class thrower(object):
       except Exception, e:
         if self.emission:
           args[0].respond(self.emission, { 'errors': [traceback.format_exc()], 'data': None })
-        print traceback.format_exc()
+        print >> sys.stderr, traceback.format_exc()
         #raise
     return decorator
 
@@ -328,7 +327,7 @@ class Rules:
 
 class CasmacatConnection(SocketConnection):
     def respond(self, *args, **kwargs):
-      print "emit", args, kwargs
+      print >> sys.stderr, "emit", args, kwargs
       print >> logfd, """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
       self.emit(*args, **kwargs)
 
@@ -336,7 +335,7 @@ class CasmacatConnection(SocketConnection):
     @timer('getAlignments')
     @thrower('getAlignmentsResult')
     def getAlignments(self, data):
-      print 'data:', data
+      print >> sys.stderr, 'data:', data
       source, target = to_utf8(data['source']), to_utf8(data['target'])
       source_tok, source_seg = models.source_tokenizer.preprocess(source)
       target_tok, target_seg = models.target_tokenizer.preprocess(target)
@@ -359,7 +358,7 @@ class CasmacatConnection(SocketConnection):
     @timer('setReplacementRule')
     @thrower('setReplacementRuleResult')
     def setReplacementRule(self, data):
-      print 'data:', data
+      print >> sys.stderr, 'data:', data
       source_rule, target_rule = to_utf8(data['sourceRule']), to_utf8(data['targetRule'])
 
       start_time = datetime.datetime.now()
@@ -397,7 +396,7 @@ class CasmacatConnection(SocketConnection):
     @timer('applyReplacementRules')
     @thrower('applyReplacementRulesResult')
     def applyReplacementRulesResult(self, data):
-      print 'data:', data
+      print >> sys.stderr, 'data:', data
       source, target = to_utf8(data['source']), to_utf8(data['target'])
 
       start_time = datetime.datetime.now()
@@ -422,7 +421,7 @@ class CasmacatConnection(SocketConnection):
     @timer('getTokens')
     @thrower('getTokensResult')
     def getTokens(self, data):
-      print 'data:', data
+      print >> sys.stderr, 'data:', data
       source, target = to_utf8(data['source']), to_utf8(data['target'])
 
       start_time = datetime.datetime.now()
@@ -444,7 +443,7 @@ class CasmacatConnection(SocketConnection):
     @timer('getConfidences')
     @thrower('getConfidencesResult')
     def getConfidencesResult(self, data):
-      print 'data:', data
+      print >> sys.stderr, 'data:', data
       source, target = to_utf8(data['source']), to_utf8(data['target'])
       source_tok, source_seg = models.source_tokenizer.preprocess(source)
       target_tok, target_seg = models.target_tokenizer.preprocess(target)
@@ -467,7 +466,7 @@ class CasmacatConnection(SocketConnection):
         'targetSegmentation': target_seg,
         'elapsedTime': elapsed_time.total_seconds()*1000.0
       }
-      print 'confidences:', obj
+      print >> sys.stderr, 'confidences:', obj
       self.respond('getConfidencesResult', { 'errors': [], 'data': obj })
 
 #class MtConnection(SocketConnection):
@@ -520,10 +519,10 @@ class CasmacatConnection(SocketConnection):
     @timer('decode')
     @thrower('decodeResult')
     def decode(self, data):
-      print 'data:', data
+      print >> sys.stderr, 'data:', data
       source = to_utf8(data['source'])
       source_tok, source_seg = models.source_tokenizer.preprocess(source)
-      print "WGSENT", source, "->", "'" + " ".join(source_tok) + "'"
+      print >> sys.stderr, "WGSENT", source, "->", "'" + " ".join(source_tok) + "'"
       contributions = new_contributions(source, source_seg)
 
       mode = self.config['mode']
@@ -574,7 +573,7 @@ class CasmacatConnection(SocketConnection):
     @timer('startSession')
     @thrower('startSessionResult')
     def startSession(self, data):
-      print 'data:', data
+      print >> sys.stderr, 'data:', data
       self.source = to_utf8(data['source'])
       for name, session in self.imt_session.iteritems():
           models.imt_systems[name].deleteSession(session)
@@ -621,12 +620,12 @@ class CasmacatConnection(SocketConnection):
     
       # if the new prefix is not the one given by the user then make it so
       if r_pref != prefix:
-        print 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
+        print >> sys.stderr, 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
         prediction = prefix + r_suf
     
       # apply the replacement rules to the suffix
       if len(self.rules):
-        print 'XXXXX', prefix, '###', r_suf
+        print >> sys.stderr, 'XXXXX', prefix, '###', r_suf
         prediction = prefix + self.rules.apply(self.source, r_suf)
         prediction_tok, prediction_seg = models.target_tokenizer.preprocess(prediction)
     
@@ -636,7 +635,7 @@ class CasmacatConnection(SocketConnection):
     
         # if the new prefix is not the one given by the user then make it so
         if r_pref != prefix:
-          print 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
+          print >> sys.stderr, 'XXXXX: tokenizer changed the prefix from "%s" o "%s"' % (prefix, r_pref)
           prediction = prefix + r_suf
     
     
@@ -664,7 +663,7 @@ class CasmacatConnection(SocketConnection):
     @timer('setPrefix')
     @thrower('setPrefixResult')
     def setPrefix(self, data):
-      print 'data:', data
+      print >> sys.stderr, 'data:', data
       target = data['target']
       caret_pos = data['caretPos']
       num_results = data['numResults'] if 'numResults' in data else 0
@@ -726,7 +725,7 @@ class CasmacatConnection(SocketConnection):
     @timer('rejectSuffix')
     @thrower('rejectSuffixResult')
     def rejectSuffix(self, data):
-      print 'data:', data
+      print >> sys.stderr, 'data:', data
       target = data['target']
       caret_pos = data['caretPos']
       num_results = data['numResults'] if 'numResults' in data else 0
@@ -853,7 +852,7 @@ class RouterConnection(SocketConnection):
                      }
 
     def on_open(self, info):
-        print 'Router', repr(info)
+        print >> sys.stderr, 'Router', repr(info)
 
 
 # Create tornadio router
@@ -875,7 +874,7 @@ class WordPriorityContainer:
     self.word_prioritizer = self.word_priority_factory.createInstance()
     if not self.word_prioritizer: raise Exception("Word prioritizer instance failed")
     elapsed_time = datetime.datetime.now() - start_time
-    print "TIME:%s loaded:%s" % ("word-prioritizer", fmt_delta(elapsed_time))
+    print >> sys.stderr, "TIME:%s loaded:%s" % ("word-prioritizer", fmt_delta(elapsed_time))
 
   def __del__(self):
     self.word_priority_factory.deleteInstance(self.word_prioritizer);
@@ -892,6 +891,7 @@ class Models:
   def __init__(self, config_fn):
     self.config = json.load(open(config_fn))
     print >> sys.stderr, "config", json.dumps(self.config)
+    print >> logfd, "config", json.dumps(self.config)
     self.mt_systems = {}
     self.imt_systems = {}
     self.ol_systems = {}
@@ -920,7 +920,7 @@ class Models:
     self.source_tokenizer = self.source_tokenizer_factory.createInstance()
     if not self.source_tokenizer: raise Exception("Tokenizer instance failed")
     elapsed_time = datetime.datetime.now() - start_time
-    print "TIME:%s loaded:%s" % ("source-tokenizer", fmt_delta(elapsed_time))
+    print >> sys.stderr, "TIME:%s loaded:%s" % ("source-tokenizer", fmt_delta(elapsed_time))
 
     start_time = datetime.datetime.now()
     self.target_tokenizer_plugin = TextProcessorPlugin(self.config["target-processor"]["module"], self.config["target-processor"]["parameters"])
@@ -930,7 +930,7 @@ class Models:
     self.target_tokenizer = self.target_tokenizer_factory.createInstance()
     if not self.target_tokenizer: raise Exception("Tokenizer instance failed")
     elapsed_time = datetime.datetime.now() - start_time
-    print "TIME:%s loaded:%s" % ("target-tokenizer", fmt_delta(elapsed_time))
+    print >> sys.stderr, "TIME:%s loaded:%s" % ("target-tokenizer", fmt_delta(elapsed_time))
 
 
     if "name" in self.config["mt"]:
@@ -945,7 +945,7 @@ class Models:
     self.static_mt = self.mt_factory.createInstance()
     if not self.static_mt: raise Exception("Static MT instance failed")
     elapsed_time = datetime.datetime.now() - start_time
-    print "TIME:%s loaded:%s" % ("static mt", fmt_delta(elapsed_time))
+    print >> sys.stderr, "TIME:%s loaded:%s" % ("static mt", fmt_delta(elapsed_time))
 
     if "online" in self.config["mt"] and self.config["mt"]["online"]:
       start_time = datetime.datetime.now()
@@ -955,7 +955,7 @@ class Models:
       self.online_mt = self.ol_factory.createInstance()
       if not self.online_mt: raise Exception("Online MT instance failed")
       elapsed_time = datetime.datetime.now() - start_time
-      print "TIME:%s loaded:%s" % ("online mt", fmt_delta(elapsed_time))
+      print >> sys.stderr, "TIME:%s loaded:%s" % ("online mt", fmt_delta(elapsed_time))
     else:
       self.ol_factory = None
       self.online_mt = None
@@ -968,7 +968,7 @@ class Models:
     self.aligner = self.alignment_factory.createInstance()
     if not self.aligner: raise Exception("Aligner instance failed")
     elapsed_time = datetime.datetime.now() - start_time
-    print "TIME:%s loaded:%s" % ("aligner", fmt_delta(elapsed_time))
+    print >> sys.stderr, "TIME:%s loaded:%s" % ("aligner", fmt_delta(elapsed_time))
 
 
     start_time = datetime.datetime.now()
@@ -979,7 +979,7 @@ class Models:
     self.confidencer = self.confidence_factory.createInstance()
     if not self.confidencer: raise Exception("Confidencer instance failed")
     elapsed_time = datetime.datetime.now() - start_time
-    print "TIME:%s loaded:%s" % ("confidencer", fmt_delta(elapsed_time))
+    print >> sys.stderr, "TIME:%s loaded:%s" % ("confidencer", fmt_delta(elapsed_time))
 
     self.word_prioritizers = {}
     if "word-prioritizer" in self.config:
@@ -1088,30 +1088,55 @@ if __name__ == "__main__":
     from sys import argv
     import logging
     import atexit
+    import getopt
 
-    models = Models(sys.argv[1])
-    models.create_plugins()
-    atexit.register(models.delete_plugins)
-
-
-    logfn = "casmacat-server.log"
     try:
-      logfn = models.config["server"]["logfile"]
-    except:
-      pass
-    logfd = codecs.open(logfn, "a", "utf-8")
+      opts, args = getopt.getopt(sys.argv[1:], "hl:c:", ["help", "logfile=", "config="])
+    except getopt.GetoptError as err:
+      # print help information and exit:
+      print >> sys.stderr, str(err) # will print something like "option -a not recognized"
+      usage()
+      sys.exit(2)
+    log_fn = None
+    config_fn = None
+    for o, a in opts:
+      if o == "-v":
+        verbose = True
+      elif o in ("-c", "--config"):
+        config_fn = a
+      elif o in ("-l", "--logfile"):
+        log_fn = a
+      else:
+        assert False, "unhandled option"
+
+    if not log_fn:
+      try:
+        log_fn = models.config["server"]["logfile"]
+      except:
+        pass
+    if log_fn:
+      logfd = codecs.open(log_fn, "a", "utf-8")
+    else:
+      logfd = codecs.open(os.path.devnull, "a", "utf-8")
 
 
     logging.getLogger().setLevel(logging.INFO)
 
     port = 3019
     try:
-      port = int(sys.argv[2])
+      port = int(args[0])
     except:
       try:
         port = models.config["server"]["port"]
       except:
         pass
+
+    models = Models(config_fn)
+    models.create_plugins()
+    atexit.register(models.delete_plugins)
+
+
+
 
     # Create socket application
     application = web.Application(
@@ -1131,3 +1156,5 @@ if __name__ == "__main__":
 
     # Create and start tornadio server
     SocketServer(application)
+
+
