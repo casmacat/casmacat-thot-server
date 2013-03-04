@@ -1,0 +1,178 @@
+#! /bin/bash
+### BEGIN INIT INFO
+# Provides: casmacat 
+# Required-Start:    $local_fs $remote_fs $network $syslog $named
+# Required-Stop:     $local_fs $remote_fs $network $syslog $named
+# Default-Start: 2 3 4 5
+# Default-Stop:  0 1 6
+# Short-Description: Start/stop casmacat servers. 
+# Description: casmacat servers. 
+#              Expand description.
+### END INIT INFO
+
+# manages casmacat backend engines
+NAME=$(basename $0)
+
+# Check for existence of needed config file and read it
+CONFIG=/home/demo/software/casmacat-server-library/server/etc/casmacat.conf
+test -r $CONFIG || { 
+  echo "$CONFIG not existing";
+  if [ "$1" = "stop" ]; then exit 0;
+  else exit 6; fi; 
+}
+. $CONFIG
+CONFIGDIR=$(dirname $CONFIG)
+mkdir -p $LOCKDIR || { 
+  echo "Lock dir $LOCKDIR cannot be created.";
+  if [ "$1" = "stop" ]; then exit 0;
+  else exit 5; fi; 
+}
+mkdir -p $PIDDIR || { 
+  echo "PID dir $PIDDIR cannot be created.";
+  if [ "$1" = "stop" ]; then exit 0;
+  else exit 5; fi; 
+}
+mkdir -p $LOGDIR || { 
+  echo "Log dir $LOGDIR cannot be created.";
+  if [ "$1" = "stop" ]; then exit 0;
+  else exit 5; fi; 
+}
+
+# Check for missing binaries
+test -x $BIN || { 
+  echo "$BIN not installed";
+  if [ "$1" = "stop" ]; then exit 0;
+  else exit 5; fi; 
+}
+BINDIR=$(dirname $BIN)
+
+export LD_LIBRARY_PATH=$PLUGINPATH:$LD_LIBRARY_PATH
+
+# Some things that run always
+touch /var/lock/$NAME
+
+
+rotatefile() {
+  FILE=$1
+  for i in `seq 4 -1 1`; do
+    if test -f "$FILE.$i.gz"; then
+      mv "$FILE.$i.gz" "$FILE.$((i+1)).gz" 
+    fi
+  done
+  if test -f "$FILE"; then
+    mv "$FILE" "$FILE.1" 
+    gzip "$FILE.1" 
+  fi
+}
+
+rotatelogs() {
+  for log in $LOGDIR/*.out; do
+    NAME="${log%%.out}"
+    rotatefile "$NAME.out"
+    rotatefile "$NAME.err"
+    rotatefile "$NAME.socket"
+  done 
+}
+
+
+start_server() {(
+  CFG=$1
+  CFGNAME=$(basename $CFG .conf) 
+  . $CFG
+  echo "$PORTS" | while IFS=',' read -a PORTARRAY; do
+    DAEMONPARAMS="--chdir $BINDIR --user $USER --start --exec $BIN --make-pidfile --background --no-close"
+    if test "${#PORTARRAY[@]}" -gt 1; then
+      for PORT in "${PORTARRAY[@]}"; do 
+        SERVERNAME=$CFGNAME-at-port-$PORT
+        echo "Setting up server $CFG at port $PORT"
+        start-stop-daemon $DAEMONPARAMS --pidfile $PIDDIR/$SERVERNAME.pid -- -c $CFGFILE -l $LOGDIR/$SERVERNAME.socket $PORT 1>$LOGDIR/$SERVERNAME.out 2>$LOGDIR/$SERVERNAME.err
+      done
+    else
+        SERVERNAME=$CFGNAME-at-port-$PORTS
+        echo "Setting up server $CFG at port $PORTS"
+        start-stop-daemon $DAEMONPARAMS --pidfile $PIDDIR/$SERVERNAME.pid -- -c $CFGFILE -l $LOGDIR/$SERVERNAME.socket $PORT 1>$LOGDIR/$SERVERNAME.out 2>$LOGDIR/$SERVERNAME.err
+    fi
+  break
+  done
+)}
+
+stop_server() {(
+  PID=$1
+  echo "Stopping server $(basename $PID .pid)"
+  start-stop-daemon --pidfile $PID --stop --retry 10 
+  unlink $PID
+)}
+
+check_server() {(
+  PID=$1
+  echo -n "Server $(basename $PID .pid) "
+  start-stop-daemon --pidfile $PID --status
+  case "$?" in
+  0) echo "is running";;
+  1) echo "is not running but the PID exists";;
+  3) echo "is not running";;
+  *) echo "status is unknown";;
+  esac
+)}
+
+start_servers() {(
+  rotatelogs
+  test -z "$(ls -A $CONFIGDIR)" && echo "No servers enabled" && exit 7
+  find $CONFIGDIR/servers-enabled/ -iname "*.conf" | while read cfg; do
+    start_server $cfg
+  done
+) || exit $?;}
+
+stop_servers() {(
+  test -z "$(ls -A $PIDDIR)" && echo "No servers running" && exit 7
+  find $PIDDIR/ -iname "*.pid" | while read pid; do
+    stop_server $pid
+  done
+) || exit $?;}
+
+check_servers() {(
+  test -z "$(ls -A $PIDDIR)" && echo "No servers running" && exit 7
+  find $PIDDIR/ -iname "*.pid" | while read pid; do
+    check_server $pid
+  done
+) || exit $?;}
+
+restart_servers() {(
+  stop_servers
+  start_servers
+)}
+
+# Carry out specific functions when asked to by the system
+case "$1" in
+  start)
+    echo "Starting script $NAME"
+    start_servers
+    ;;
+  stop)
+    echo "Stopping script $NAME"
+    stop_servers
+    ;;
+  restart)
+    echo "If the service is running, stop it then restart it. If it is not running, start it."
+    restart_servers
+    ;;
+  reload)
+    echo "Reload the configuration without stopping and restarting the service."
+    restart_servers
+    ;;
+  force-reload)
+    echo "Reload the configuration if the service supports this. Otherwise, do the same as if restart had been given."
+    restart_servers
+    ;;
+  status)
+    echo "Show the current status of service."
+    check_servers
+    ;;
+  *)
+    echo "Usage: /etc/init.d/$0 {start|stop}"
+    exit 1
+    ;;
+esac
+
+exit 0
+
