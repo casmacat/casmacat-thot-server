@@ -14,7 +14,7 @@
 NAME=$(basename $0)
 
 # Check for existence of needed config file and read it
-CONFIG=/home/demo/software/casmacat-server-library/server/etc/casmacat.conf
+CONFIG=/etc/casmacat/casmacat.conf
 test -r $CONFIG || { 
   echo "$CONFIG not existing";
   if [ "$1" = "stop" ]; then exit 0;
