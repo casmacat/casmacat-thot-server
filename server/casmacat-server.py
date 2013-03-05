@@ -651,9 +651,16 @@ class CasmacatConnection(SocketConnection):
           # compute the non-token chars from the last prefix token and the first suffix token
           suffix_spaces = prediction_seg[prefix_last_tok + 1][0] - prediction_seg[prefix_last_tok][1]
 
-          # compyte what is the actual number of non-tokens to be appended after the prefix
+          # compute what is the actual number of non-tokens to be appended after the prefix
           spaces = max(0, suffix_spaces - prefix_spaces) 
           print >> sys.stderr, "############# SPACES", prefix_spaces, suffix_spaces, spaces
+
+          if last_token_partial_len > 0:
+            # if it is a partial word we must sum the length of the word suffix
+            owl = prefix_seg[prefix_last_tok][1] - prefix_seg[prefix_last_tok][0]
+            nwl = prediction_seg[prefix_last_tok][1] - prediction_seg[prefix_last_tok][0]
+            spaces +=  nwl - owl 
+            print >> sys.stderr, "############# LAST WORD SUFFIX", nwl, owl, nwl - owl 
 
           # we compute the prefix segmentation for the original prefix (the one given by the user)
           # the suffix of the last token might have changed
