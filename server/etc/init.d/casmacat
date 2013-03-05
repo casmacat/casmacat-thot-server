@@ -90,7 +90,7 @@ start_server() {(
     else
         SERVERNAME=$CFGNAME-at-port-$PORTS
         echo "Setting up server $CFG at port $PORTS"
-        start-stop-daemon $DAEMONPARAMS --pidfile $PIDDIR/$SERVERNAME.pid -- -c $CFGFILE -l $LOGDIR/$SERVERNAME.socket $PORT 1>$LOGDIR/$SERVERNAME.out 2>$LOGDIR/$SERVERNAME.err
+        start-stop-daemon $DAEMONPARAMS --pidfile $PIDDIR/$SERVERNAME.pid -- -c $CFGFILE -l $LOGDIR/$SERVERNAME.socket $PORTS 1>$LOGDIR/$SERVERNAME.out 2>$LOGDIR/$SERVERNAME.err
     fi
   break
   done
