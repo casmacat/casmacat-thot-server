@@ -109,9 +109,9 @@ def new_match(created_by, target, target_seg, elapsed_time):
   match = {}
   match['target'] = target
   match['targetSegmentation'] = target_seg
-  match['quality'] = 75
+  match['quality'] = 0.75
   if created_by == 'OL':
-    match['quality'] = 70
+    match['quality'] = 0.70
   match['author'] = created_by
   match['elapsedTime'] = elapsed_time.total_seconds()*1000.0
   return match
@@ -120,9 +120,9 @@ def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
   match = {}
   match['target'] = prediction
   match['targetSegmentation'] = prediction_seg
-  match['quality'] = 75
+  match['quality'] = 0.75
   if created_by == 'OL':
-    match['quality'] = 70
+    match['quality'] = 0.70
   match['author'] = created_by
   match['elapsedTime'] = elapsed_time.total_seconds()*1000.0
   return match
@@ -537,7 +537,12 @@ class CasmacatConnection(SocketConnection):
           if len(self.rules):
             target = self.rules.apply(source, target)
             target_tok, target_seg = models.target_tokenizer.preprocess(target)
+
+          validated_words = [False]*len(target_tok)
+          sent = models.confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
+
           match = new_match(name, target, target_seg, elapsed_time)
+          match['quality'] = sent
           add_match(contributions, match)
 
 
