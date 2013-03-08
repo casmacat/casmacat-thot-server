@@ -1,5 +1,5 @@
 <?php 
-if (empty($_GET['itp-server'])) die('No server set: <a href="?itp-server='.$_SERVER['SERVER_NAME'].':3019&htr-server='.$_SERVER['SERVER_NAME'].':3003">try this example</a>');
+if (empty($_GET['itp-server'])) die('No server set: <a href="?itp-server='.$_SERVER['SERVER_NAME'].':4001&htr-server='.$_SERVER['SERVER_NAME'].':5001">try this example</a>');
 
 // Helper function(s) FIXME: include from external file
 function trim_text($text, $words = 5) 
