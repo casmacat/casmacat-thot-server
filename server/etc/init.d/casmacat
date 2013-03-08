@@ -44,7 +44,6 @@ test -x $BIN || {
   if [ "$1" = "stop" ]; then exit 0;
   else exit 5; fi; 
 }
-BINDIR=$(dirname $BIN)
 
 export LD_LIBRARY_PATH=$PLUGINPATH:$LD_LIBRARY_PATH
 
@@ -79,6 +78,7 @@ start_server() {(
   CFG=$1
   CFGNAME=$(basename $CFG .conf) 
   . $CFG
+  BINDIR=$(dirname $BIN)
   echo "$PORTS" | while IFS=',' read -a PORTARRAY; do
     DAEMONPARAMS="--chdir $BINDIR --user $USER --start --exec $BIN --make-pidfile --background --no-close"
     if test "${#PORTARRAY[@]}" -gt 1; then

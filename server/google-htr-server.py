@@ -367,30 +367,52 @@ if __name__ == "__main__":
     from sys import argv
     import logging
     import atexit
+    import getopt 
 
-    models = Models(sys.argv[1])
-    models.create_plugins()
-    atexit.register(models.delete_plugins)
+    try:
+      opts, args = getopt.getopt(sys.argv[1:], "hl:c:", ["help", "logfile=", "config="])
+    except getopt.GetoptError as err:
+      # print help information and exit:
+      print >> sys.stderr, str(err) # will print something like "option -a not recognized"
+      usage()
+      sys.exit(2)
+    log_fn = None
+    config_fn = None
+    for o, a in opts:
+      if o == "-v":
+        verbose = True
+      elif o in ("-c", "--config"):
+        config_fn = a
+      elif o in ("-l", "--logfile"):
+        log_fn = a
+      else:
+        assert False, "unhandled option"
 
-    logfn = "google-htr-server.log"
-    try: 
-      logfn = models.config["server"]["logfile"]
-    except:
-      pass
-    logfd = codecs.open(logfn, "a", "utf-8")
-
+    if not log_fn:
+      try:
+        log_fn = models.config["server"]["logfile"]
+      except:
+        pass
+    if log_fn:
+      logfd = codecs.open(log_fn, "a", "utf-8")
+    else:
+      logfd = codecs.open(os.path.devnull, "a", "utf-8")
 
     logging.getLogger().setLevel(logging.INFO)
 
+    models = Models(config_fn)
+    models.create_plugins()
+    atexit.register(models.delete_plugins)
 
     port = 3003
     try: 
-      port = int(sys.argv[2])
+      port = int(sys.argv[0])
     except:
       try:
         port = models.config["server"]["port"]
       except:
         pass
+
 
     # Create socket application
     application = web.Application(
@@ -400,7 +422,7 @@ if __name__ == "__main__":
         socket_io_port = port
     )
 
-    print >> logfd, """/*\n  Casmacat server started on port %d\n  %s\n*/\n\n"config": %s\n\n\n""" % (port, str(datetime.datetime.now()), json.dumps(models.config, indent=2, separators=(',', ': '), encoding="utf-8"))
+    print >> logfd, """/*\n  Casmacat proxy for Google HTR started on port %d\n  %s\n*/\n\n"config": %s\n\n\n""" % (port, str(datetime.datetime.now()), json.dumps(models.config, indent=2, separators=(',', ': '), encoding="utf-8"))
 
     # Create and start tornadio server
     SocketServer(application)
