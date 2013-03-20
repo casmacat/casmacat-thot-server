@@ -2,6 +2,7 @@
 
   var NLP = require('nlp-utils');
   var G   = require('geometry-utils');
+  $('html').attr('spellcheck', 'false');
 
   var methods = {
     init: function(_options) {
@@ -18,7 +19,7 @@
         
         // If the plugin hasn't been initialized yet
         if (!data) {
-          $(this).data('editable', {ntok: 0});
+          $(this).data('editable', {ntok: 0, options: options});
         }
 
         $this.bind('blur.editable click.editable mouseleave.editable keyup.editable', this, function(ev) {
@@ -56,19 +57,8 @@
       // find HTML text element in cursor position
       while (walker.nextNode()) {
         elem = walker.currentNode;
-        if ((pos - elem.length) > 0) pos -= elem.length;
+        if ((pos - elem.length) >= 0) pos -= elem.length;
         else break;
-      }
-
-      if (walker.nextNode()) {
-        // if the caret is at the end of the current token we can have two cases
-        // where we would like to move to the beginning of the next token:
-        // 1. the current token is not editable-token, so it is a 'space' token
-        // 2. the next token is an editable-token so we move to the beginning of the next token 
-        if (pos === elem.length && (!$(elem.parentNode).is('.editable-token') || $(walker.currentNode.parentNode).is('.editable-token') )) {
-          elem = walker.currentNode;
-          pos  = 0;
-        }
       }
 
       return {elem: elem, pos: pos};
@@ -264,7 +254,7 @@
       }
 
       return pos;
-     },
+    },
 
     setCaretAtToken: function(token) {
       var pos = this.editable('getTokenPos', token);
@@ -364,13 +354,25 @@
 
         if ($this.is(':focus')) {
           var pos = $this.editable('getCaretPos');
-          //console.log(pos, $this.html());
-          $this.html(tokens.html()); 
+          $this.empty();
+          $this.append(tokens.contents()); 
           $this.editable('setCaretPos', pos);
-          //console.log(pos, $this.html());
+          var tokenAtPos = $this.editable('getTokenAtCaretPos', pos);
+          if (tokenAtPos.pos > 0) {
+            var lastEditedToken = tokenAtPos.elem;
+            if (lastEditedToken.parentNode && $(lastEditedToken.parentNode).is('.editable-token')) {
+              lastEditedToken = lastEditedToken.parentNode;
+            }
+            // XXX: do not use jquery data if you want css selectors to work
+            lastEditedToken.dataset.validated = true;
+          }
+          $(lastEditedToken).prevAll(".editable-token").andSelf().each(function(i, elem){
+            elem.dataset.prefix = true;
+          });
         }
         else {
-          $this.html(tokens.html()); 
+          $this.empty();
+          $this.append(tokens.contents()); 
         }
       }
       else { // not tokenization

@@ -40,8 +40,8 @@ var Memento = require("module.memento");
       var conf = cfg();
       if (conf.config.mode != 'PE') {
         var target = $target.editable('getText'),
-            pos    = typeof self.currentCaretPos !== 'undefined' ? self.currentCaretPos.pos : $target.editable('getCaretPos');
-    
+            pos    = $target.editable('getCaretPos');
+
         conf.itpServer.rejectSuffix({
           target: target,
           caretPos: pos,
@@ -64,8 +64,7 @@ var Memento = require("module.memento");
           console.log("Loading previous data...", data);
           self.vis.updateSuggestions(data);
         } else {
-          console.log("Rejecting...");
-          self.mousewheel.addElement(decodedResult);
+          console.log("Rejecting...", decodedResult);
           reject();
         }
       }
@@ -288,7 +287,26 @@ var Memento = require("module.memento");
         , $source = itpCfg.$source
         , itp     = itpCfg.itpServer
         ;
-  
+
+      function onCaretChange(e, d, callback) {
+        if (!itp.replay || e.isTrigger) {
+          var alignments = $(d.token).data('alignments');
+          if (alignments && alignments.alignedIds) {
+            callback(alignments.alignedIds, 'caret-align');
+          }
+        }
+      };
+        
+      function toggleOpt($elem, opt) {
+        var elem = $elem.get(0);
+        if (!elem.getAttribute(["data-" + opt])) {
+          elem.setAttribute(["data-" + opt], true);
+        }
+        else {
+          elem.setAttribute(["data-" + opt], false);
+        }
+      }
+
       // #source and #target events
       // caretenter is a new event from jquery.editable that is triggered
       // whenever the caret enters in a new token span
@@ -296,96 +314,148 @@ var Memento = require("module.memento");
         self.vis.updateWordPriorityDisplay($target, $(d.token));
       });
       $([$source[0], $target[0]]).bind('caretenter' + nsClass, function(e, d) {
-        var alignments = $(d.token).data('alignments');
-        if (alignments && alignments.alignedIds) {
-          self.vis.showAlignments(alignments.alignedIds, 'caret-align');
-        }
+        onCaretChange(e, d, self.vis.showAlignments);
       })
       // caretleave is a new event from jquery.editable that is triggered
       // whenever the caret leaves a token span
       .bind('caretleave' + nsClass, function(e, d) {
-        var alignments = $(d.token).data('alignments');
-        if (alignments && alignments.alignedIds) {
-          self.vis.hideAlignments(alignments.alignedIds, 'caret-align');
-        }
+        onCaretChange(e, d, self.vis.hideAlignments);
       })
       .bind('keydown' + nsClass, function(e) {
         // prevent new lines
         if (e.which === 13) {
-          e.stopPropagation();
+          //e.stopPropagation(); // We need to capture the event to fire 'save draft translation' fn
           e.preventDefault();
         }
       }).bind('keydown' + nsClass, 'tab', function(e){
         // prevent tabs that move to the next word or to the next priority word
-        e.stopPropagation();
+        //e.stopPropagation();
         e.preventDefault();
         tabKeyHandler(e, 'fwd');
       }).bind('keydown' + nsClass, 'shift+tab', function(e){
-        e.stopPropagation();
+        //e.stopPropagation();
         e.preventDefault();
         tabKeyHandler(e, 'bck');
+      }).bind('keydown' + nsClass, 'ctrl+shift+1', function(e){
+        //e.stopPropagation();
+        e.preventDefault();
+        toggleOpt($target, "opt-caret-align");
+        toggleOpt($source, "opt-caret-align");
+      }).bind('keydown' + nsClass, 'ctrl+shift+2', function(e){
+        //e.stopPropagation();
+        e.preventDefault();
+        toggleOpt($target, "opt-mouse-align");
+        toggleOpt($source, "opt-mouse-align");
+      }).bind('keydown' + nsClass, 'ctrl+shift+3', function(e){
+        //e.stopPropagation();
+        e.preventDefault();
+        toggleOpt($target, "opt-confidences");
+        toggleOpt($source, "opt-confidences");
+      }).bind('keydown' + nsClass, 'ctrl+shift+4', function(e){
+        //e.stopPropagation();
+        e.preventDefault();
+        toggleOpt($target, "opt-validated");
+        toggleOpt($source, "opt-validated");
+      }).bind('keydown' + nsClass, 'ctrl+shift+5', function(e){
+        //e.stopPropagation();
+        e.preventDefault();
+        toggleOpt($target, "opt-prefix");
+        toggleOpt($source, "opt-prefix");
       });
 
       function tabKeyHandler(e, mode) {
-        //if (mode == 'fwd') {}
-        var ui = userCfg(), $token;
-        
-        if (ui.prioritizer != 'none') {
-          if (mode == 'fwd') {
+        var ui = userCfg(), $token, gotoEnd = false;
+
+        // find next token 
+        if (mode == 'fwd') {
+          // if we have a prioritizer, we rely on the representation and find the first greyed out token 
+          if (ui.prioritizer != 'none') {
             $token = $('.editable-token', $target).filter(function(e){ return $(this).css('opacity') < 1.0}).first();
-          } else {
-            var tok = $target.editable('getTokenAtCaret');
-            if (tok.elem) {
-              $token = $(tok.elem).parent().prev('.editable-token');
+          }
+          // if we don't have prioritizer, we find the token next to the caret position 
+          else {
+            //if (self.currentCaretPos && self.currentCaretPos.token) {
+            //$token = $(self.currentCaretPos.token.elem);
+            var tokenPos = $target.editable('getTokenAtCaret');
+            $token = $(tokenPos.elem);
+            if ($token) {
+              if ($token.parent().is('.editable-token')) {
+                $token = $token.parent();
+              }
+              // move to the next token editable if we are at the end of a token and the next token is pasted
+              // since we assume we are already at the beginning of the next token 
+              if (tokenPos.elem.nodeValue.length - tokenPos.pos === 0 &&
+                  $token[0].nextSibling && $token[0].nextSibling.nodeType === 3 && $token[0].nextSibling.nodeValue.length === 0)
+              {
+                $token = $token.next('.editable-token');
+              }
             }
           }
-          if ($token) {
-            $target.editable('setCaretAtToken', $token.get(0));
-          } else {
-            $target.editable('setCaretPos', $target.text().length);
+          // if this is the last token go to end
+          var $next = $token.next('.editable-token');
+          if ($token && $token.length && !$next.length) {
+            gotoEnd = true;
           }
-        } else {
-          if (self.currentCaretPos && self.currentCaretPos.token) {
-            $token = $(self.currentCaretPos.token.elem);
+          $token = $next;
+        }
+        // find previous token 
+        else {
+          var tokenPos = $target.editable('getTokenAtCaret');
+          if (tokenPos.elem) {
+            $token = $(tokenPos.elem);
+            
+            // $token is editable 
             if ($token.parent().is('.editable-token')) {
               $token = $token.parent();
+              if (tokenPos.pos === 0) {
+                $token = $token.prev('.editable-token');
+              }
             }
-            if (mode == 'fwd') {
-              $token = $token.next('.editable-token');
-            } else {
-              $token = $token.prev('.editable-token');
-            }
-            if ($token) {
-              $target.editable('setCaretAtToken', $token.get(0));
-            } else {
-              $target.editable('setCaretPos', $target.text().length);
+            // elem is non-token (space) 
+            else {
+              var elem = tokenPos.elem;
+              while (elem && elem.nodeType === 3) {
+                elem = elem.previousSibling;
+              }
+              $token = $(elem);
             }
           }
-        }      
+        }
+
+        if ($token && $token.length) {
+          $target.editable('setCaretAtToken', $token.get(0));
+        } 
+        else if (gotoEnd) {
+          $target.editable('setCaretPos', $target.text().length);
+        }
       };
       
-      // #source events
-      // on key up throttle a new translation
-      $source.bind('keyup' + nsClass, function(e) {
-        var $this = $(this),
-            data = $this.data('editable'),
-            source = $this.editable('getText');
+      var sourceOptions = $source.data('editable').options;
+      if (!sourceOptions.disabled) {
+        // #source events
+        // on key up throttle a new translation
+        $source.bind('keyup' + nsClass, function(e) {
+          var $this = $(this),
+              data = $this.data('editable'),
+              source = $this.editable('getText');
   
-        if (isPrintableChar(e)) {
-          throttle(function() {
-            if (data.str != source) {
-              var query = {
-                source: source,
-                //num_results: 2,
+       
+          if (isPrintableChar(e)) {
+            throttle(function() {
+              if (data.str != source) {
+                var query = {
+                  source: source,
+                  //num_results: 2,
+                }
+                itp.decode(query);
               }
-              itp.decode(query);
-            }
-          }, throttle_ms);
-        }
-      })
-      .bind('change' + nsClass, function(e){
-        itp.startSession({source: $source.editable('getText')});
-      });
+            }, throttle_ms);
+          }
+        })
+        .bind('change' + nsClass, function(e){
+          itp.startSession({source: $source.editable('getText')});
+        });
+      }
 
     
       self.typedWords = {};
@@ -395,7 +465,7 @@ var Memento = require("module.memento");
         // IF "implicit reject on click" AND "cursor pos has chaged": invalidate previous states
         if (typeof self.currentCaretPos != 'undefined' && caretPos !== self.currentCaretPos.pos) {
           self.mousewheel.invalidate();
-          //self.memento.invalidate();
+          self.mousewheel.addElement(decodedResult);
         }
       };
             
@@ -414,7 +484,7 @@ var Memento = require("module.memento");
         // Update only the caret position
         self.currentCaretPos.pos = cpos;
         // Issue a reject only if CTRL is pressed
-        //if (e.ctrlKey) reject(); // UPDATE: This is error prone and may require interaction with other modules
+        if (e.ctrlKey) reject(); // UPDATE: This is error prone and may require interaction with other modules
       })
       // on keyup throttle a new translation
       .bind('keyup' + nsClass, function(e) {
@@ -425,8 +495,13 @@ var Memento = require("module.memento");
               target = $this.editable('getText'),
               source = $source.editable('getText'),
               pos = $target.editable('getCaretPos');
-              
-          var spanElem = $target.editable('getTokenAtCaretPos', pos).elem.parentNode;
+
+          var spanElem = $target.editable('getTokenAtCaretPos', pos).elem;
+          if (spanElem && spanElem.parentNode && $(spanElem.parentNode).is('.editable-token')) {
+            spanElem = spanElem.parentNode;
+          }
+          var suffixHasUserCorrections = $(spanElem).nextAll('.editable-token').filter(function(index, elem){ return elem.dataset.validated; });
+ 
           var targetId = $(spanElem).attr('id');
           // Remember interacted words only when the user types in the right span
           var numInStr = targetId ? targetId.match(/(\d+)$/) : null;
@@ -437,13 +512,23 @@ var Memento = require("module.memento");
           if (isPrintableChar(e)) {
             throttle(function () {
               if (data.str != target) {
+                // Predict from last edited token onwards
+                $target.find('span').each(function(i, elem){
+                  // TODO
+                });
                 var query = {
+                  source: source,
                   target: target,
                   caretPos: pos,
                   numResults: 1
                 }
                 var itpCfg = cfg(), itp = itpCfg.itpServer;
-                itp.setPrefix(query);
+                if (suffixHasUserCorrections.length === 0) {
+                  itp.setPrefix(query);
+                }
+                else {
+                  itp.getTokens(query);
+                }
               }
             }, throttle_ms);
           }

@@ -101,6 +101,11 @@
           if (alignment[v] > 0.5) {
             sourceal[c].push('#' + targetspans[v].id);
             targetal[v].push('#' + sourcespans[c].id);
+
+            var s = $('#' + sourcespans[c].id).get(0);
+            var t = $('#' + targetspans[v].id).get(0);
+            if (t.dataset.prefix) s.dataset.prefix = true;
+            if (t.dataset.validated) s.dataset.validated = true;
           }
         }
       }
@@ -212,13 +217,14 @@
 
       var currentPriority = $token.data('priority');
       spans.each(function() {
-        var $span = $(this), opacity = 1.0, scale = 2.0;
+        var $span = $(this), scale = 2.0;
         if ($span.data('priority') >= currentPriority + userPriorityLength) {
           opacity = 0.3; //Math.pow(2, (-priorities[c] + 2) * scale);
+        } else {
+          opacity = 1.0;
         }
-        $span.css({ opacity: opacity });
+        $span.css('opacity', opacity);
       });
-      //console.log("user priority:", userPriorityLength, "word priorities:", priorities);
     }
  
     // updates the confidence display with new confidence info      
