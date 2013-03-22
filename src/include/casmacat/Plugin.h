@@ -30,15 +30,16 @@
 namespace casmacat {
 
   // Tokenize a string at spaces/quotation blocks
-  void tokenize_args(const std::string str, std::vector<std::string> &tokens) {
+  template <typename T>
+  void tokenize_args(const T str, std::vector<T> &tokens) {
     if (not str.empty()) {
       tokens.clear();
       char inside_quote = 0;
       char last_char = 0;
-      std::string token;
+      T token;
 
-      for (std::string::const_iterator it = str.begin(); it < str.end(); last_char = *it, ++it) {
-        if (last_char != '\\' and std::string("\"'").find(*it) != std::string::npos) {
+      for (typename T::const_iterator it = str.begin(); it < str.end(); last_char = *it, ++it) {
+        if (last_char != '\\' and T("\"'").find(*it) != T::npos) {
           if (inside_quote == 0 ) {
             inside_quote = *it;
           }
@@ -229,7 +230,7 @@ namespace casmacat {
 
     value_type *createStringArgs(const std::string &cmd, Context *context = 0) {
       std::vector<std::string> args;
-      tokenize_args(cmd, args);
+      tokenize_args<std::string>(cmd, args);
       return createVectorStringArgs(args, context);
     }
 
