@@ -220,7 +220,7 @@ namespace casmacat {
 
       value_type *value = create_(argc, argv, context);
 
-      for (size_t i = 0; i < argc; i++) {
+      for (int i = 0; i < argc; i++) {
         delete[] argv[i];
       }
       delete[] argv;
