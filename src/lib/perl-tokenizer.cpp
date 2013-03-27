@@ -88,7 +88,12 @@ public:
     PL_perl_destruct_level = 1;
     PL_exit_flags |= PERL_EXIT_DESTRUCT_END;
 
-    perl_parse(vm, xs_init, argc, argv, 0);
+    int status = 0;
+    status = perl_parse(vm, xs_init, argc, argv, 0);
+    if (status != 0) {
+      cerr << "perl status " << status << " for file " << argv[0] << "\n";
+      throw "Perl tokenizer could not be loaded\n";
+    }
     perl_run(vm);
 
     _num_perl_plugin_instances++;
@@ -254,11 +259,12 @@ class PerlTokenizerFactory: public ITextProcessorFactory {
   char **_argv;
   string _name;
 public:
-  PerlTokenizerFactory(): _argv(0), _name("perl") { }
+  PerlTokenizerFactory(): _argc(0), _argv(0), _name("perl") { }
   ~PerlTokenizerFactory() {
-    if (_argv != 0) {
-      char **it = _argv;
-      while (*it) { delete[] it++; }
+    if (_argc > 0 and _argv != 0) {
+      for (size_t a = 0; a < _argc; a++) {
+        delete[] _argv[a];
+      }
       delete[] _argv;
     }
   }
@@ -268,15 +274,17 @@ public:
     if (argc < 2) { return EXIT_FAILURE; }
     
     // copy arguments
-    _argc = argc;
-    _argv = new char*[argc + 1];
-    _argv[0] = new char [_name.size() + 1];
-    _argv[0] = strcpy(_argv[0], _name.c_str()); 
-    for (size_t a = 0; a < argc; a++) {
-      _argv[a] = new char [strlen(argv[a]) + 1];
-      strcpy(_argv[a], argv[a]);
+    if (argc > 0) {
+      _argc = argc;
+      _argv = new char*[_argc + 1];
+      _argv[0] = new char [_name.size() + 1];
+      _argv[0] = strcpy(_argv[0], _name.c_str()); 
+      for (size_t a = 1; a < argc; a++) {
+        _argv[a] = new char [strlen(argv[a]) + 1];
+        strcpy(_argv[a], argv[a]);
+      }
+      _argv[argc] = 0;
     }
-    _argv[argc] = 0;
 
     return EXIT_SUCCESS;
   }
