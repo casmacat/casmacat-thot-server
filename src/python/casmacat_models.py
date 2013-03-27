@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from server_utils import *
-import os.path, sys, math, traceback
+import os.path, sys, math
 try: import simplejson as json
 except ImportError: import json
 
@@ -27,11 +27,6 @@ class PythonPlugin:
     else:
       self.plugin = self.module.__dict__["Plugin"](params)
 
-    self.online_learning = False
-    if "online-learning" in self.obj and self.obj["online-learning"]:
-      self.online_learning = True 
-
-
   def new_instance(self, specialization_id = None):
     return self.plugin 
 
@@ -50,7 +45,6 @@ so_dict = {
   "mt": MtPlugin,
   "imt": ImtPlugin,
   "aligner": AlignmentPlugin,
-  "dictionary": DictionaryPlugin,
   "confidencer": ConfidencePlugin,
   "word-prioritizer": WordPriorityPlugin,
   "source-processor": TextProcessorPlugin,
@@ -67,11 +61,10 @@ class SoPlugin:
     assert kind in so_dict, "Invalid kind of plugin"
     self.Class = so_dict[kind]
 
-    params = self.obj["parameters"] if "parameters" in self.obj else "" 
     if "name" in obj:
-      self.plugin = self.Class(self.obj["module"], params, self.obj["name"])
+      self.plugin = self.Class(self.obj["module"], self.obj["parameters"], self.obj["name"])
     else:
-      self.plugin = self.Class(self.obj["module"], params)
+      self.plugin = self.Class(self.obj["module"], self.obj["parameters"])
     if not self.plugin:
       raise Exception("%s plugin failed" % self.kind)
 
@@ -81,9 +74,9 @@ class SoPlugin:
     if logger:
       self.factory.setLogger(logger)
 
-    self.online_learning = False
-    if "online-learning" in self.obj and self.obj["online-learning"]:
-      self.online_learning = True 
+    self.avoid_updates = False
+    if "avoid-updates" in self.obj and self.obj["avoid-updates"]:
+      self.avoid_updates = True
 
     self.instances = []
 
@@ -99,27 +92,16 @@ class SoPlugin:
     self.factory.deleteInstance(inst);
 
   def reset(self):
+    print "reseting", self.kind
     old = self.instances[:]
     self.instances = []
     for instance in old:
       self.factory.deleteInstance(instance);
-    self.plugin.destroy(self.factory)
-
-    print >> sys.stderr, "RENEW:%s" % self.factory.__class__.__name__
-    self.factory = self.plugin.create()
-    if not self.factory: 
-      raise Exception("%s plugin failed" % self.kind)
-    if logger:
-      self.factory.setLogger(logger)
-
-    for instance in old:
-      new_instance = self.new_instance()
-      print >> sys.stderr, "RENEW:%s" % self.kind
-
+      self.new_instance()
 
   def __del__(self):
     for inst in self.instances[:]:
-      print >> sys.stderr, "DELETE:%s" % inst
+      print "Deleting", inst
       self.del_instance(inst);
     self.plugin.destroy(self.factory)
     del self.plugin
@@ -133,10 +115,6 @@ class RefPlugin:
     self.obj = obj
     self.ref = ref
 
-    self.online_learning = False
-    if "online-learning" in self.obj and self.obj["online-learning"]:
-      self.online_learning = True 
-
 
 def get_objects(config, kind):
   if kind not in config: return []
@@ -147,35 +125,23 @@ def get_objects(config, kind):
 class Models:
   def __init__(self, config_fn):
     self.systems = {}
-    self.ol_systems = {}
     self.plugins = {}
     self.refs = {}
     self.updates = []
     self.config = json.load(open(config_fn))
     print >> sys.stderr, "config", json.dumps(self.config)
 
-  def __getattr__(self, kind):
-    kind = kind.replace('_', '-')
-    if kind in self.systems:
-      system = self.systems[kind][0][1]
+  def __getattr__(self, name):
+    name = name.replace('_', '-')
+    if name in self.systems:
+      system = self.systems[name][0][1]
       return system
     else:
-      raise AttributeError("No model '%s' found" % kind)
+      raise AttributeError("No model '%s' found" % name)
 
   def get_system(self, kind, name):
     if kind in self.systems:
-      try:
-        return next(system for n, system, _ in self.systems[kind] if n == name)
-      except StopIteration, e:
-        #traceback.print_stack() 
-        #print >> sys.stderr, "System '%s' of kind '%s' not found" % (name, kind) 
-        return None 
-    return None
-
-  def option(self, kind, option):
-    if kind in self.systems:
-      if option in self.systems[kind][0][2].obj:
-        return self.systems[kind][0][2].obj[option]
+      return next(system for n, system in self.systems[kind] if n == name)
     return None
 
   def load_plugin(self, kind, obj):
@@ -204,11 +170,8 @@ class Models:
 
       if plugin.__class__.__name__ != 'RefPlugin':
         instance = plugin.new_instance()
-        try:    self.systems[kind].append( (plugin.name, instance, plugin) )
-        except: self.systems[kind] = [ (plugin.name, instance, plugin) ]
-        if plugin.online_learning:
-          try:    self.ol_systems.append( (plugin.name, instance, plugin) )
-          except: self.ol_systems = [ (plugin.name, instance, plugin) ]
+        try:    self.systems[kind].append( (plugin.name, instance) )
+        except: self.systems[kind] = [ (plugin.name, instance) ]
         if 'id' in obj:
           self.refs[obj['id']] = (plugin, instance)
 
@@ -226,7 +189,6 @@ class Models:
     self.load_plugins("mt")
     self.load_plugins("imt")
     self.load_plugins("aligner")
-    self.load_plugins("dictionary")
     self.load_plugins("confidencer")
     self.load_plugins("word-prioritizer")
     
@@ -237,11 +199,8 @@ class Models:
           if plugin.ref in self.refs:
             orig_plugin, instance = self.refs[plugin.ref]
             name = plugin.id if plugin.id else orig_plugin.name
-            try:    self.systems[kind].append( (name, instance, orig_plugin) )
-            except: self.systems[kind] = [ (name, instance, orig_plugin) ]
-            if plugin.online_learning:
-              try:    self.ol_systems.append( (name, instance, orig_plugin) )
-              except: self.ol_systems = [ (name, instance, orig_plugin) ]
+            try:    self.systems[kind].append( (name, instance) )
+            except: self.systems[kind] = [ (name, instance) ]
   
 
     print >> sys.stderr, "Plugins loaded"
@@ -255,7 +214,6 @@ class Models:
     print >> sys.stderr, "Plugins deleted"
     self.plugins = {}
     self.systems = {}
-    self.ol_systems = {}
     self.refs = {}
 
   def __del__(self):
@@ -268,24 +226,8 @@ class Models:
 
       for kind, plugins in self.plugins.iteritems():
         for plugin in plugins:
-          if plugin.online_learning and plugin.__class__.__name__ != 'RefPlugin':
-            print >> sys.stderr, "RESET-ONLINE:%s:%s:%s:%s" % (kind, plugin.name, plugin.__class__.__name__, plugin.online_learning)
-
-            self.systems[kind] = [ s for s in self.systems[kind] if s[1] not in plugin.instances]
-            self.ol_systems    = [ s for s in self.ol_systems    if s[1] not in plugin.instances]
-            self.refs          = [ s for s in self.refs          if s[1] not in plugin.instances]
-
+          if plugin.__class__.__name__ != 'RefPlugin':
             plugin.reset()
-
-            for instance in plugin.instances:
-              try:    self.systems[kind].append( (plugin.name, instance, plugin) )
-              except: self.systems[kind] = [ (plugin.name, instance, plugin) ]
-              if plugin.online_learning:
-                try:    self.ol_systems.append( (plugin.name, instance, plugin) )
-                except: self.ol_systems = [ (plugin.name, instance, plugin) ]
-              if 'id' in obj:
-                self.refs[plugin.id] = (plugin, instance)
-
 
       # get instances for references
       for kind, plugins in self.plugins.iteritems():
@@ -294,12 +236,10 @@ class Models:
             if plugin.ref in self.refs:
               orig_plugin, instance = self.refs[plugin.ref]
               name = plugin.id if plugin.id else orig_plugin.name
-              try:    self.systems[kind].append( (name, instance, orig_plugin) )
-              except: self.systems[kind] = [ (name, instance, orig_plugin) ]
-              if plugin.online_learning:
-                try:    self.ol_systems.append( (name, instance, orig_plugin) )
-                except: self.ol_systems = [ (name, instance, orig_plugin) ]
+              try:    self.systems[kind].append( (name, instance) )
+              except: self.systems[kind] = [ (name, instance) ]
 
+          
     print >> sys.stderr, "Reset finished"
 
 
