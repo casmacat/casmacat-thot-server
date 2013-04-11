@@ -46,6 +46,7 @@ test -x $BIN || {
 }
 
 export LD_LIBRARY_PATH=$PLUGINPATH:$LD_LIBRARY_PATH
+export PYTHONPATH=$PYTHONDEPS:$PYTHONPATH
 
 # Some things that run always
 touch /var/lock/$NAME
