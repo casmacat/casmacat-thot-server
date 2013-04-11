@@ -311,6 +311,8 @@ class CasmacatConnection(SocketConnection):
               'targetSegmentation': target_seg,
               'elapsedTime': elapsed_time.total_seconds()*1000.0
             }
+
+      if 'caretPos' in data: obj['caretPos'] = data['caretPos']
       self.respond('getTokensResult', { 'errors': [], 'data': obj })
 
 
