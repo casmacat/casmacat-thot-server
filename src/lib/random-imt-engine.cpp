@@ -57,25 +57,37 @@ public:
                          const bool last_token_is_partial,
                                vector<string> &corrected_suffix)
   {
-    vector<string> partial_translation(prefix), corrected_translation;
+    //vector<string> partial_translation(prefix), corrected_translation;
 
-    vector<bool> validated, corrected_validated;
-    validated.resize(prefix.size(), true);
+    //vector<bool> validated, corrected_validated;
+    //validated.resize(prefix.size(), true);
 
-    if (not suffix.empty()) {
-      partial_translation.insert(partial_translation.end(), suffix.begin(), suffix.end());
-      validated.resize(prefix.size() + suffix.size(), false);
+    //if (not suffix.empty()) {
+    //  partial_translation.insert(partial_translation.end(), suffix.begin(), suffix.end());
+    //  validated.resize(prefix.size() + suffix.size(), false);
+    //}
+    //else {
+    //  vector<string> simulated_suffix(max(source.size() - prefix.size(), size_t(0)), "<nothing>");
+    //  partial_translation.insert(partial_translation.end(), simulated_suffix.begin(), simulated_suffix.end());
+    //  validated.resize(prefix.size() + simulated_suffix.size(), false);
+    //}
+
+    //setPartialValidation(partial_translation, validated, corrected_translation, corrected_validated);
+
+    //corrected_suffix.clear();
+    //corrected_suffix.insert(corrected_suffix.end(), corrected_translation.begin() + prefix.size(), corrected_translation.end());
+    size_t count = prefix.size();
+    corrected_suffix.clear();
+    if (last_token_is_partial) {
+      corrected_suffix.insert(corrected_suffix.end(), prefix.begin(), prefix.end()-1);
+      corrected_suffix.push_back(prefix.back() + to_string(count++));
     }
     else {
-      vector<string> simulated_suffix(max(source.size() - prefix.size(), size_t(0)), "<nothing>");
-      partial_translation.insert(partial_translation.end(), simulated_suffix.begin(), simulated_suffix.end());
-      validated.resize(prefix.size() + simulated_suffix.size(), false);
+      corrected_suffix.insert(corrected_suffix.end(), prefix.begin(), prefix.end());
     }
-
-    setPartialValidation(partial_translation, validated, corrected_translation, corrected_validated);
-
-    corrected_suffix.clear();
-    corrected_suffix.insert(corrected_suffix.end(), corrected_translation.begin() + prefix.size(), corrected_translation.end());
+    for (size_t i = count; i < source.size(); ++i) {
+      corrected_suffix.push_back("token" + to_string(i));
+    }
   }
 
   virtual void rejectSuffix(const vector<string> &prefix,

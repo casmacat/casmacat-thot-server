@@ -2,7 +2,7 @@
 # The list of libraries we are building seperated by spaces.
 # The 'lib_' indicates that these build products will be installed
 # in the $(libdir) directory. For example /usr/lib
-lib_LTLIBRARIES = libcasmacat.la random-aligner.la random-confidence-estimator.la random-imt-engine.la imt-engine-max-suffix-len.la random-mt-engine.la space-tokenizer.la 
+lib_LTLIBRARIES = libcasmacat.la random-aligner.la random-dictionary.la random-confidence-estimator.la random-imt-engine.la imt-engine-max-suffix-len.la random-mt-engine.la space-tokenizer.la 
 
 
 #######################################
@@ -25,6 +25,10 @@ random_aligner_la_CPPFLAGS = -I$(top_srcdir)/src/include
 random_confidence_estimator_la_SOURCES = random-confidence-estimator.cpp
 random_confidence_estimator_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic $(LDFLAGS)
 random_confidence_estimator_la_CPPFLAGS = -I$(top_srcdir)/src/include
+
+random_dictionary_la_SOURCES = random-dictionary.cpp
+random_dictionary_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic $(LDFLAGS)
+random_dictionary_la_CPPFLAGS = -I$(top_srcdir)/src/include
 
 random_imt_engine_la_SOURCES = random-imt-engine.cpp
 random_imt_engine_la_LDFLAGS = -version-info 0:0:0 -module -export-dynamic $(LDFLAGS)

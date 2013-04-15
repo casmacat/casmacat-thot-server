@@ -5,6 +5,7 @@
 #include <casmacat/Context.h>
 #include <casmacat/IUpdateable.h>
 #include <casmacat/IAlignmentEngine.h>
+#include <casmacat/IDictionaryEngine.h>
 #include <casmacat/IConfidenceEngine.h>
 #include <casmacat/IWordPriorityEngine.h>
 #include <casmacat/IMtEngine.h>
@@ -38,6 +39,7 @@ using namespace std;
 %RefOutputIntVector( priorities_out );
 %RefOutputFloatMatrix( alignments_out );
 %RefOutputStringVector( target_out );
+%RefOutputStringVector( options_out );
 %RefOutputStringVector( corrected_suffix_out );
 %RefOutputStringVector( corrected_translation_out );
 %RefOutputBoolVector( corrected_validated_out );
@@ -66,6 +68,7 @@ casmacat::Context *create_context() { return new casmacat::Context(); };
 %include <casmacat/IPluginFactory.h>
 %include <casmacat/IUpdateable.h>
 %include <casmacat/IAlignmentEngine.h>
+%include <casmacat/IDictionaryEngine.h>
 %include <casmacat/IConfidenceEngine.h>
 %include <casmacat/IWordPriorityEngine.h>
 %include <casmacat/IMtEngine.h>
@@ -77,6 +80,7 @@ casmacat::Context *create_context() { return new casmacat::Context(); };
 
 namespace casmacat {
   %template(IAlignmentFactory)           IPluginFactory<IAlignmentEngine>;
+  %template(IDictionaryFactory)          IPluginFactory<IDictionaryEngine>;
   %template(IConfidenceFactory)          IPluginFactory<IConfidenceEngine>;
   %template(IWordPriorityFactory)        IPluginFactory<IWordPriorityEngine>;
   %template(ITextProcessorFactory)       IPluginFactory<ITextProcessor>;
@@ -84,6 +88,7 @@ namespace casmacat {
   %template(IInteractiveMtFactory)       IPluginFactory<IInteractiveMtEngine>;
   %template(IHtrFactory)                 IPluginFactory<IHtrEngine>;
   %template(AlignmentPlugin)             Plugin<IAlignmentFactory>;
+  %template(DictionaryPlugin)            Plugin<IDictionaryFactory>;
   %template(ConfidencePlugin)            Plugin<IConfidenceFactory>;
   %template(WordPriorityPlugin)          Plugin<IWordPriorityFactory>;
   %template(TextProcessorPlugin)         Plugin<ITextProcessorFactory>;

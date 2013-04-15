@@ -45,6 +45,7 @@ so_dict = {
   "mt": MtPlugin,
   "imt": ImtPlugin,
   "aligner": AlignmentPlugin,
+  "dictionary": DictionaryPlugin,
   "confidencer": ConfidencePlugin,
   "word-prioritizer": WordPriorityPlugin,
   "source-processor": TextProcessorPlugin,
@@ -189,6 +190,7 @@ class Models:
     self.load_plugins("mt")
     self.load_plugins("imt")
     self.load_plugins("aligner")
+    self.load_plugins("dictionary")
     self.load_plugins("confidencer")
     self.load_plugins("word-prioritizer")
     
