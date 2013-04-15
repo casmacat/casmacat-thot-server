@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, traceback, os, re
-import random, math, codecs, copy
+import random, math, copy
 import collections
 try: import simplejson as json
 except ImportError: import json
@@ -13,8 +13,6 @@ from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 
 from server_utils import *
 from casmacat import *
-
-logfd = None
 
 def new_match(created_by, target, target_seg, elapsed_time):
   match = {}
@@ -203,7 +201,7 @@ class Rules:
 class CasmacatConnection(SocketConnection):
     def respond(self, *args, **kwargs):
       print >> sys.stderr, "emit", args, kwargs
-      print >> logfd, """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
+      print >> get_logfd(), """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
       self.emit(*args, **kwargs)
 
     @event('getAlignments')
@@ -845,10 +843,7 @@ if __name__ == "__main__":
       except:
         pass
 
-    if log_fn:
-      logfd = codecs.open(log_fn, "a", "utf-8")
-    else:
-      logfd = codecs.open(os.path.devnull, "a", "utf-8")
+    config_log(log_fn)
 
     logging.getLogger().setLevel(logging.INFO)
 
@@ -857,7 +852,7 @@ if __name__ == "__main__":
       raise Exception("Missing config file")
 
     models = casmacat_models.Models(config_fn)
-    print >> logfd, "config", json.dumps(models.config)
+    print >> get_logfd(), "config", json.dumps(models.config)
     models.create_plugins()
     atexit.register(models.delete_plugins)
 
@@ -886,7 +881,7 @@ if __name__ == "__main__":
     )
 
 
-    print >> logfd, """/*\n  Casmacat server started on port %d\n  %s\n*/\n\n"config": %s\n\n\n""" % (port, str(datetime.datetime.now()), json.dumps(models.config, indent=2, separators=(',', ': '), encoding="utf-8"))
+    print >> get_logfd(), """/*\n  Casmacat server started on port %d\n  %s\n*/\n\n"config": %s\n\n\n""" % (port, str(datetime.datetime.now()), json.dumps(models.config, indent=2, separators=(',', ': '), encoding="utf-8"))
 
     # Create and start tornadio server
     SocketServer(application)

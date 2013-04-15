@@ -2,11 +2,24 @@
 
 from casmacat import *
 import datetime, time, traceback
-import os.path, sys, math
+import os.path, sys, math, codecs
 try: import simplejson as json
 except ImportError: import json
 
 logfd = sys.stderr
+
+def config_log(log_fn):
+  global logfd
+  if log_fn:
+    logfd = codecs.open(log_fn, "a", "utf-8")
+  else:
+    logfd = codecs.open(os.path.devnull, "a", "utf-8")
+
+def get_logfd():
+  global logfd
+  return logfd
+
+
 
 def fmt_delta(elapsed_time):
   h, rem = divmod(elapsed_time.seconds, 3600)
