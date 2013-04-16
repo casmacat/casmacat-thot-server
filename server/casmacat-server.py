@@ -14,6 +14,9 @@ from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 from server_utils import *
 from casmacat import *
 
+def timediff(elapsed_time):
+  return elapsed_time.total_seconds()*1000.0
+
 def new_match(created_by, target, target_seg, elapsed_time):
   match = {}
   match['target'] = target
@@ -22,9 +25,9 @@ def new_match(created_by, target, target_seg, elapsed_time):
   if created_by == 'OL':
     match['quality'] = 0.70
   match['author'] = created_by
-  match['elapsedTime'] = elapsed_time.total_seconds()*1000.0
+  match['elapsedTime'] = timediff(elapsed_time)
   return match
-
+ 
 def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
   match = {}
   match['target'] = prediction
@@ -33,7 +36,7 @@ def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
   if created_by == 'OL':
     match['quality'] = 0.70
   match['author'] = created_by
-  match['elapsedTime'] = elapsed_time.total_seconds()*1000.0
+  match['elapsedTime'] = timediff(elapsed_time)
   return match
 
 def new_contributions(source, source_seg):
@@ -204,29 +207,6 @@ class CasmacatConnection(SocketConnection):
       print >> get_logfd(), """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
       self.emit(*args, **kwargs)
 
-    @event('getAlignments')
-    @timer('getAlignments')
-    @thrower('getAlignmentsResult')
-    def getAlignments(self, data):
-      print >> sys.stderr, 'data:', data
-      source, target = to_utf8(data['source']), to_utf8(data['target'])
-      source_tok, source_seg = models.source_processor.preprocess(source)
-      target_tok, target_seg = models.target_processor.preprocess(target)
-
-      start_time = datetime.datetime.now()
-      matrix = models.aligner.align(source_tok, target_tok)
-      elapsed_time = datetime.datetime.now() - start_time
-
-      logger.log(DEBUG_LOG, matrix);
-      obj = { 'alignments': matrix,
-              'source': source,
-              'sourceSegmentation': source_seg,
-              'target': target,
-              'targetSegmentation': target_seg,
-              'elapsedTime': elapsed_time.total_seconds()*1000.0
-            }
-      self.respond('getAlignmentsResult', { 'errors': [], 'data': obj })
-
     @event('setReplacementRule')
     @timer('setReplacementRule')
     @thrower('setReplacementRuleResult')
@@ -239,7 +219,7 @@ class CasmacatConnection(SocketConnection):
 
       elapsed_time = datetime.datetime.now() - start_time
 
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0, 'ruleId': rule_id }
+      obj = { 'elapsedTime': timediff(elapsed_time), 'ruleId': rule_id }
       self.respond('setReplacementRuleResult', { 'errors': [], 'data': obj })
 
 
@@ -250,7 +230,7 @@ class CasmacatConnection(SocketConnection):
       start_time = datetime.datetime.now()
       rules = self.rules.toJSON()
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0, 'rules': rules }
+      obj = { 'elapsedTime': timediff(elapsed_time), 'rules': rules }
       self.respond('getReplacementRulesResult', { 'errors': [], 'data': obj })
 
 
@@ -261,7 +241,7 @@ class CasmacatConnection(SocketConnection):
       start_time = datetime.datetime.now()
       self.rules.remove(data['ruleId'])
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('delReplacementRuleResult', { 'errors': [], 'data': obj })
 
 
@@ -285,7 +265,7 @@ class CasmacatConnection(SocketConnection):
               'sourceSegmentation': source_seg,
               'target': target,
               'targetSegmentation': target_seg,
-              'elapsedTime': elapsed_time.total_seconds()*1000.0
+              'elapsedTime': timediff(elapsed_time)
             }
       self.respond('applyReplacementRulesResult', { 'errors': [], 'data': obj })
 
@@ -307,11 +287,34 @@ class CasmacatConnection(SocketConnection):
               'sourceSegmentation': source_seg,
               'target': target,
               'targetSegmentation': target_seg,
-              'elapsedTime': elapsed_time.total_seconds()*1000.0
+              'elapsedTime': timediff(elapsed_time)
             }
 
       if 'caretPos' in data: obj['caretPos'] = data['caretPos']
       self.respond('getTokensResult', { 'errors': [], 'data': obj })
+
+    @event('getAlignments')
+    @timer('getAlignments')
+    @thrower('getAlignmentsResult')
+    def getAlignments(self, data):
+      print >> sys.stderr, 'data:', data
+      source, target = to_utf8(data['source']), to_utf8(data['target'])
+      source_tok, source_seg = models.source_processor.preprocess(source)
+      target_tok, target_seg = models.target_processor.preprocess(target)
+
+      start_time = datetime.datetime.now()
+      matrix = models.aligner.align(source_tok, target_tok)
+      elapsed_time = datetime.datetime.now() - start_time
+
+      logger.log(DEBUG_LOG, matrix);
+      obj = { 'alignments': matrix,
+              'source': source,
+              'sourceSegmentation': source_seg,
+              'target': target,
+              'targetSegmentation': target_seg,
+              'elapsedTime': timediff(elapsed_time)
+            }
+      self.respond('getAlignmentsResult', { 'errors': [], 'data': obj })
 
 
     @event('getConfidences')
@@ -339,7 +342,7 @@ class CasmacatConnection(SocketConnection):
         'sourceSegmentation': source_seg,
         'target': target,
         'targetSegmentation': target_seg,
-        'elapsedTime': elapsed_time.total_seconds()*1000.0
+        'elapsedTime': timediff(elapsed_time)
       }
       print >> sys.stderr, 'confidences:', obj
       self.respond('getConfidencesResult', { 'errors': [], 'data': obj })
@@ -414,17 +417,28 @@ class CasmacatConnection(SocketConnection):
         for mt in mts:
           start_time = datetime.datetime.now()
           target_tok = mt.translate(source_tok)
-
           target, target_seg = models.target_processor.postprocess(target_tok)
+          elapsed_time = datetime.datetime.now() - start_time
+          match = new_match(name, target, target_seg, elapsed_time)
+
           if len(self.rules):
             target = self.rules.apply(source, target)
             target_tok, target_seg = models.target_processor.preprocess(target)
 
           validated_words = [False]*len(target_tok)
-          sent = models.confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
+          if models.option("confidencer", "delayed") == False:
+            sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, validated_words)
+            match['confidences'] = conf
+          else:
+            sent = models.confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
+
+          if models.option("aligner", "delayed") == False:
+            matrix = models.aligner.align(source_tok, target_tok)
+            match['alignments'] = matrix
+
 
           elapsed_time = datetime.datetime.now() - start_time
-          match = new_match(name, target, target_seg, elapsed_time)
+          match['elapsedTime'] = timediff(elapsed_time)
           match['quality'] = sent
           add_match(contributions, match)
       prepare(contributions)
@@ -489,7 +503,7 @@ class CasmacatConnection(SocketConnection):
           self.imt_session[name] = imt.newSession(source_tok)
 
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('startSessionResult', { 'errors': [], 'data': obj })
 
 
@@ -626,6 +640,17 @@ class CasmacatConnection(SocketConnection):
 
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
+          if models.option("confidencer", "delayed") == False:
+            validated_words = [True] * len(prefix_tok)
+            validated_words.extend([False]*(len(prediction_tok) - len(prefix_tok)))
+            sent, conf = models.confidencer.getWordConfidences(self.source_tok, prediction_tok, validated_words)
+            match['confidences'] = conf
+            match['quality'] = sent
+
+          if models.option("aligner", "delayed") == False:
+            matrix = models.aligner.align(self.source_tok, prediction_tok)
+            match['alignments'] = matrix
+
           if "prioritizer" in self.config and self.source_tok:
             prioritizer = models.get_system("prioritizer", self.config["prioritizer"])
             if prioritizer:
@@ -637,6 +662,8 @@ class CasmacatConnection(SocketConnection):
               priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
               match["priorities"] = priority
 
+          elapsed_time = datetime.datetime.now() - start_time
+          match['elapsedTime'] = timediff(elapsed_time)
           add_match(predictions, match)
         else:
           predictions["errors"].append("The server cannot provide a completion to the prefix")
@@ -689,6 +716,17 @@ class CasmacatConnection(SocketConnection):
 
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
+          if models.option("confidencer", "delayed") == False:
+            validated_words = [True] * len(prefix_tok)
+            validated_words.extend([False]*(len(prediction_tok) - len(prefix_tok)))
+            sent, conf = models.confidencer.getWordConfidences(self.source_tok, prediction_tok, validated_words)
+            match['confidences'] = conf
+            match['quality'] = sent
+
+          if models.option("aligner", "delayed") == False:
+            matrix = models.aligner.align(self.source_tok, prediction_tok)
+            match['alignments'] = matrix
+
           if "prioritizer" in self.config and self.source_tok:
             prioritizer = models.get_system("prioritizer", self.config["prioritizer"])
             if prioritizer:
@@ -700,6 +738,8 @@ class CasmacatConnection(SocketConnection):
               priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
               match["priorities"] = priority
 
+          elapsed_time = datetime.datetime.now() - start_time
+          match['elapsedTime'] = timediff(elapsed_time)
           add_match(predictions, match)
         else:
           predictions["errors"].append("The server cannot provide a completion to the prefix since the user has rejected all the options")
@@ -717,7 +757,7 @@ class CasmacatConnection(SocketConnection):
       logger.log(DEBUG_LOG, "ending imt session");
 
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('endSessionResult', { 'errors': [], 'data': obj })
 
     @event('reset')
@@ -727,7 +767,7 @@ class CasmacatConnection(SocketConnection):
       start_time = datetime.datetime.now()
       models.reset()
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('resetResult', { 'errors': [], 'data': obj })
 
     @event('configure')
