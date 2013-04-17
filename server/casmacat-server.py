@@ -290,6 +290,21 @@ class CasmacatConnection(SocketConnection):
               'elapsedTime': timediff(elapsed_time)
             }
 
+      validated_words = [False]*len(target_tok)
+      if models.option("confidencer", "delayed") == False:
+        sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, validated_words)
+        obj['confidences'] = conf
+        obj['quality'] = sent
+
+      if models.option("aligner", "delayed") == False:
+        matrix = models.aligner.align(source_tok, target_tok)
+        obj['alignments'] = matrix
+
+
+      elapsed_time = datetime.datetime.now() - start_time
+      obj['elapsedTime'] = timediff(elapsed_time)
+
+
       if 'caretPos' in data: obj['caretPos'] = data['caretPos']
       self.respond('getTokensResult', { 'errors': [], 'data': obj })
 
