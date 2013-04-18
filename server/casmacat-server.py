@@ -3,7 +3,6 @@
 
 import sys, traceback, os, re
 import random, math, copy
-import collections
 try: import simplejson as json
 except ImportError: import json
 import casmacat_models
@@ -667,14 +666,13 @@ class CasmacatConnection(SocketConnection):
             match['alignments'] = matrix
 
           if "prioritizer" in self.config and self.source_tok:
-            prioritizer = models.get_system("prioritizer", self.config["prioritizer"])
+            prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
             if prioritizer:
-              wp = models.word_prioritizers[self.config["prioritizer"]]
               n_ok = len(prefix_tok)
               if last_token_is_partial:
                 n_ok -= 1
               validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
-              priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+              priority = prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
               match["priorities"] = priority
 
           elapsed_time = datetime.datetime.now() - start_time
@@ -743,14 +741,13 @@ class CasmacatConnection(SocketConnection):
             match['alignments'] = matrix
 
           if "prioritizer" in self.config and self.source_tok:
-            prioritizer = models.get_system("prioritizer", self.config["prioritizer"])
+            prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
             if prioritizer:
-              wp = models.word_prioritizers[self.config["prioritizer"]]
               n_ok = len(prefix_tok)
               if last_token_is_partial:
                 n_ok -= 1
               validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
-              priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+              priority = prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
               match["priorities"] = priority
 
           elapsed_time = datetime.datetime.now() - start_time
