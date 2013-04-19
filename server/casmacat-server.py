@@ -418,13 +418,19 @@ class CasmacatConnection(SocketConnection):
       contributions = new_contributions(source, source_seg)
 
       if self.config['mode'] and self.config['mode'] != "":
-        mts = [models.get_system('mt', name) for name in self.config['mode'].split(",")]
+        mts = [models.get_system('imt', name) for name in self.config['mode'].split(",")]
+        mts = [mt for mt in mts if mt]
+        print >> sys.stderr, "mts", mts
+        if len(mts) == 0:
+          mts = [models.get_system('mt', name) for name in self.config['mode'].split(",")]
+          print >> sys.stderr, "imts", mts
       else:
         mts = [models.mt]
       mts = [ mt for mt in mts if mt ]
         
       if len(mts) == 0:
-        pass
+        traceback.print_stack() 
+        print >> sys.stderr, "System '%s' of kind 'mt' not found" % self.config['mode']
         # XXX: Raise exception?
 
       else:
