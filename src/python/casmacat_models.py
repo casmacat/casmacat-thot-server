@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from server_utils import *
-import os.path, sys, math
+import os.path, sys, math, traceback
 try: import simplejson as json
 except ImportError: import json
 
@@ -62,10 +62,11 @@ class SoPlugin:
     assert kind in so_dict, "Invalid kind of plugin"
     self.Class = so_dict[kind]
 
+    params = self.obj["parameters"] if "parameters" in self.obj else "" 
     if "name" in obj:
-      self.plugin = self.Class(self.obj["module"], self.obj["parameters"], self.obj["name"])
+      self.plugin = self.Class(self.obj["module"], params, self.obj["name"])
     else:
-      self.plugin = self.Class(self.obj["module"], self.obj["parameters"])
+      self.plugin = self.Class(self.obj["module"], params)
     if not self.plugin:
       raise Exception("%s plugin failed" % self.kind)
 
@@ -132,17 +133,28 @@ class Models:
     self.config = json.load(open(config_fn))
     print >> sys.stderr, "config", json.dumps(self.config)
 
-  def __getattr__(self, name):
-    name = name.replace('_', '-')
-    if name in self.systems:
-      system = self.systems[name][0][1]
+  def __getattr__(self, kind):
+    kind = kind.replace('_', '-')
+    if kind in self.systems:
+      system = self.systems[kind][0][1]
       return system
     else:
-      raise AttributeError("No model '%s' found" % name)
+      raise AttributeError("No model '%s' found" % kind)
 
   def get_system(self, kind, name):
     if kind in self.systems:
-      return next(system for n, system in self.systems[kind] if n == name)
+      try:
+        return next(system for n, system, _ in self.systems[kind] if n == name)
+      except StopIteration, e:
+        #traceback.print_stack() 
+        #print >> sys.stderr, "System '%s' of kind '%s' not found" % (name, kind) 
+        return None 
+    return None
+
+  def option(self, kind, option):
+    if kind in self.systems:
+      if option in self.systems[kind][0][2].obj:
+        return self.systems[kind][0][2].obj[option]
     return None
 
   def load_plugin(self, kind, obj):
@@ -171,8 +183,8 @@ class Models:
 
       if plugin.__class__.__name__ != 'RefPlugin':
         instance = plugin.new_instance()
-        try:    self.systems[kind].append( (plugin.name, instance) )
-        except: self.systems[kind] = [ (plugin.name, instance) ]
+        try:    self.systems[kind].append( (plugin.name, instance, plugin) )
+        except: self.systems[kind] = [ (plugin.name, instance, plugin) ]
         if 'id' in obj:
           self.refs[obj['id']] = (plugin, instance)
 
@@ -201,8 +213,8 @@ class Models:
           if plugin.ref in self.refs:
             orig_plugin, instance = self.refs[plugin.ref]
             name = plugin.id if plugin.id else orig_plugin.name
-            try:    self.systems[kind].append( (name, instance) )
-            except: self.systems[kind] = [ (name, instance) ]
+            try:    self.systems[kind].append( (name, instance, orig_plugin) )
+            except: self.systems[kind] = [ (name, instance, orig_plugin) ]
   
 
     print >> sys.stderr, "Plugins loaded"
@@ -238,8 +250,8 @@ class Models:
             if plugin.ref in self.refs:
               orig_plugin, instance = self.refs[plugin.ref]
               name = plugin.id if plugin.id else orig_plugin.name
-              try:    self.systems[kind].append( (name, instance) )
-              except: self.systems[kind] = [ (name, instance) ]
+              try:    self.systems[kind].append( (name, instance, orig_plugin) )
+              except: self.systems[kind] = [ (name, instance, orig_plugin) ]
 
           
     print >> sys.stderr, "Reset finished"

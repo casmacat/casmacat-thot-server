@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from casmacat import *
+import collections
 import datetime, time, traceback
 import os.path, sys, math, codecs
 try: import simplejson as json
