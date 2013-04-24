@@ -26,6 +26,13 @@ using namespace std;
 using namespace casmacat;
 
 
+size_t suffixIdxStart(const std::vector<bool> &validated) {
+  int i = validated.size() - 1; 
+  for (;i >= 0; --i) {
+    if (validated[i]) break;
+  }
+  return i + 1;
+}
 
 /********************************************************
  **  Confidence prioritizer:
@@ -51,18 +58,18 @@ public:
   {
     priorities.resize(target.size());
 
+    size_t i = suffixIdxStart(validated);
+    std::fill(priorities.begin(), priorities.begin() + i, 0);
+
     int priority = 1; 
     size_t count = 0;
-    for (size_t i = 0; i < target.size(); i++) {
-      if (validated[i]) priorities[i] = 0;
-      else {
-        priorities[i] = priority;
-        count++;
-        if (count == _n_word_len) {
-          count = 0;
-          priority++;
-        } 
-      }
+    for (; i < priorities.size(); i++) {
+      priorities[i] = priority;
+      count++;
+      if (count == _n_word_len) {
+        count = 0;
+        priority++;
+      } 
     }
   }
 
@@ -174,23 +181,23 @@ public:
 		computeWordConfidences(source, target, validated, confidences);
 
 
-		// clean and prepare the priorities vector
-		priorities.clear();
+		// prepare the priorities vector
     priorities.resize(target.size());
 
-		int priority = 1; 
+    size_t i = suffixIdxStart(validated);
+    std::fill(priorities.begin(), priorities.begin() + i, 0);
+
+
+		int priority = 0; 
     size_t count = 0;
-    for (size_t i = 0; i < target.size(); i++) {
-      if (validated[i]) priorities[i] = 0;
-      else {
-				if (confidences[i] < _threshold) count++;
-        
-				if (count == _n_word_len) {
-          count = 0;
-          priority++;
-        } 
-        priorities[i] = priority;
-      }
+    for (; i < priorities.size(); i++) {
+      if (confidences[i] < _threshold) count++;
+      
+			if (count == _n_word_len) {
+        count = 0;
+        priority++;
+      } 
+      priorities[i] = priority;
     }
   }
 
