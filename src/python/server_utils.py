@@ -20,8 +20,6 @@ def get_logfd():
   global logfd
   return logfd
 
-
-
 def fmt_delta(elapsed_time):
   h, rem = divmod(elapsed_time.seconds, 3600)
   m , rem = divmod(rem, 60)
