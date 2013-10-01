@@ -23,7 +23,7 @@ if __name__ == "__main__":
   import atexit
 
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "hc:ds:t:f:x:", ["help", "config=", "detokenize", "source-language=", "target-language=", "filter=", "xliff="])
+    opts, args = getopt.getopt(sys.argv[1:], "hc:ds:t:f:x:D:", ["help", "config=", "detokenize", "source-language=", "target-language=", "filter=", "xliff=", "detokenized="])
   except getopt.GetoptError as err:
     # print help information and exit:
     print str(err) # will print something like "option -a not recognized"
@@ -36,6 +36,8 @@ if __name__ == "__main__":
   target_language = "es"
   filter_sentences = None
   xliff_fn = None
+  detokenized_fn = None
+  detokenized_fd = None
   for o, a in opts:
     if o == "-v":
       verbose = True
@@ -54,6 +56,8 @@ if __name__ == "__main__":
       xliff_fn = a
     elif o in ("-d", "--detokenize"):
       tokenize = False
+    elif o in ("-D", "--detokenized"):
+      detokenized_fn = a 
     else:
       assert False, "unhandled option"
 
@@ -62,7 +66,7 @@ if __name__ == "__main__":
 
   config = json.load(open(config_fn))
 
-  tokenizer_plugin = TextProcessorPlugin(config["text-processor"]["module"], config["text-processor"]["parameters"])
+  tokenizer_plugin = TextProcessorPlugin(config["source-processor"]["module"], config["source-processor"]["parameters"])
   tokenizer_factory = tokenizer_plugin.create()
   assert tokenizer_factory, "Tokenizer plugin failed"
   tokenizer = tokenizer_factory.createInstance()
@@ -71,6 +75,7 @@ if __name__ == "__main__":
   wrong = 0
   sentences = []
   n = 1
+  if detokenized_fn: detokenized_fd = open(detokenized_fn, "w")
   for fn in args:
     for line in open(fn):
       line = line.strip()
@@ -80,6 +85,7 @@ if __name__ == "__main__":
         line_detok, _ = tokenizer.postprocess(line_tok)
         sentences.append((n, line_tok))
 
+        if detokenized_fd: print >> detokenized_fd, line_detok
         if line_detok != line:
           print "original:", line
           print "produced:", line_detok
@@ -93,6 +99,7 @@ if __name__ == "__main__":
         line_tok, _   = tokenizer.preprocess(line_detok)
         sentences.append((n, line_detok))
 
+        if detokenized_fd: print >> detokenized_fd, " ".join(line_tok)
         if line_tok != line:
           print "original:", line
           print "produced:", line_tok
@@ -101,8 +108,10 @@ if __name__ == "__main__":
           #raise Exception("Wrong detokenization")
       n += 1
 
+  if detokenized_fd: detokenized_fd.close()
+
   
-  print "%d incompatibilities found" % wrong
+  print "%d out of %d incompatibilities found" % (wrong, n)
 
   if filter_sentences:
     re_num = re.compile("^(\d+)$")

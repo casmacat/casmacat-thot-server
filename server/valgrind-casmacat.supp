@@ -437,4 +437,506 @@
    fun:SHA1_Update
 }
 
+## Memory leaks related to the integration of python
+## Unfortunately, python is not good at freeing memory on exit. That
+## is mostly unimportant, since the memory shows as "still reachable"
+## in valgrind, so is easy to ignore
+
+{
+   Python leak
+   Memcheck:Leak
+   fun:*
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalFrameEx
+   fun:*
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:*
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:*
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:*
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:function_call
+   fun:PyObject_Call
+   fun:instancemethod_call
+   fun:PyObject_Call
+   fun:slot_tp_init
+   fun:type_call
+   fun:PyObject_Call
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:function_call
+   fun:PyObject_Call
+   fun:PyEval_CallObjectWithKeywords
+   fun:_PyCodec_Lookup
+   fun:codec_getitem
+   fun:Py_InitializeEx
+   fun:Py_Initialize
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:function_call
+   fun:PyObject_Call
+   fun:slot_tp_new
+   fun:type_call
+   fun:PyObject_Call
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:function_call
+   fun:PyObject_Call
+   fun:PyEval_CallObjectWithKeywords
+   fun:_PyCodec_Lookup
+   fun:codec_getitem
+   fun:Py_InitializeEx
+   fun:Py_Initialize
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+   fun:load_source_module
+   fun:import_submodule
+   fun:load_next
+   fun:import_module_level
+   fun:PyImport_ImportModuleLevel
+   fun:builtin___import__
+   fun:PyCFunction_Call
+   fun:PyObject_Call
+   fun:PyObject_CallFunctionObjArgs
+   fun:PyImport_Import
+   fun:PyImport_ImportModule
+   fun:Py_InitializeEx
+   fun:Py_Initialize
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:function_call
+   fun:PyObject_Call
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:function_call
+   fun:PyObject_Call
+   fun:instancemethod_call
+   fun:PyObject_Call
+   fun:slot_tp_init
+   fun:type_call
+   fun:PyObject_Call
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:function_call
+   fun:PyObject_Call
+   fun:instancemethod_call
+   fun:PyObject_Call
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:function_call
+   fun:PyObject_Call
+   fun:instancemethod_call
+   fun:PyObject_Call
+   fun:PyEval_CallObjectWithKeywords
+   fun:PyInstance_New
+   fun:PyObject_Call
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+{
+   Python leak
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalCodeEx
+   fun:function_call
+   fun:PyObject_Call
+   fun:instancemethod_call
+   fun:PyObject_Call
+   fun:PyEval_CallObjectWithKeywords
+   fun:PyInstance_New
+   fun:PyObject_Call
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:PyImport_ExecCodeModuleEx
+}
+
+{
+   Not a leak: frames are allocated once, and then reused as needed
+   Memcheck:Leak
+   fun:malloc
+   fun:PyObject_Malloc
+   fun:_PyObject_GC_Malloc
+   fun:_PyObject_GC_NewVar
+   fun:PyFrame_New
+   fun:PyEval_EvalFrameEx
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalCode
+   fun:run_mod
+   fun:PyRun_StringFlags
+   fun:PyRun_SimpleStringFlags
+   fun:PyRun_SimpleString
+   fun:python__pyrun_simplestring
+}
+
+## Some custom python suppressing that affecto only python
+{
+   ignore_parsing
+   Memcheck:Cond
+   ...
+   fun:PyEval_EvalFrameEx
+}
+
+{
+   ignore_parsing
+   Memcheck:Cond
+   ...
+   fun:PyDict_SetItem
+}
+
+{
+   ignore_parsing
+   Memcheck:Cond
+   ...
+   fun:Py_Main
+   ...
+}
+
+{
+   ignore_parsing
+   Memcheck:Value8
+   ...
+   fun:Py_Main
+   ...
+}
+
+{
+   ignore_parsing
+   Memcheck:Addr4
+   ...
+   fun:Py_Main
+   ...
+}
+
+{
+   ignore_parsing
+   Memcheck:Addr4
+   ...
+   fun:PyUnicodeUCS4_Decode
+   ...
+}
+
+{
+   ignore_parsing
+   Memcheck:Value8
+   ...
+   fun:PyEval_EvalFrameEx
+}
+
+{
+   ignore_parsing
+   Memcheck:Value8
+   ...
+   fun:PyEval_EvalCodeEx
+}
+
+{
+   ignore_parsing
+   Memcheck:Value8
+   ...
+   fun:PyImport_ExecCodeModuleEx
+}
+
+{
+   ignore_parsing
+   Memcheck:Addr4
+   ...
+   fun:PyAST_Compile
+   ...
+}
+
+{
+   ignore_parsing
+   Memcheck:Addr4
+   ...
+   fun:PyEval_EvalCodeEx
+   fun:PyEval_EvalFrameEx
+}
+
+{
+   ignore_parsing
+   Memcheck:Addr4
+   ...
+   fun:PyEval_EvalCodeEx
+   fun:PyImport_ExecCodeModuleEx
+   fun:*
+   fun:*
+}
+
+{
+   ignore_parsing
+   Memcheck:Leak
+   ...
+   fun:CRYPTO_malloc
+   ...
+}
+
+##{
+##   ignore_parsing
+##   Memcheck:Leak
+##   ...
+##   fun:Py_InitializeEx
+##   ...
+##}
+##
+##
+##{
+##   ignore_parsing
+##   Memcheck:Leak
+##   ...
+##   fun:PyList_New
+##   ...
+##}
+##
+##{
+##   ignore_parsing
+##   Memcheck:Leak
+##   ...
+##   fun:PyList_Append
+##   ...
+##}
+##
+##{
+##   ignore_parsing
+##   Memcheck:Leak
+##   ...
+##   fun:PyMarshal_ReadLastObjectFromFile
+##   ...
+##}
+
+
 

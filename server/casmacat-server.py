@@ -10,6 +10,7 @@ import casmacat_models
 from tornado import web
 from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 
+from profiler_connection import ProfilerConnection
 from server_utils import *
 from casmacat import *
 
@@ -823,6 +824,7 @@ class CasmacatConnection(SocketConnection):
     def on_open(self, info):
       print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
+      self.info = info
       self.imt_session = {}
       #self.config = { 'useSuggestions': False, 'mode': u'PE' }
       self.config = { 'useSuggestions': True, 'mode': u'ITP' }
@@ -839,6 +841,7 @@ class RouterConnection(SocketConnection):
                      #'/aligner': AlignerConnection,
                      #'/word_confidence': WordConfidenceConnection,
                      #'/logger': LoggerConnection
+                     '/profiler': ProfilerConnection,
                      '/casmacat': CasmacatConnection
                      }
 
