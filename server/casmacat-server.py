@@ -15,7 +15,7 @@ from server_utils import *
 from casmacat import *
 
 def timediff(elapsed_time):
-  return elapsed_time.total_seconds()*1000.0
+  return elapsed_time.total_seconds()/1000.0
 
 def new_match(created_by, target, target_seg, elapsed_time):
   match = {}
@@ -479,11 +479,12 @@ class CasmacatConnection(SocketConnection):
       target = to_utf8(data['target'])
       target_tok, target_seg = models.target_processor.preprocess(target)
       start_time = datetime.datetime.now()
-      for name, ol in models.ol_systems.iteritems():
+      for name, ol, plugin in models.ol_systems:
+        print sys.stderr, "validating model ", name, "with", source_tok, target_tok
         ol.update(source_tok, target_tok)
       elapsed_time = datetime.datetime.now() - start_time
       models.updates.append({'source': source, 'target': target})
-      obj = { 'elapsedTime': elapsed_time }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('validateResults', { 'errors': [], 'data': obj })
 
     @event('getValidatedContributions')

@@ -304,7 +304,7 @@ if __name__ == "__main__":
     tokenizer = tokenizer_factory.createInstance()
     if not tokenizer: raise Exception("Tokenizer instance failed")
     
-    htr_plugin = HtrPlugin("plugins/iatros-plugin.so", "-c plugins/xerox.plugin.conf")
+    htr_plugin = HtrPlugin("plugins/iatros-plugin.so", "-c /home/demo/software/casmacat-server-library/server/htr-models/casmacat/casmacat.conf")
     htr_factory = htr_plugin.create()
     if not htr_factory: raise Exception("HTR plugin failed")
     htr_factory.setLogger(logger)
@@ -316,7 +316,7 @@ if __name__ == "__main__":
         CasmacatRouter.apply_routes([]),
         flash_policy_port = 843,
         flash_policy_file = os.path.join(ROOT, 'flashpolicy.xml'),
-        socket_io_port = 3003
+        socket_io_port = 7001
     )
 
     # Create and start tornadio server
