@@ -27,6 +27,11 @@ class PythonPlugin:
     else:
       self.plugin = self.module.__dict__["Plugin"](params)
 
+    self.online_learning = False
+    if "online-learning" in self.obj and self.obj["online-learning"]:
+      self.online_learning = True 
+
+
   def new_instance(self, specialization_id = None):
     return self.plugin 
 
@@ -76,9 +81,9 @@ class SoPlugin:
     if logger:
       self.factory.setLogger(logger)
 
-    self.avoid_updates = False
-    if "avoid-updates" in self.obj and self.obj["avoid-updates"]:
-      self.avoid_updates = True
+    self.online_learning = False
+    if "online-learning" in self.obj and self.obj["online-learning"]:
+      self.online_learning = True 
 
     self.instances = []
 
@@ -117,6 +122,10 @@ class RefPlugin:
     self.obj = obj
     self.ref = ref
 
+    self.online_learning = False
+    if "online-learning" in self.obj and self.obj["online-learning"]:
+      self.online_learning = True 
+
 
 def get_objects(config, kind):
   if kind not in config: return []
@@ -127,6 +136,7 @@ def get_objects(config, kind):
 class Models:
   def __init__(self, config_fn):
     self.systems = {}
+    self.ol_systems = {}
     self.plugins = {}
     self.refs = {}
     self.updates = []
@@ -185,6 +195,9 @@ class Models:
         instance = plugin.new_instance()
         try:    self.systems[kind].append( (plugin.name, instance, plugin) )
         except: self.systems[kind] = [ (plugin.name, instance, plugin) ]
+        if plugin.online_learning:
+          try:    self.ol_systems.append( (plugin.name, instance, plugin) )
+          except: self.ol_systems = [ (plugin.name, instance, plugin) ]
         if 'id' in obj:
           self.refs[obj['id']] = (plugin, instance)
 
@@ -215,6 +228,9 @@ class Models:
             name = plugin.id if plugin.id else orig_plugin.name
             try:    self.systems[kind].append( (name, instance, orig_plugin) )
             except: self.systems[kind] = [ (name, instance, orig_plugin) ]
+            if plugin.online_learning:
+              try:    self.ol_systems.append( (name, instance, orig_plugin) )
+              except: self.ol_systems = [ (name, instance, orig_plugin) ]
   
 
     print >> sys.stderr, "Plugins loaded"
@@ -228,6 +244,7 @@ class Models:
     print >> sys.stderr, "Plugins deleted"
     self.plugins = {}
     self.systems = {}
+    self.ol_systems = {}
     self.refs = {}
 
   def __del__(self):
@@ -252,6 +269,9 @@ class Models:
               name = plugin.id if plugin.id else orig_plugin.name
               try:    self.systems[kind].append( (name, instance, orig_plugin) )
               except: self.systems[kind] = [ (name, instance, orig_plugin) ]
+              if plugin.online_learning:
+                try:    self.ol_systems.append( (name, instance, orig_plugin) )
+                except: self.ol_systems = [ (name, instance, orig_plugin) ]
 
           
     print >> sys.stderr, "Reset finished"
