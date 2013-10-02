@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import sys, traceback, os, re
-import random, math, copy
+import random, math, codecs, copy
+import collections
 try: import simplejson as json
 except ImportError: import json
 import casmacat_models
