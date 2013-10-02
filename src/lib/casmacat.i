@@ -33,6 +33,7 @@ using namespace std;
 // We have to specify the name of the variable used in the method getConfigData for
 // this typemap to work correctly
 %RefOutputStringVector( tokenized_out );
+%RefOutputStringVectorVector( nbests_out );
 %RefOutputString( detokenized_out );
 %RefOutputSegmentation( segmentation_out );
 %RefOutputFloatVector( confidences_out );

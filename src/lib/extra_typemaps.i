@@ -6,6 +6,7 @@
 typedef unsigned int uint32_t;
 
 %template(StringVector) std::vector<std::string>;
+%template(StringVectorVector) std::vector<std::vector<std::string> >;
 %template(FloatVector)  std::vector<float>;
 %template(BoolVector)   std::vector<bool>;
 %template(IntVector)    std::vector<int>;
@@ -56,6 +57,11 @@ typedef unsigned int uint32_t;
 %define %RefOutputStringVector( name )
 	%fragment("t_output_helper");
 	%RefOutputTypemapComplex( %arg(std::vector<std::string>), name );
+%enddef
+
+%define %RefOutputStringVectorVector( name )
+	%fragment("t_output_helper");
+	%RefOutputTypemapComplex( %arg(std::vector< std::vector<std::string> >), name );
 %enddef
 
 %define %RefOutputFloatVector( name )

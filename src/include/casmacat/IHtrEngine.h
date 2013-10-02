@@ -40,14 +40,18 @@ namespace casmacat {
 
     virtual ~IHtrSession() {};
 
-    /* Set partial validation of a translation */
+    /* Add point to the decoder */
     virtual void addPoint(float x, float y, stroke_type_t type) = 0;
 
-    /* Set prefix of a translation */
+    /* Get a partial decoding from the received points */
     virtual bool decodePartially(std::vector<std::string> &corrected_suffix_out) = 0;
 
-    /* Set prefix of a translation */
+    /* Get the final decoding */
     virtual void decode(std::vector<std::string> &corrected_suffix_out) = 0;
+
+    /* Get the n-best final decodings */
+    virtual void decodeNBest(std::vector< std::vector<std::string> > &nbests_out, std::vector< float > &confidences_out) = 0;
+
   };
 
   class IHtrEngine {
