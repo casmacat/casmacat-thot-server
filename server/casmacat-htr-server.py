@@ -1,9 +1,16 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import ctypes
+gperftools = ctypes.CDLL('/usr/lib/libprofiler.so.0')
+gperftools.ProfilerStart.argtypes = [ctypes.c_char_p]
+#def ProfilerStart(fn): pass
+#def ProfilerStop(): pass
+
+
 import sys, traceback, os
 import datetime, time
-import random, math, codecs, collections
+import random, math, codecs, collections, operator
 
 try: import simplejson as json
 except ImportError: import json
@@ -14,11 +21,11 @@ from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 from casmacat import *
 #from numpy.testing.utils import elapsed
 
-
-do_partial_recognition = True
+do_partial_recognition = False
 
 def dump_strokes(strokes):
-  fn = "strokes/" + str(time.time()) + ".moto";
+  fn = "strokes/" + config_fn + '.' + str(time.time()) + ".moto";
+  print >> sys.stderr, "dumping strokes to file '%s'" % fn
   out = open(fn, "w")
   print >> out, "<unk>"
   print >> out, len(strokes)
@@ -29,7 +36,7 @@ def dump_strokes(strokes):
     else: 
       print >> out, 0
     for x, y, _ in points:
-      print >> out, int(round(x)), int(round(y))
+      print >> out, int(round(x)), -int(round(y))
   out.close()
 
 
@@ -175,11 +182,11 @@ class HtrConnection(SocketConnection):
       source_tok, source_seg = models.tokenizer.preprocess(source)
       print >> sys.stderr, "source", source
 
-      prefix = target[:caret_pos] 
+      prefix = to_utf8(data['target'][:caret_pos])
       prefix_tok, prefix_seg = models.tokenizer.preprocess(prefix)
       print >> sys.stderr, "prefix", prefix
 
-      suffix = target[caret_pos:] 
+      suffix = to_utf8(data['target'][caret_pos:])
       suffix_tok, suffix_seg = models.tokenizer.preprocess(suffix)
       print >> sys.stderr, "suffix", suffix 
 
@@ -189,8 +196,8 @@ class HtrConnection(SocketConnection):
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial 
 
       start_time = datetime.datetime.now()
-      #self.htr_session = models.htr.createSessionFromPrefix(source_tok, prefix_tok, suffix_tok, last_token_is_partial)
-      self.htr_session = models.htr.createSessionFromPrefix([], [], [], False)
+      self.htr_session = models.htr.createSessionFromPrefix(source_tok, prefix_tok, suffix_tok, last_token_is_partial)
+      #self.htr_session = models.htr.createSessionFromPrefix([], [], [], False)
       self.strokes = []
       elapsed_time = datetime.datetime.now() - start_time
       obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
@@ -233,19 +240,38 @@ class HtrConnection(SocketConnection):
     @event('endSession')
     @timer('endSession')
     @thrower('endSessionResult')
-    def endSession(self):
+    def endSession(self, data):
       if self.htr_session: 
-          start_time = datetime.datetime.now()
-          result_tok = self.htr_session.decode()
-          elapsed_time = datetime.datetime.now() - start_time
-          print >> sys.stderr, "change", result_tok
-          result, result_seg = models.tokenizer.postprocess(result_tok)
+          max_nbests = data['maxNBests'] if 'maxNBests' in data else 1
+          print >> sys.stderr, "max nbests", max_nbests
 
-          obj = { 'nbest': [{ 
-                    'text': result, 
-                    'textSegmentation': result_seg,
-                    'elapsedTime': elapsed_time.total_seconds()*1000.0
-                  }], 
+          start_time = datetime.datetime.now()
+
+          nbests, scores = self.htr_session.decodeNBest()
+          nbests = zip(nbests, scores)
+          print nbests
+          nbests.sort(key = operator.itemgetter(1), reverse=True)
+          if max_nbests > 0:
+            nbests = nbests[:max_nbests]
+
+          elapsed_time = datetime.datetime.now() - start_time
+            
+          nbest_list = []
+
+          for result_tok, score in nbests:
+            print >> sys.stderr, "change", result_tok, score
+            start_time = datetime.datetime.now()
+            result, result_seg = models.tokenizer.postprocess(result_tok)
+            local_elapsed_time = datetime.datetime.now() - start_time + elapsed_time
+  
+            nbest_list.append({ 
+                      'text': result, 
+                      'textSegmentation': result_seg,
+                      'score': score,
+                      'elapsedTime': local_elapsed_time.total_seconds()*1000.0
+                  })
+
+          obj = { 'nbest': nbest_list, 
                   'elapsedTime': elapsed_time.total_seconds()*1000.0
                 }
 
@@ -381,9 +407,11 @@ if __name__ == "__main__":
     models.create_plugins()
     atexit.register(models.delete_plugins)
 
+    atexit.register(gperftools.ProfilerStop)
+
     port = 5002
     try: 
-      port = int(sys.argv[0])
+      port = int(args[0])
     except:
       try:
         port = models.config["server"]["port"]
@@ -399,6 +427,8 @@ if __name__ == "__main__":
     )
 
     print >> logfd, """/*\n  Casmacat HTR server started on port %d\n  %s\n*/\n\n"config": %s\n\n\n""" % (port, str(datetime.datetime.now()), json.dumps(models.config, indent=2, separators=(',', ': '), encoding="utf-8"))
+
+    gperftools.ProfilerStart("output.prof")
 
     # Create and start tornadio server
     SocketServer(application)

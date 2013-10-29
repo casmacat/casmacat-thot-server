@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys, codecs, locale
+
 import sys, traceback, os
 import datetime, time
 import random, math, codecs
@@ -179,11 +181,11 @@ class HtrConnection(SocketConnection):
       source_tok, source_seg = models.tokenizer.preprocess(source)
       print >> sys.stderr, "source", source
 
-      prefix = target[:caret_pos] 
+      prefix = to_utf8(data['target'][:caret_pos])
       prefix_tok, prefix_seg = models.tokenizer.preprocess(prefix)
       print >> sys.stderr, "prefix", prefix
 
-      suffix = target[caret_pos:] 
+      suffix = to_utf8(data['target'][caret_pos:])
       suffix_tok, suffix_seg = models.tokenizer.preprocess(suffix)
       print >> sys.stderr, "suffix", suffix 
 
@@ -241,12 +243,14 @@ class HtrConnection(SocketConnection):
         self.partial_result = response[1][0][1][0] 
         for res in response[1][0][1]:
           if res != "":
-            print "RES", res 
+            res = to_utf8(res) 
+            print "RES", type(res), 
+            print res 
             partial_result_tok, partial_result_seg = models.tokenizer.preprocess(res)
             print >> sys.stderr, "partial response", partial_result_tok
             obj['nbest'].append({
                   'text': res, 
-                  'textSegmentation': partial_result_seg
+                  'textSegmentation': partial_result_seg,
             })
 
         self.last_result = { 'errors': [], 'data': obj } 
@@ -283,7 +287,8 @@ class HtrConnection(SocketConnection):
     @event('endSession')
     @timer('endSession')
     @thrower('endSessionResult')
-    def endSession(self):
+    def endSession(self, data):
+      max_nbests = data['maxNBests'] if 'maxNBests' in data else 1
       if self.last_submit < len(self.ink): 
         response = self.decode()
       else:
@@ -406,7 +411,7 @@ if __name__ == "__main__":
 
     port = 3003
     try: 
-      port = int(sys.argv[0])
+      port = int(args[0])
     except:
       try:
         port = models.config["server"]["port"]
