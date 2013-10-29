@@ -20,7 +20,6 @@ def get_logfd():
   global logfd
   return logfd
 
-
 profiler_callback = None
 def setup_profiler_notifications(callback):
   global profiler_callback
