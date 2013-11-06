@@ -99,16 +99,27 @@ class SoPlugin:
     self.factory.deleteInstance(inst);
 
   def reset(self):
-    print "reseting", self.kind
     old = self.instances[:]
     self.instances = []
     for instance in old:
       self.factory.deleteInstance(instance);
-      self.new_instance()
+    self.plugin.destroy(self.factory)
+
+    print >> sys.stderr, "RENEW:%s" % self.factory.__class__.__name__
+    self.factory = self.plugin.create()
+    if not self.factory: 
+      raise Exception("%s plugin failed" % self.kind)
+    if logger:
+      self.factory.setLogger(logger)
+
+    for instance in old:
+      new_instance = self.new_instance()
+      print >> sys.stderr, "RENEW:%s" % self.kind
+
 
   def __del__(self):
     for inst in self.instances[:]:
-      print "Deleting", inst
+      print >> sys.stderr, "DELETE:%s" % inst
       self.del_instance(inst);
     self.plugin.destroy(self.factory)
     del self.plugin
@@ -191,6 +202,7 @@ class Models:
       try:    self.plugins[kind].append(plugin)
       except: self.plugins[kind] = [ plugin ]
 
+      print >> sys.stderr, "HAS-OL:%s:%s:%s" % (plugin.name, plugin.__class__.__name__, plugin.online_learning)
       if plugin.__class__.__name__ != 'RefPlugin':
         instance = plugin.new_instance()
         try:    self.systems[kind].append( (plugin.name, instance, plugin) )
@@ -233,6 +245,7 @@ class Models:
               except: self.ol_systems = [ (name, instance, orig_plugin) ]
   
 
+    print >> sys.stderr, "OL-SYSTEMS:%s" % ":".join([name for name, _, _ in self.ol_systems])
     print >> sys.stderr, "Plugins loaded"
 
 
@@ -257,7 +270,8 @@ class Models:
 
       for kind, plugins in self.plugins.iteritems():
         for plugin in plugins:
-          if plugin.__class__.__name__ != 'RefPlugin':
+          if plugin.online_learning and plugin.__class__.__name__ != 'RefPlugin':
+            print >> sys.stderr, "RESET-ONLINE:%s:%s:%s:%s" % (kind, plugin.name, plugin.__class__.__name__, plugin.online_learning)
             plugin.reset()
 
       # get instances for references
@@ -273,7 +287,7 @@ class Models:
                 try:    self.ol_systems.append( (name, instance, orig_plugin) )
                 except: self.ol_systems = [ (name, instance, orig_plugin) ]
 
-          
+    print >> sys.stderr, "OL-SYSTEMS:%s" % ":".join([name for name, _, _ in self.ol_systems])
     print >> sys.stderr, "Reset finished"
 
 

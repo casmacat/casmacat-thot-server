@@ -12,36 +12,37 @@
 
 # manages casmacat backend engines
 NAME=$(basename $0)
-
+ACTION=$1
+shift
 # Check for existence of needed config file and read it
 CONFIG=/etc/casmacat/casmacat.conf
 test -r $CONFIG || { 
   echo "$CONFIG not existing";
-  if [ "$1" = "stop" ]; then exit 0;
+  if [ "$ACTION" = "stop" ]; then exit 0;
   else exit 6; fi; 
 }
 . $CONFIG
 CONFIGDIR=$(dirname $CONFIG)
 mkdir -p $LOCKDIR || { 
   echo "Lock dir $LOCKDIR cannot be created.";
-  if [ "$1" = "stop" ]; then exit 0;
+  if [ "$ACTION" = "stop" ]; then exit 0;
   else exit 5; fi; 
 }
 mkdir -p $PIDDIR || { 
   echo "PID dir $PIDDIR cannot be created.";
-  if [ "$1" = "stop" ]; then exit 0;
+  if [ "$ACTION" = "stop" ]; then exit 0;
   else exit 5; fi; 
 }
 mkdir -p $LOGDIR || { 
   echo "Log dir $LOGDIR cannot be created.";
-  if [ "$1" = "stop" ]; then exit 0;
+  if [ "$ACTION" = "stop" ]; then exit 0;
   else exit 5; fi; 
 }
 
 # Check for missing binaries
 test -x $BIN || { 
   echo "$BIN not installed";
-  if [ "$1" = "stop" ]; then exit 0;
+  if [ "$ACTION" = "stop" ]; then exit 0;
   else exit 5; fi; 
 }
 
@@ -51,6 +52,12 @@ export PYTHONPATH=$PYTHONDEPS:$PYTHONPATH
 # Some things that run always
 touch /var/lock/$NAME
 
+SERVERS=($*)
+if test -z "$SERVERS"; then
+  while IFS= read -d $'\0' -r file ; do
+     SERVERS=("${SERVERS[@]}" "$file")
+  done < <(find $CONFIGDIR/servers-enabled/ -iname "*.conf" -print0)
+fi
 
 rotatefile() {
   FILE=$1
@@ -119,7 +126,8 @@ check_server() {(
 start_servers() {(
   rotatelogs
   test -z "$(ls -A $CONFIGDIR)" && echo "No servers enabled" && exit 7
-  find $CONFIGDIR/servers-enabled/ -iname "*.conf" | while read cfg; do
+  #find $CONFIGDIR/servers-enabled/ -iname "*.conf" | while read cfg; do
+  for cfg in "${SERVERS[@]}"; do
     start_server $cfg
   done
 ) || exit $?;}
@@ -144,7 +152,7 @@ restart_servers() {(
 )}
 
 # Carry out specific functions when asked to by the system
-case "$1" in
+case "$ACTION" in
   start)
     echo "Starting script $NAME"
     start_servers
@@ -170,7 +178,7 @@ case "$1" in
     check_servers
     ;;
   *)
-    echo "Usage: /etc/init.d/$0 {start|stop}"
+    echo "Usage: service `basename $0` {start|stop|restart|reload|force-reload|status}"
     exit 1
     ;;
 esac

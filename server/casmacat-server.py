@@ -15,6 +15,8 @@ from profiler_connection import ProfilerConnection
 from server_utils import *
 from casmacat import *
 
+connections = set()
+
 def timediff(elapsed_time):
   return elapsed_time.total_seconds()/1000.0
 
@@ -627,6 +629,10 @@ class CasmacatConnection(SocketConnection):
     @timer('setPrefix')
     @thrower('setPrefixResult')
     def setPrefix(self, data):
+      if not self.source:
+        self.respond('getPrefixResult', { 'errors': ["Session not started!"] })
+        return
+
       print >> sys.stderr, 'data:', data
       target = data['target']
       caret_pos = data['caretPos']
@@ -702,6 +708,10 @@ class CasmacatConnection(SocketConnection):
     @timer('rejectSuffix')
     @thrower('rejectSuffixResult')
     def rejectSuffix(self, data):
+      if not self.source:
+        self.respond('rejectSuffixResult', { 'errors': ["Session not started!"] })
+        return
+
       print >> sys.stderr, 'data:', data
       target = data['target']
       caret_pos = data['caretPos']
@@ -781,8 +791,9 @@ class CasmacatConnection(SocketConnection):
     @thrower('endSessionResult')
     def endSessionResult(self):
       for name, session in self.imt_session.iteritems():
-        next((imt for n, imt in models.systems['imt'] if n == name)).deleteSession(session)
+        next((imt for n, imt, _ in models.systems['imt'] if n == name)).deleteSession(session)
       self.imt_session = {}
+      self.source, self.source_tok, self.source_seg = None, None, None
       logger.log(DEBUG_LOG, "ending imt session");
 
       elapsed_time = datetime.datetime.now() - start_time
@@ -794,6 +805,13 @@ class CasmacatConnection(SocketConnection):
     @thrower('resetResult')
     def reset(self):
       start_time = datetime.datetime.now()
+      print >> sys.stderr, "MODELS:", models.systems['imt']
+      for conn in connections:
+        for name, session in conn.imt_session.iteritems():
+          next((imt for n, imt, _ in models.systems['imt'] if n == name)).deleteSession(session)
+        conn.source, conn.source_tok, conn.source_seg = None, None, None
+      connections.clear()
+      self.imt_session = {}
       models.reset()
       elapsed_time = datetime.datetime.now() - start_time
       obj = { 'elapsedTime': timediff(elapsed_time) }
@@ -826,15 +844,18 @@ class CasmacatConnection(SocketConnection):
     def on_open(self, info):
       print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
+      connections.add(self)
       self.info = info
       self.imt_session = {}
       #self.config = { 'useSuggestions': False, 'mode': u'PE' }
       self.config = { 'useSuggestions': True, 'mode': u'ITP' }
       self.rules = Rules()
+      self.source, self.source_tok, self.source_seg = None, None, None
 
     @event
     def on_close(self):
       MyLogger.participants.remove(self)
+      connections.remove(self)
       self.rules = None
 
 
