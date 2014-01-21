@@ -450,19 +450,18 @@ class CasmacatConnection(SocketConnection):
             target_tok, target_seg = models.target_processor.preprocess(target)
 
           validated_words = [False]*len(target_tok)
+          sent = 0
           if models.option("confidencer", "delayed") == False:
             sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, validated_words)
             match['confidences'] = conf
-          elif "confidencer" in self.config:
+          elif models.option("confidencer", "module"):
             sent = models.confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
-          else:
-            sent = 0
 
           if models.option("aligner", "delayed") == False:
             matrix = models.aligner.align(source_tok, target_tok)
             match['alignments'] = matrix
 
-          if "prioritizer" in self.config:
+          if models.option("word-prioritizer", "module"):
             prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
             if prioritizer and len(target_tok) > 0:
               match["priorities"] = [0] * len(target_tok)
@@ -638,7 +637,7 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, 'data:', data
       target = data['target']
       caret_pos = data['caretPos']
-      num_results = data['numResults'] if 'numResults' in data else 0
+      num_results = data['numResults'] if 'numResults' in data else 1
 
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target))
 
@@ -676,18 +675,22 @@ class CasmacatConnection(SocketConnection):
 
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
-          if models.option("confidencer", "delayed") == False:
+          if models.option("confidencer", "module"):
             validated_words = [True] * len(prefix_tok)
             validated_words.extend([False]*(len(prediction_tok) - len(prefix_tok)))
-            sent, conf = models.confidencer.getWordConfidences(self.source_tok, prediction_tok, validated_words)
-            match['confidences'] = conf
-            match['quality'] = sent
+            if models.option("confidencer", "delayed") == False:
+              sent, conf = models.confidencer.getWordConfidences(self.source_tok, prediction_tok, validated_words)
+              match['confidences'] = conf
+              match['quality'] = sent
+            else:
+              sent = models.confidencer.getSentenceConfidence(self.source_tok, prediction_tok, validated_words)
+              match['quality'] = sent
 
           if models.option("aligner", "delayed") == False:
             matrix = models.aligner.align(self.source_tok, prediction_tok)
             match['alignments'] = matrix
 
-          if "prioritizer" in self.config and self.source_tok:
+          if models.option("word-prioritizer", "module") and self.source_tok:
             prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
             if prioritizer:
               n_ok = len(prefix_tok)
@@ -717,7 +720,7 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, 'data:', data
       target = data['target']
       caret_pos = data['caretPos']
-      num_results = data['numResults'] if 'numResults' in data else 0
+      num_results = data['numResults'] if 'numResults' in data else 1
 
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target))
 
@@ -742,48 +745,56 @@ class CasmacatConnection(SocketConnection):
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
 
       for name, session in self.imt_session.iteritems():
-        start_time = datetime.datetime.now()
-        prediction_tok = session.rejectSuffix(prefix_tok, suffix_tok, last_token_is_partial)
-        elapsed_time = datetime.datetime.now() - start_time
-        print >> sys.stderr, name, "prediction_tok", prediction_tok
+        for n in range(num_results):
+          start_time = datetime.datetime.now()
+          prediction_tok = session.rejectSuffix(prefix_tok, suffix_tok, last_token_is_partial)
+          elapsed_time = datetime.datetime.now() - start_time
+          print >> sys.stderr, name, "prediction_tok", prediction_tok
 
-        # make sure that the new prediction is at least as long as the prefix
-        # which is the result of a system that doesn't have paths to continue
-        # the prefix
-        if len(prediction_tok) >= len(prefix_tok):
-          prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
+          # make sure that the new prediction is at least as long as the prefix
+          # which is the result of a system that doesn't have paths to continue
+          # the prefix
+          if len(prediction_tok) >= len(prefix_tok):
+            prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
 
-          if prediction != to_utf8(target):
-            match = new_prediction(name, prediction, prediction_seg, elapsed_time)
+            if prediction != to_utf8(target):
+              match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
-            if models.option("confidencer", "delayed") == False:
-              validated_words = [True] * len(prefix_tok)
-              validated_words.extend([False]*(len(prediction_tok) - len(prefix_tok)))
-              sent, conf = models.confidencer.getWordConfidences(self.source_tok, prediction_tok, validated_words)
-              match['confidences'] = conf
-              match['quality'] = sent
+              if models.option("confidencer", "module"):
+                validated_words = [True] * len(prefix_tok)
+                validated_words.extend([False]*(len(prediction_tok) - len(prefix_tok)))
+                if models.option("confidencer", "delayed") == False:
+                  sent, conf = models.confidencer.getWordConfidences(self.source_tok, prediction_tok, validated_words)
+                  match['confidences'] = conf
+                  match['quality'] = sent
+                else:
+                  sent = models.confidencer.getSentenceConfidence(self.source_tok, prediction_tok, validated_words)
+                  match['quality'] = sent
 
-            if models.option("aligner", "delayed") == False:
-              matrix = models.aligner.align(self.source_tok, prediction_tok)
-              match['alignments'] = matrix
 
-            if "prioritizer" in self.config and self.source_tok:
-              prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
-              if prioritizer:
-                n_ok = len(prefix_tok)
-                if last_token_is_partial:
-                  n_ok -= 1
-                validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
-                priority = prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
-                match["priorities"] = priority
+              if models.option("aligner", "delayed") == False:
+                matrix = models.aligner.align(self.source_tok, prediction_tok)
+                match['alignments'] = matrix
 
-            elapsed_time = datetime.datetime.now() - start_time
-            match['elapsedTime'] = timediff(elapsed_time)
-            add_match(predictions, match)
+              if models.option("word-prioritizer", "module") and self.source_tok:
+                prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
+                if prioritizer:
+                  n_ok = len(prefix_tok)
+                  if last_token_is_partial:
+                    n_ok -= 1
+                  validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
+                  priority = prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+                  match["priorities"] = priority
+
+              elapsed_time = datetime.datetime.now() - start_time
+              match['elapsedTime'] = timediff(elapsed_time)
+              add_match(predictions, match)
+            else:
+              predictions["errors"].append("The server cannot provide a completion to the prefix since the user has rejected all the options")
+              break
           else:
             predictions["errors"].append("The server cannot provide a completion to the prefix since the user has rejected all the options")
-        else:
-          predictions["errors"].append("The server cannot provide a completion to the prefix since the user has rejected all the options")
+            break
       prepare(predictions)
       print >> sys.stderr, "SUGGESTIONS:", predictions
       self.respond('rejectSuffixResult', predictions)
