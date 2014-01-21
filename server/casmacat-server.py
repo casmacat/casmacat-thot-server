@@ -453,8 +453,10 @@ class CasmacatConnection(SocketConnection):
           if models.option("confidencer", "delayed") == False:
             sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, validated_words)
             match['confidences'] = conf
-          else:
+          elif "confidencer" in self.config:
             sent = models.confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
+          else:
+            sent = 0
 
           if models.option("aligner", "delayed") == False:
             matrix = models.aligner.align(source_tok, target_tok)
