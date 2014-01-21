@@ -855,7 +855,7 @@ class CasmacatConnection(SocketConnection):
     @event
     def on_close(self):
       MyLogger.participants.remove(self)
-      connections.remove(self)
+      if self in connections: connections.remove(self)
       self.rules = None
 
 
