@@ -539,9 +539,6 @@ class CasmacatConnection(SocketConnection):
 
 
 
-
-
-
     def splitPoint(self, prediction_seg, prefix_last_tok, last_token_partial_len): 
       if prefix_last_tok >= 0:
         if not last_token_partial_len: # if complete word return start of next token
@@ -553,7 +550,6 @@ class CasmacatConnection(SocketConnection):
           # XXX: This assumes that the prefix of the last word does not change in length
           return prediction_seg[prefix_last_tok][0] + last_token_partial_len
       return 0
-    
     
     # after preprocessing, prediction might not be compatible with the real prefix
     # in case of last token NOT partial, the tokenization SHOULD NOT affect the prefix
@@ -585,42 +581,11 @@ class CasmacatConnection(SocketConnection):
         prediction = prefix + r_suf
      
         # now, we have a prediction with the user prefix. XXX: we assume the tokens are also correct
-        # but we neeed to adjust the segmentation
-    
-        if prefix_last_tok >= 0 and prefix_last_tok + 1 < len(prediction_seg):
-          # compute the non-token chars the user has introduced at the end of the prefix
-          prefix_spaces = len_utf8(prefix) - prefix_seg[prefix_last_tok][1]
-          print >> sys.stderr, "############## PREFIX '%s'" % prefix, prefix_last_tok, prefix_seg
-          print >> sys.stderr, "############## PREFIX LEN", len_utf8(prefix), prefix_seg[prefix_last_tok][1]
+        # but we need to adjust the segmentation
+        print >> sys.stderr, "############## PREDICTION SEG", prediction, prediction_seg 
+        prediction_tok, prediction_seg = models.target_processor.preprocess(prediction)
 
-          # compute the non-token chars from the last prefix token and the first suffix token
-          suffix_spaces = prediction_seg[prefix_last_tok + 1][0] - prediction_seg[prefix_last_tok][1]
-
-          # compute what is the actual number of non-tokens to be appended after the prefix
-          spaces = max(0, suffix_spaces - prefix_spaces) 
-          print >> sys.stderr, "############# SPACES", prefix_spaces, suffix_spaces, spaces
-
-          if last_token_partial_len > 0:
-            # if it is a partial word we must sum the length of the word suffix
-            owl = prefix_seg[prefix_last_tok][1] - prefix_seg[prefix_last_tok][0]
-            nwl = prediction_seg[prefix_last_tok][1] - prediction_seg[prefix_last_tok][0]
-            spaces +=  nwl - owl 
-            print >> sys.stderr, "############# LAST WORD SUFFIX", nwl, owl, nwl - owl 
-
-          # we compute the prefix segmentation for the original prefix (the one given by the user)
-          # the suffix of the last token might have changed
-          orig_last_token_end = prefix_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
-          prefix_seg = [s for s in prefix_seg[:prefix_last_tok]] + [(prefix_seg[prefix_last_tok][0], orig_last_token_end)]
-    
-          # thus, we need to move the suffix by
-          diff = len_utf8(prefix) + spaces - prediction_seg[prefix_last_tok + 1][0]
-          print >> sys.stderr, "############## DIFF", diff
-          print >> sys.stderr, "############## PREDICTION SEG", prediction_seg[prefix_last_tok + 1][0], prediction, prediction_seg 
-
-          #diff = len_utf8(prefix) - prefix_seg[prefix_last_tok][1] + orig_last_token_end - new_last_token_end
-          #       original prefix seg.,    we need to adjust the suffix with the new prefix length
-          prediction_seg = prefix_seg +  [(s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:]]
-          print >> sys.stderr, "############## FINAL PREDICTION SEG", prediction_seg 
+        print >> sys.stderr, "############## FINAL PREDICTION SEG", prediction_seg 
     
       return prediction, prediction_seg, prediction_tok
 
@@ -661,6 +626,10 @@ class CasmacatConnection(SocketConnection):
 
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
 
+      target_tok, target_seg = models.target_processor.preprocess(to_utf8(target))
+      predictions['data']['previousTarget'] = to_utf8(target)
+      predictions['data']['previousTargetSegmentation'] = target_seg
+
       for name, session in self.imt_session.iteritems():
         start_time = datetime.datetime.now()
         prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
@@ -671,6 +640,7 @@ class CasmacatConnection(SocketConnection):
         # which is the result of a system that doesn't have paths to continue
         # the prefix
         if len(prediction_tok) >= len(prefix_tok):
+          print >> sys.stderr, "############## TARGET SEG", to_utf8(target), target_seg 
           prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
 
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
@@ -706,6 +676,7 @@ class CasmacatConnection(SocketConnection):
         else:
           predictions["errors"].append("The server cannot provide a completion to the prefix")
       prepare(predictions)
+
       print >> sys.stderr, "SUGGESTIONS:", predictions
       self.respond('setPrefixResult', predictions)
 
@@ -743,6 +714,10 @@ class CasmacatConnection(SocketConnection):
       print >> sys.stderr, "last_token_is_partial", last_token_is_partial
 
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
+
+      target_tok, target_seg = models.target_processor.preprocess(to_utf8(target))
+      predictions['data']['previousTarget'] = to_utf8(target)
+      predictions['data']['previousTargetSegmentation'] = target_seg
 
       for name, session in self.imt_session.iteritems():
         for n in range(num_results):
@@ -796,6 +771,7 @@ class CasmacatConnection(SocketConnection):
             predictions["errors"].append("The server cannot provide a completion to the prefix since the user has rejected all the options")
             break
       prepare(predictions)
+
       print >> sys.stderr, "SUGGESTIONS:", predictions
       self.respond('rejectSuffixResult', predictions)
 
