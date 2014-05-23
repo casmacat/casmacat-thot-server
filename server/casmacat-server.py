@@ -461,7 +461,7 @@ class CasmacatConnection(SocketConnection):
             matrix = models.aligner.align(source_tok, target_tok)
             match['alignments'] = matrix
 
-          if models.option("word-prioritizer", "module"):
+          if models.option("word-prioritizer", "module") and "prioritizer" in self.config:
             prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
             if prioritizer and len(target_tok) > 0:
               match["priorities"] = [0] * len(target_tok)
@@ -690,7 +690,7 @@ class CasmacatConnection(SocketConnection):
             matrix = models.aligner.align(self.source_tok, prediction_tok)
             match['alignments'] = matrix
 
-          if models.option("word-prioritizer", "module") and self.source_tok:
+          if models.option("word-prioritizer", "module") and "prioritizer" in self.config and self.source_tok:
             prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
             if prioritizer:
               n_ok = len(prefix_tok)
@@ -776,7 +776,7 @@ class CasmacatConnection(SocketConnection):
                 matrix = models.aligner.align(self.source_tok, prediction_tok)
                 match['alignments'] = matrix
 
-              if models.option("word-prioritizer", "module") and self.source_tok:
+              if models.option("word-prioritizer", "module") and "prioritizer" in self.config and self.source_tok:
                 prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
                 if prioritizer:
                   n_ok = len(prefix_tok)
