@@ -150,13 +150,12 @@ AM_CONDITIONAL([HAVE_PERL], [test x$rxvt_perl_link = xyes])
 
 # doxygen
 AC_CHECK_PROGS([DOXYGEN], [doxygen])
+AM_CONDITIONAL([HAVE_DOXYGEN],
+DX_INIT_DOXYGEN(casmacat, doxygen.cfg, doc)
 if test -z "$DOXYGEN";
    then AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
-else
-AM_CONDITIONAL([HAVE_DOXYGEN],
-[test -n "$DOXYGEN"])AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([docs/doxygen.cfg])])
-DX_INIT_DOXYGEN(casmacat, doxygen.cfg, doc)
 fi
+AC_SUBST(HAVE_DOXYGEN)
 
 # optional configure options
 AC_ARG_WITH(debug, AC_HELP_STRING(--with-debug, \
@@ -219,5 +218,6 @@ AC_CONFIG_FILES(Makefile
                 src/bin/Makefile
                 src/lib/Makefile
                 src/include/casmacat/Makefile
-                docs/Makefile)
+                docs/Makefile
+                docs/doxygen.cfg)
 AC_OUTPUT
