@@ -21,14 +21,6 @@ def get_logfd():
   return logfd
 
 
-profiler_callback = None
-def setup_profiler_notifications(callback):
-  global profiler_callback
-  profiler_callback = callback
-
-def notify_profiler(connection, info):
-  profiler_callback(connection, info)
-
 server_start_time = datetime.datetime.now()
 def timesecs(elapsed_time):
   return elapsed_time.seconds + elapsed_time.microseconds/1000.0
@@ -83,13 +75,6 @@ class timer(object):
       print >> sys.stderr, "TIME:%s:%s" % (self.name, fmt_delta(elapsed_time))
       print >> logfd, """/* Time to process method "%s": %s */\n\n\n""" % (self.name, fmt_delta(elapsed_time))
 
-      notify_profiler(args[0], { 
-        'name': self.name, 
-        'timestamp': timesecs(datetime.datetime.now() - server_start_time),
-        'elapsedTime': timesecs(elapsed_time),
-        'memory': m2, 'resident': r2, 'stacksize': s2,
-        'memoryDelta': m2-m1, 'residentDelta': r2-r1, 'stacksizeDelta': s2-s1
-      })
       return ret
     return decorator
 

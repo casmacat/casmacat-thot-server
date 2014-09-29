@@ -14,7 +14,10 @@ from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 from server_utils import *
 from casmacat import *
 
-logfd = None
+connections = set()
+
+def timediff(elapsed_time):
+  return elapsed_time.total_seconds()/1000.0
 
 def new_match(created_by, target, target_seg, elapsed_time):
   match = {}
@@ -24,9 +27,9 @@ def new_match(created_by, target, target_seg, elapsed_time):
   if created_by == 'OL':
     match['quality'] = 0.70
   match['author'] = created_by
-  match['elapsedTime'] = elapsed_time.total_seconds()*1000.0
+  match['elapsedTime'] = timediff(elapsed_time)
   return match
-
+ 
 def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
   match = {}
   match['target'] = prediction
@@ -35,7 +38,7 @@ def new_prediction(created_by, prediction, prediction_seg, elapsed_time):
   if created_by == 'OL':
     match['quality'] = 0.70
   match['author'] = created_by
-  match['elapsedTime'] = elapsed_time.total_seconds()*1000.0
+  match['elapsedTime'] = timediff(elapsed_time)
   return match
 
 def new_contributions(source, source_seg):
@@ -203,31 +206,8 @@ class Rules:
 class CasmacatConnection(SocketConnection):
     def respond(self, *args, **kwargs):
       print >> sys.stderr, "emit", args, kwargs
-      print >> logfd, """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
+      print >> get_logfd(), """/*\n  Server response "%s"\n  %s\n*/\n\n"%s": %s\n""" % (args[0], str(datetime.datetime.now()), args[0], json.dumps(args[1:], indent=2, separators=(',', ': '), encoding="utf-8"))
       self.emit(*args, **kwargs)
-
-    @event('getAlignments')
-    @timer('getAlignments')
-    @thrower('getAlignmentsResult')
-    def getAlignments(self, data):
-      print >> sys.stderr, 'data:', data
-      source, target = to_utf8(data['source']), to_utf8(data['target'])
-      source_tok, source_seg = models.source_processor.preprocess(source)
-      target_tok, target_seg = models.target_processor.preprocess(target)
-
-      start_time = datetime.datetime.now()
-      matrix = models.aligner.align(source_tok, target_tok)
-      elapsed_time = datetime.datetime.now() - start_time
-
-      logger.log(DEBUG_LOG, matrix);
-      obj = { 'alignments': matrix,
-              'source': source,
-              'sourceSegmentation': source_seg,
-              'target': target,
-              'targetSegmentation': target_seg,
-              'elapsedTime': elapsed_time.total_seconds()*1000.0
-            }
-      self.respond('getAlignmentsResult', { 'errors': [], 'data': obj })
 
     @event('setReplacementRule')
     @timer('setReplacementRule')
@@ -241,7 +221,7 @@ class CasmacatConnection(SocketConnection):
 
       elapsed_time = datetime.datetime.now() - start_time
 
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0, 'ruleId': rule_id }
+      obj = { 'elapsedTime': timediff(elapsed_time), 'ruleId': rule_id }
       self.respond('setReplacementRuleResult', { 'errors': [], 'data': obj })
 
 
@@ -252,7 +232,7 @@ class CasmacatConnection(SocketConnection):
       start_time = datetime.datetime.now()
       rules = self.rules.toJSON()
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0, 'rules': rules }
+      obj = { 'elapsedTime': timediff(elapsed_time), 'rules': rules }
       self.respond('getReplacementRulesResult', { 'errors': [], 'data': obj })
 
 
@@ -263,7 +243,7 @@ class CasmacatConnection(SocketConnection):
       start_time = datetime.datetime.now()
       self.rules.remove(data['ruleId'])
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('delReplacementRuleResult', { 'errors': [], 'data': obj })
 
 
@@ -287,7 +267,7 @@ class CasmacatConnection(SocketConnection):
               'sourceSegmentation': source_seg,
               'target': target,
               'targetSegmentation': target_seg,
-              'elapsedTime': elapsed_time.total_seconds()*1000.0
+              'elapsedTime': timediff(elapsed_time)
             }
       self.respond('applyReplacementRulesResult', { 'errors': [], 'data': obj })
 
@@ -309,9 +289,49 @@ class CasmacatConnection(SocketConnection):
               'sourceSegmentation': source_seg,
               'target': target,
               'targetSegmentation': target_seg,
-              'elapsedTime': elapsed_time.total_seconds()*1000.0
+              'elapsedTime': timediff(elapsed_time)
             }
+
+      validated_words = [False]*len(target_tok)
+      if models.option("confidencer", "delayed") == False:
+        sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, validated_words)
+        obj['confidences'] = conf
+        obj['quality'] = sent
+
+      if models.option("aligner", "delayed") == False:
+        matrix = models.aligner.align(source_tok, target_tok)
+        obj['alignments'] = matrix
+
+
+      elapsed_time = datetime.datetime.now() - start_time
+      obj['elapsedTime'] = timediff(elapsed_time)
+
+
+      if 'caretPos' in data: obj['caretPos'] = data['caretPos']
       self.respond('getTokensResult', { 'errors': [], 'data': obj })
+
+    @event('getAlignments')
+    @timer('getAlignments')
+    @thrower('getAlignmentsResult')
+    def getAlignments(self, data):
+      print >> sys.stderr, 'data:', data
+      source, target = to_utf8(data['source']), to_utf8(data['target'])
+      source_tok, source_seg = models.source_processor.preprocess(source)
+      target_tok, target_seg = models.target_processor.preprocess(target)
+
+      start_time = datetime.datetime.now()
+      matrix = models.aligner.align(source_tok, target_tok)
+      elapsed_time = datetime.datetime.now() - start_time
+
+      logger.log(DEBUG_LOG, matrix);
+      obj = { 'alignments': matrix,
+              'source': source,
+              'sourceSegmentation': source_seg,
+              'target': target,
+              'targetSegmentation': target_seg,
+              'elapsedTime': timediff(elapsed_time)
+            }
+      self.respond('getAlignmentsResult', { 'errors': [], 'data': obj })
 
 
     @event('getConfidences')
@@ -339,7 +359,7 @@ class CasmacatConnection(SocketConnection):
         'sourceSegmentation': source_seg,
         'target': target,
         'targetSegmentation': target_seg,
-        'elapsedTime': elapsed_time.total_seconds()*1000.0
+        'elapsedTime': timediff(elapsed_time)
       }
       print >> sys.stderr, 'confidences:', obj
       self.respond('getConfidencesResult', { 'errors': [], 'data': obj })
@@ -401,30 +421,53 @@ class CasmacatConnection(SocketConnection):
       contributions = new_contributions(source, source_seg)
 
       if self.config['mode'] and self.config['mode'] != "":
-        mts = [models.get_system('mt', name) for name in self.config['mode'].split(",")]
+        mts = [models.get_system('imt', name) for name in self.config['mode'].split(",")]
+        mts = [mt for mt in mts if mt]
+        print >> sys.stderr, "mts", mts
+        if len(mts) == 0:
+          mts = [models.get_system('mt', name) for name in self.config['mode'].split(",")]
+          print >> sys.stderr, "imts", mts
       else:
         mts = [models.mt]
       mts = [ mt for mt in mts if mt ]
         
       if len(mts) == 0:
-        pass
+        traceback.print_stack() 
+        print >> sys.stderr, "System '%s' of kind 'mt' not found" % self.config['mode']
         # XXX: Raise exception?
 
       else:
         for mt in mts:
           start_time = datetime.datetime.now()
           target_tok = mt.translate(source_tok)
-
           target, target_seg = models.target_processor.postprocess(target_tok)
+          elapsed_time = datetime.datetime.now() - start_time
+          match = new_match(name, target, target_seg, elapsed_time)
+
           if len(self.rules):
             target = self.rules.apply(source, target)
             target_tok, target_seg = models.target_processor.preprocess(target)
 
           validated_words = [False]*len(target_tok)
-          sent = models.confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
+          sent = 0
+          if models.option("confidencer", "delayed") == False:
+            sent, conf = models.confidencer.getWordConfidences(source_tok, target_tok, validated_words)
+            match['confidences'] = conf
+          elif models.option("confidencer", "module"):
+            sent = models.confidencer.getSentenceConfidence(source_tok, target_tok, validated_words)
+
+          if models.option("aligner", "delayed") == False:
+            matrix = models.aligner.align(source_tok, target_tok)
+            match['alignments'] = matrix
+
+          if models.option("word-prioritizer", "module") and "prioritizer" in self.config:
+            prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
+            if prioritizer and len(target_tok) > 0:
+              match["priorities"] = [0] * len(target_tok)
+
 
           elapsed_time = datetime.datetime.now() - start_time
-          match = new_match(name, target, target_seg, elapsed_time)
+          match['elapsedTime'] = timediff(elapsed_time)
           match['quality'] = sent
           add_match(contributions, match)
       prepare(contributions)
@@ -439,11 +482,12 @@ class CasmacatConnection(SocketConnection):
       target = to_utf8(data['target'])
       target_tok, target_seg = models.target_processor.preprocess(target)
       start_time = datetime.datetime.now()
-      for name, ol in models.ol_systems.iteritems():
+      for name, ol, plugin in models.ol_systems:
+        print sys.stderr, "validating model ", name, "with", source_tok, target_tok
         ol.update(source_tok, target_tok)
       elapsed_time = datetime.datetime.now() - start_time
       models.updates.append({'source': source, 'target': target})
-      obj = { 'elapsedTime': elapsed_time }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('validateResults', { 'errors': [], 'data': obj })
 
     @event('getValidatedContributions')
@@ -489,11 +533,8 @@ class CasmacatConnection(SocketConnection):
           self.imt_session[name] = imt.newSession(source_tok)
 
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('startSessionResult', { 'errors': [], 'data': obj })
-
-
-
 
 
 
@@ -508,7 +549,6 @@ class CasmacatConnection(SocketConnection):
           # XXX: This assumes that the prefix of the last word does not change in length
           return prediction_seg[prefix_last_tok][0] + last_token_partial_len
       return 0
-    
     
     # after preprocessing, prediction might not be compatible with the real prefix
     # in case of last token NOT partial, the tokenization SHOULD NOT affect the prefix
@@ -540,42 +580,11 @@ class CasmacatConnection(SocketConnection):
         prediction = prefix + r_suf
      
         # now, we have a prediction with the user prefix. XXX: we assume the tokens are also correct
-        # but we neeed to adjust the segmentation
-    
-        if prefix_last_tok >= 0 and prefix_last_tok + 1 < len(prediction_seg):
-          # compute the non-token chars the user has introduced at the end of the prefix
-          prefix_spaces = len_utf8(prefix) - prefix_seg[prefix_last_tok][1]
-          print >> sys.stderr, "############## PREFIX '%s'" % prefix, prefix_last_tok, prefix_seg
-          print >> sys.stderr, "############## PREFIX LEN", len_utf8(prefix), prefix_seg[prefix_last_tok][1]
+        # but we need to adjust the segmentation
+        print >> sys.stderr, "############## PREDICTION SEG", prediction, prediction_seg 
+        prediction_tok, prediction_seg = models.target_processor.preprocess(prediction)
 
-          # compute the non-token chars from the last prefix token and the first suffix token
-          suffix_spaces = prediction_seg[prefix_last_tok + 1][0] - prediction_seg[prefix_last_tok][1]
-
-          # compute what is the actual number of non-tokens to be appended after the prefix
-          spaces = max(0, suffix_spaces - prefix_spaces) 
-          print >> sys.stderr, "############# SPACES", prefix_spaces, suffix_spaces, spaces
-
-          if last_token_partial_len > 0:
-            # if it is a partial word we must sum the length of the word suffix
-            owl = prefix_seg[prefix_last_tok][1] - prefix_seg[prefix_last_tok][0]
-            nwl = prediction_seg[prefix_last_tok][1] - prediction_seg[prefix_last_tok][0]
-            spaces +=  nwl - owl 
-            print >> sys.stderr, "############# LAST WORD SUFFIX", nwl, owl, nwl - owl 
-
-          # we compute the prefix segmentation for the original prefix (the one given by the user)
-          # the suffix of the last token might have changed
-          orig_last_token_end = prefix_seg[prefix_last_tok][0] + len_utf8(prediction_tok[prefix_last_tok])
-          prefix_seg = [s for s in prefix_seg[:prefix_last_tok]] + [(prefix_seg[prefix_last_tok][0], orig_last_token_end)]
-    
-          # thus, we need to move the suffix by
-          diff = len_utf8(prefix) + spaces - prediction_seg[prefix_last_tok + 1][0]
-          print >> sys.stderr, "############## DIFF", diff
-          print >> sys.stderr, "############## PREDICTION SEG", prediction_seg[prefix_last_tok + 1][0], prediction, prediction_seg 
-
-          #diff = len_utf8(prefix) - prefix_seg[prefix_last_tok][1] + orig_last_token_end - new_last_token_end
-          #       original prefix seg.,    we need to adjust the suffix with the new prefix length
-          prediction_seg = prefix_seg +  [(s[0]+diff, s[1]+diff) for s in prediction_seg[prefix_last_tok + 1:]]
-          print >> sys.stderr, "############## FINAL PREDICTION SEG", prediction_seg 
+        print >> sys.stderr, "############## FINAL PREDICTION SEG", prediction_seg 
     
       return prediction, prediction_seg, prediction_tok
 
@@ -585,10 +594,14 @@ class CasmacatConnection(SocketConnection):
     @timer('setPrefix')
     @thrower('setPrefixResult')
     def setPrefix(self, data):
+      if not self.source:
+        self.respond('getPrefixResult', { 'errors': ["Session not started!"] })
+        return
+
       print >> sys.stderr, 'data:', data
       target = data['target']
       caret_pos = data['caretPos']
-      num_results = data['numResults'] if 'numResults' in data else 0
+      num_results = data['numResults'] if 'numResults' in data else 1
 
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target))
 
@@ -612,6 +625,10 @@ class CasmacatConnection(SocketConnection):
 
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
 
+      target_tok, target_seg = models.target_processor.preprocess(to_utf8(target))
+      predictions['data']['previousTarget'] = to_utf8(target)
+      predictions['data']['previousTargetSegmentation'] = target_seg
+
       for name, session in self.imt_session.iteritems():
         start_time = datetime.datetime.now()
         prediction_tok = session.setPrefix(prefix_tok, suffix_tok, last_token_is_partial)
@@ -622,25 +639,43 @@ class CasmacatConnection(SocketConnection):
         # which is the result of a system that doesn't have paths to continue
         # the prefix
         if len(prediction_tok) >= len(prefix_tok):
+          print >> sys.stderr, "############## TARGET SEG", to_utf8(target), target_seg 
           prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
 
           match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
-          if "prioritizer" in self.config and self.source_tok:
-            prioritizer = models.get_system("prioritizer", self.config["prioritizer"])
+          if models.option("confidencer", "module"):
+            validated_words = [True] * len(prefix_tok)
+            validated_words.extend([False]*(len(prediction_tok) - len(prefix_tok)))
+            if models.option("confidencer", "delayed") == False:
+              sent, conf = models.confidencer.getWordConfidences(self.source_tok, prediction_tok, validated_words)
+              match['confidences'] = conf
+              match['quality'] = sent
+            else:
+              sent = models.confidencer.getSentenceConfidence(self.source_tok, prediction_tok, validated_words)
+              match['quality'] = sent
+
+          if models.option("aligner", "delayed") == False:
+            matrix = models.aligner.align(self.source_tok, prediction_tok)
+            match['alignments'] = matrix
+
+          if models.option("word-prioritizer", "module") and "prioritizer" in self.config and self.source_tok:
+            prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
             if prioritizer:
-              wp = models.word_prioritizers[self.config["prioritizer"]]
               n_ok = len(prefix_tok)
               if last_token_is_partial:
                 n_ok -= 1
               validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
-              priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+              priority = prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
               match["priorities"] = priority
 
+          elapsed_time = datetime.datetime.now() - start_time
+          match['elapsedTime'] = timediff(elapsed_time)
           add_match(predictions, match)
         else:
           predictions["errors"].append("The server cannot provide a completion to the prefix")
       prepare(predictions)
+
       print >> sys.stderr, "SUGGESTIONS:", predictions
       self.respond('setPrefixResult', predictions)
 
@@ -648,10 +683,14 @@ class CasmacatConnection(SocketConnection):
     @timer('rejectSuffix')
     @thrower('rejectSuffixResult')
     def rejectSuffix(self, data):
+      if not self.source:
+        self.respond('rejectSuffixResult', { 'errors': ["Session not started!"] })
+        return
+
       print >> sys.stderr, 'data:', data
       target = data['target']
       caret_pos = data['caretPos']
-      num_results = data['numResults'] if 'numResults' in data else 0
+      num_results = data['numResults'] if 'numResults' in data else 1
 
       logger.log(DEBUG_LOG, str(caret_pos) + " @ " + to_utf8(target))
 
@@ -675,35 +714,63 @@ class CasmacatConnection(SocketConnection):
 
       predictions = new_predictions(self.source, self.source_seg, caret_pos)
 
+      target_tok, target_seg = models.target_processor.preprocess(to_utf8(target))
+      predictions['data']['previousTarget'] = to_utf8(target)
+      predictions['data']['previousTargetSegmentation'] = target_seg
+
       for name, session in self.imt_session.iteritems():
-        start_time = datetime.datetime.now()
-        prediction_tok = session.rejectSuffix(prefix_tok, suffix_tok, last_token_is_partial)
-        elapsed_time = datetime.datetime.now() - start_time
-        print >> sys.stderr, name, "prediction_tok", prediction_tok
+        for n in range(num_results):
+          start_time = datetime.datetime.now()
+          prediction_tok = session.rejectSuffix(prefix_tok, suffix_tok, last_token_is_partial)
+          elapsed_time = datetime.datetime.now() - start_time
+          print >> sys.stderr, name, "prediction_tok", prediction_tok
 
-        # make sure that the new prediction is at least as long as the prefix
-        # which is the result of a system that doesn't have paths to continue
-        # the prefix
-        if len(prediction_tok) >= len(prefix_tok):
-          prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
+          # make sure that the new prediction is at least as long as the prefix
+          # which is the result of a system that doesn't have paths to continue
+          # the prefix
+          if len(prediction_tok) >= len(prefix_tok):
+            prediction, prediction_seg, prediction_tok = self.postprocessPrediction(prefix, prefix_seg, prediction_tok, last_token_partial_len, prefix_last_tok)
 
-          match = new_prediction(name, prediction, prediction_seg, elapsed_time)
+            if prediction != to_utf8(target):
+              match = new_prediction(name, prediction, prediction_seg, elapsed_time)
 
-          if "prioritizer" in self.config and self.source_tok:
-            prioritizer = models.get_system("prioritizer", self.config["prioritizer"])
-            if prioritizer:
-              wp = models.word_prioritizers[self.config["prioritizer"]]
-              n_ok = len(prefix_tok)
-              if last_token_is_partial:
-                n_ok -= 1
-              validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
-              priority = wp.word_prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
-              match["priorities"] = priority
+              if models.option("confidencer", "module"):
+                validated_words = [True] * len(prefix_tok)
+                validated_words.extend([False]*(len(prediction_tok) - len(prefix_tok)))
+                if models.option("confidencer", "delayed") == False:
+                  sent, conf = models.confidencer.getWordConfidences(self.source_tok, prediction_tok, validated_words)
+                  match['confidences'] = conf
+                  match['quality'] = sent
+                else:
+                  sent = models.confidencer.getSentenceConfidence(self.source_tok, prediction_tok, validated_words)
+                  match['quality'] = sent
 
-          add_match(predictions, match)
-        else:
-          predictions["errors"].append("The server cannot provide a completion to the prefix since the user has rejected all the options")
+
+              if models.option("aligner", "delayed") == False:
+                matrix = models.aligner.align(self.source_tok, prediction_tok)
+                match['alignments'] = matrix
+
+              if models.option("word-prioritizer", "module") and "prioritizer" in self.config and self.source_tok:
+                prioritizer = models.get_system("word-prioritizer", self.config["prioritizer"])
+                if prioritizer:
+                  n_ok = len(prefix_tok)
+                  if last_token_is_partial:
+                    n_ok -= 1
+                  validated = [True]*n_ok + [False]*(len(prediction_tok) - n_ok)
+                  priority = prioritizer.getWordPriorities(self.source_tok, prediction_tok, validated)
+                  match["priorities"] = priority
+
+              elapsed_time = datetime.datetime.now() - start_time
+              match['elapsedTime'] = timediff(elapsed_time)
+              add_match(predictions, match)
+            else:
+              predictions["errors"].append("The server cannot provide a completion to the prefix since the user has rejected all the options")
+              break
+          else:
+            predictions["errors"].append("The server cannot provide a completion to the prefix since the user has rejected all the options")
+            break
       prepare(predictions)
+
       print >> sys.stderr, "SUGGESTIONS:", predictions
       self.respond('rejectSuffixResult', predictions)
 
@@ -712,12 +779,13 @@ class CasmacatConnection(SocketConnection):
     @thrower('endSessionResult')
     def endSessionResult(self):
       for name, session in self.imt_session.iteritems():
-        next((imt for n, imt in models.systems['imt'] if n == name)).deleteSession(session)
+        next((imt for n, imt, _ in models.systems['imt'] if n == name)).deleteSession(session)
       self.imt_session = {}
+      self.source, self.source_tok, self.source_seg = None, None, None
       logger.log(DEBUG_LOG, "ending imt session");
 
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('endSessionResult', { 'errors': [], 'data': obj })
 
     @event('reset')
@@ -725,9 +793,16 @@ class CasmacatConnection(SocketConnection):
     @thrower('resetResult')
     def reset(self):
       start_time = datetime.datetime.now()
+      print >> sys.stderr, "MODELS:", models.systems['imt']
+      for conn in connections:
+        for name, session in conn.imt_session.iteritems():
+          next((imt for n, imt, _ in models.systems['imt'] if n == name)).deleteSession(session)
+        conn.source, conn.source_tok, conn.source_seg = None, None, None
+      connections.clear()
+      self.imt_session = {}
       models.reset()
       elapsed_time = datetime.datetime.now() - start_time
-      obj = { 'elapsedTime': elapsed_time.total_seconds()*1000.0 }
+      obj = { 'elapsedTime': timediff(elapsed_time) }
       self.respond('resetResult', { 'errors': [], 'data': obj })
 
     @event('configure')
@@ -757,14 +832,18 @@ class CasmacatConnection(SocketConnection):
     def on_open(self, info):
       print >> sys.stderr, "Connection Info", repr(info.__dict__)
       MyLogger.participants.add(self)
+      connections.add(self)
+      self.info = info
       self.imt_session = {}
       #self.config = { 'useSuggestions': False, 'mode': u'PE' }
       self.config = { 'useSuggestions': True, 'mode': u'ITP' }
       self.rules = Rules()
+      self.source, self.source_tok, self.source_seg = None, None, None
 
     @event
     def on_close(self):
       MyLogger.participants.remove(self)
+      if self in connections: connections.remove(self)
       self.rules = None
 
 
@@ -843,10 +922,7 @@ if __name__ == "__main__":
       except:
         pass
 
-    if log_fn:
-      logfd = codecs.open(log_fn, "a", "utf-8")
-    else:
-      logfd = codecs.open(os.path.devnull, "a", "utf-8")
+    config_log(log_fn)
 
     logging.getLogger().setLevel(logging.INFO)
 
@@ -855,7 +931,7 @@ if __name__ == "__main__":
       raise Exception("Missing config file")
 
     models = casmacat_models.Models(config_fn)
-    print >> logfd, "config", json.dumps(models.config)
+    print >> get_logfd(), "config", json.dumps(models.config)
     models.create_plugins()
     atexit.register(models.delete_plugins)
 
@@ -884,7 +960,7 @@ if __name__ == "__main__":
     )
 
 
-    print >> logfd, """/*\n  Casmacat server started on port %d\n  %s\n*/\n\n"config": %s\n\n\n""" % (port, str(datetime.datetime.now()), json.dumps(models.config, indent=2, separators=(',', ': '), encoding="utf-8"))
+    print >> get_logfd(), """/*\n  Casmacat server started on port %d\n  %s\n*/\n\n"config": %s\n\n\n""" % (port, str(datetime.datetime.now()), json.dumps(models.config, indent=2, separators=(',', ': '), encoding="utf-8"))
 
     # Create and start tornadio server
     SocketServer(application)
