@@ -45,9 +45,10 @@ AC_PROG_MAKE_SET
 
 
 # boost
-AX_BOOST_BASE(1.41)
-AX_BOOST_UNIT_TEST_FRAMEWORK
-AM_CONDITIONAL([MAKE_TEST], [test x"$BOOST_UNIT_TEST_FRAMEWORK_LIB" != x])
+#XXX: disable unit testing since it does not work in many installations
+# AX_BOOST_BASE(1.41)
+# AX_BOOST_UNIT_TEST_FRAMEWORK
+# AM_CONDITIONAL([MAKE_TEST], [test x"$BOOST_UNIT_TEST_FRAMEWORK_LIB" != x])
 
 # check for Python
 AM_PATH_PYTHON
