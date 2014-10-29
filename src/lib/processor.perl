@@ -27,16 +27,17 @@ while (@ARGV) {
   /^-h$/ && ($HELP = 1, next);
 }
 
+my $mydir = "$dirname/nonbreaking_prefixes";
+
 if ($HELP) {
   print "Usage ./processor.perl (-l [en|de|...]) -d nonbreaking_prefixes_dirname -c truecase_model\n";
   exit;
 }
 if (!$QUIET) {
-  print STDERR "Tokenizer v3\n";
+  print STDERR "Tokenizer v3 from $mydir\n";
   print STDERR "Language: $language\n";
 }
 
-my $mydir = "$dirname/nonbreaking_prefixes";
 
 ######### LOAD TOKENIZER MODELS ############
 
